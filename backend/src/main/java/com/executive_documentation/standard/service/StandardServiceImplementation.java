@@ -1,0 +1,58 @@
+package com.executive_documentation.standard.service;
+
+import com.executive_documentation.exception.NotFoundException;
+import com.executive_documentation.standard.model.Standard;
+import com.executive_documentation.standard.repository.StandardRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class StandardServiceImplementation implements StandardService {
+
+    private final StandardRepository standardRepository;
+
+    @Override
+    public Standard get(Long id) {
+        return standardRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public List<Standard> getAll() {
+        return standardRepository.findAll();
+    }
+
+    @Transactional
+    @Override
+    public Standard create(Standard standard) {
+        return standardRepository.save(standard);
+    }
+
+    @Transactional
+    @Override
+    public Standard update(long id, Standard standard) {
+        Standard updatedStandard = findStandardOrNot(id);
+
+        if (standard.getName() != null) {
+            updatedStandard.setName(standard.getName());
+        }
+
+        return standardRepository.save(updatedStandard);
+    }
+
+    @Transactional
+    @Override
+    public void delete(long id) {
+        findStandardOrNot(id);
+        standardRepository.deleteById(id);
+    }
+
+    @Override
+    public Standard findStandardOrNot(long id) {
+        return standardRepository.findById(id).orElseThrow(() -> new NotFoundException("Подобъект не найден"));
+    }
+}

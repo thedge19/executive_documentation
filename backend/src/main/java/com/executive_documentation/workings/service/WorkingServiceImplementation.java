@@ -1,0 +1,86 @@
+package com.executive_documentation.workings.service;
+
+import com.executive_documentation.exception.NotFoundException;
+import com.executive_documentation.workings.dto.WorkingMapper;
+import com.executive_documentation.workings.dto.WorkingRequestDto;
+import com.executive_documentation.workings.dto.WorkingUpdateDto;
+import com.executive_documentation.workings.model.Working;
+import com.executive_documentation.workings.repository.WorkingRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+@Slf4j
+public class WorkingServiceImplementation implements WorkingService {
+
+    private final WorkingRepository workingRepository;
+    private final WorkingMapper workingMapper;
+
+    @Override
+    public Working get(Long id) {
+        return findWorkingOrNot(id);
+    }
+
+    @Override
+    public List<Working> getAll(long id) {
+        return workingRepository.findAllBySubObjectIdOrderByIdAsc(id);
+    }
+
+    @Override
+    public List<Working> getAllByPositiveDone(long id) {
+        return workingRepository.findAllBySubObjectId(id);
+    }
+
+    @Transactional
+    @Override
+    public Working create(WorkingRequestDto workingDto) {
+        return workingRepository.save(workingMapper.toEntity(workingDto));
+    }
+
+    @Transactional
+    @Override
+    public Working update(long id, WorkingUpdateDto dto) {
+        Working updatedWorking = findWorkingOrNot(id);
+
+        if (dto.getName() != null) {
+            updatedWorking.setName(dto.getName());
+        }
+
+        if (dto.getUnits() != null) {
+            updatedWorking.setUnits(dto.getUnits());
+        }
+
+        if (dto.getQuantity() != null)  {
+            updatedWorking.setQuantity(dto.getQuantity());
+        }
+
+        if (dto.getDone() != null) {
+            updatedWorking.setDone(dto.getDone());
+        }
+
+        log.info("Updating working standard {}, units {}, quantity {}",
+                updatedWorking.getStandard().getName(),
+                updatedWorking.getUnits(),
+                updatedWorking.getQuantity());
+
+        return workingRepository.save(updatedWorking);
+    }
+
+    @Transactional
+    @Override
+    public void delete(long id) {
+        findWorkingOrNot(id);
+        workingRepository.deleteById(id);
+    }
+
+    @Override
+    public Working findWorkingOrNot(long id) {
+        return workingRepository.findById(id).orElseThrow(() -> new NotFoundException("Подобъект не найден"));
+    }
+}
