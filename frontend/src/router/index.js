@@ -86,7 +86,7 @@ const router = createRouter({
       component: () => import('../views/subObjects/UpdateSubObject.vue')
     },
     {
-      path: '/works',
+      path: '/works/:id',
       name: 'viewWorks',
       component: ViewWorks
     },

@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS standards
 CREATE TABLE IF NOT EXISTS works
 (
     work_id           BIGSERIAL PRIMARY KEY,
-    work_name         VARCHAR(255) NOT NULL,
+    work_name         VARCHAR(1000) NOT NULL,
     work_units        VARCHAR(50)  NOT NULL,
     work_quantity     NUMERIC(19, 4),
     work_done         NUMERIC(19, 4),

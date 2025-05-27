@@ -1,18 +1,61 @@
 <template>
     <main>
         <Navbar/>
-      <div style="position: absolute; top: 0; bottom: 0; left: 0; right: 0;">
-        <div class="my-5 py-lg-5 mx-auto w-50">
-          <div class="mx-auto py-lg-5">
-            <h2 class="text-center mb-3">Редактирование {{ material.name }}</h2>
-            <form @submit.prevent="updateMaterial">
-              <h2 v-if="material.certificateId != null">Сертификат добавлен</h2>
-              <div v-if="material.certificateId == null" class="mb-3 ">
-                <label for="formFile" class="form-label">Добавьте сертификат/паспорт</label>
-                <input  @change="addCertificate" class="form-control border border-primary" type="file" id="formFile">
+      <div class="my-5">
+        <div class="mx-auto w-25 " style="max-width:100%;">
+          <h2 class="text-center mb-3">Редактирование материалов</h2>
+          <form @submit.prevent="updateMaterial">
+
+            <div class="row">
+              <div class="col-md-12 form-group mb-3">
+                <label for="name" class="form-label">Наименование</label>
+                <input id="name" type="text" name="name" class="form-control"
+                       required v-model="material.name">
               </div>
-            </form>
-          </div>
+            </div>
+            <!--Units-->
+            <div class="row">
+              <div class="col-md-12 form-group mb-3">
+                <label for="units" class="form-label">Ед. изм.</label>
+                <input id="units" type="text" name="units" class="form-control"
+                       required v-model="material.units">
+              </div>
+            </div>
+            <!--Quantity-->
+            <div class="row">
+              <div class="col-md-12 form-group mb-3">
+                <label for="quantity" class="form-label">Документ о качестве</label>
+                <input id="quantity" type="text" name="quantity" class="form-control"
+                       required v-model="material.documents">
+              </div>
+            </div>
+            <!--Standard-->
+            <div class="input-group mb-3 mt-3">
+              <label class="input-group-text" for="inputGroupSelect01">Автор</label>
+              <input id="author" type="text" name="author" class="form-control"
+                      v-model="material.author">
+            </div>
+            <div class="row">
+              <div class="col-md-12 form-group mb-3">
+                <label for="numberOfPages" class="form-label">Число страниц в сертификате (паспорте)</label>
+                <input id="numberOfPages" type="number" name="numberOfPages" class="form-control"
+                       placeholder="0" required v-model="material.numberOfPages">
+              </div>
+            </div>
+            <!--ГОСТ, ТУ-->
+            <div class="row">
+              <div class="col-md-12 form-group mb-3">
+                <label for="documents" class="form-label">ГОСТ, ТУ</label>
+                <input id="documents" type="text" name="documents" class="form-control"
+                       placeholder="ГОСТ, ТУ" required v-model="material.standard">
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-12 form-group" style="width: 50%">
+                <input class="btn btn-primary w-30" type="submit" value="Обновить">
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </main>
@@ -36,9 +79,9 @@ export default {
                 units: '',
                 documents: '',
                 standard: '',
-                certificate_id: null
+                author: '',
+                numberOfPages: '',
             },
-          selectedFile: null,
         }
     },
 
@@ -57,20 +100,19 @@ export default {
 
         },
 
-        addCertificate(event) {
-          this.selectedFile = event.target.files[0];
-          const formData = new FormData();
-          console.log(this.selectedFile);
-          formData.append("file", this.selectedFile);
-          fetch(`http://localhost:8080/materials/certificate/${this.$route.params.id}`, {
-            method: 'POST',
-            body: formData
-          })
-              .then(data => {
-                console.log(data);
-                this.$router.push('/materials');
-              })
-        }
+      updateMaterial() {
+        fetch(`http://localhost:8080/materials/${this.$route.params.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(this.material)
+        })
+            .then(data => {
+              console.log(data);
+              this.$router.push(`/materials`);
+            })
+      },
     }
 }
 

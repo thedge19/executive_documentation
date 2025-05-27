@@ -26,9 +26,6 @@
               <a class="nav-link" href="/subObjects">Подобъекты</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="/works">Работы</a>
-            </li>
-            <li class="nav-item">
               <a class="nav-link" href="/controls">Входняк</a>
             </li>
             <li class="nav-item">

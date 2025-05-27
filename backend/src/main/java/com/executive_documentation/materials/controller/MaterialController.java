@@ -3,14 +3,20 @@ package com.executive_documentation.materials.controller;
 import com.executive_documentation.materials.dto.MaterialResponseDto;
 import com.executive_documentation.materials.model.Material;
 import com.executive_documentation.materials.service.MaterialService;
+import com.executive_documentation.workings.model.Working;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -31,9 +37,41 @@ public class MaterialController {
     }
 
     @GetMapping
-    public List<MaterialResponseDto> getAll() {
+    ResponseEntity<Page<MaterialResponseDto>> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,asc") String[] sort) {
         log.info("Get all Materials");
-        return materialService.getAll();
+
+        try {
+            // Создаем объект сортировки
+            Sort sorting = Sort.by(
+                    sort[0].contains(",") ?
+                            sort[0].split(",")[0] :
+                            sort[0]
+            );
+
+            if (sort[0].contains(",")) {
+                sorting = sort[0].split(",")[1].equalsIgnoreCase("desc") ?
+                        sorting.descending() :
+                        sorting.ascending();
+            }
+
+            Pageable pageable = PageRequest.of(page, size, sorting);
+            Page<MaterialResponseDto> worksPage = materialService.getAll(pageable);
+
+            log.info("Found {} materials out of {}",
+                    worksPage.getNumberOfElements(),
+                    worksPage.getTotalElements());
+
+            log.info(worksPage.toString());
+
+            return ResponseEntity.ok(worksPage);
+
+        } catch (Exception e) {
+            log.error("Error fetching works for material: {}", e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -53,7 +91,7 @@ public class MaterialController {
 
     @PatchMapping("/{id}")
     public Material update(@PathVariable long id,
-                            @RequestBody Material material) {
+                           @RequestBody Material material) {
         log.info("Update Material: {}", material.getName());
         Material materialUpdated = materialService.update(id, material);
         log.info("Update Material: {}", materialUpdated);

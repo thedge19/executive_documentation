@@ -12,6 +12,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,15 +56,29 @@ public class FileStorageService {
     public ResponseEntity<Resource> loadFileAsResource(String fileName) {
         try {
             Resource resource = getResource(fileName);
+            String originalFilename = extractOriginalFilename(fileName);
+
+            String encodedFilename = URLEncoder.encode(originalFilename, StandardCharsets.UTF_8.toString())
+                    .replaceAll("\\+", "%20");
+
+            String contentDisposition = String.format(
+                    "inline; filename*=UTF-8''%s",
+                    encodedFilename
+            );
 
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_PDF)
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "inline; filename=\"" + resource.getFilename() + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
                     .body(resource);
         } catch (Exception e) {
             throw new RuntimeException("Could not read file: " + fileName, e);
         }
+    }
+
+    private String extractOriginalFilename(String storedFilename) {
+        // Извлекаем оригинальное имя файла после UUID
+        int underscoreIndex = storedFilename.indexOf('_');
+        return underscoreIndex > 0 ? storedFilename.substring(underscoreIndex + 1) : storedFilename;
     }
 
     public Resource getResource(String fileName) {

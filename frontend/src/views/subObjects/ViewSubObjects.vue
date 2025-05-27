@@ -11,13 +11,13 @@
           <a href="/addSubObject" class="btn btn-primary">Добавить подобъект</a>
           <div class="d-flex justify-content-start mt-3">
             <label class="radio mr-1">
-              <input type="radio" @change="onChangeProject()" name="add" :value="4"
+              <input type="radio" @change="onChangeProject()" name="add" :value="1"
                      v-model="projectId"
                      checked>
               <span> <i class="fa fa-user"></i> Грушовая </span>
             </label>
             <label class="radio m-lg-auto">
-              <input type="radio" @change="onChangeProject()" name="add" :value="5"
+              <input type="radio" @change="onChangeProject()" name="add" :value="2"
                      v-model="projectId">
               <span> <i class="fa fa-plus-circle"></i> Шесхарис </span>
             </label>
@@ -35,7 +35,7 @@
             <tbody>
             <tr v-for="subObject in subObjects" :key="subObject.id">
               <th scope="row">{{ subObject.id }}</th>
-              <td>{{ subObject.name }}</td>
+              <td><a :href="`/works/${subObject.id}`"> {{ subObject.name }}</a></td>
               <td>{{ subObject.title }}</td>
               <td>{{ subObject.project.name }}</td>
               <td>
@@ -91,15 +91,30 @@ export default {
             console.log(data)
           })
     },
+
     deleteSubObject(id) {
-      fetch(`http://localhost:8080/subobjects/${id}`, {
-        method: 'DELETE'
-      })
-          .then(data => {
-            console.log(data)
-            this.getSubObjects()
-          })
-    }
+      if (confirm('Вы действительно хотите удалить подобъект?')) {
+        fetch(`http://localhost:8080/subobjects/${id}`, {
+          method: 'DELETE'
+        })
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Ошибка при удалении');
+              }
+              return response;
+            })
+            .then(data => {
+              console.log(data);
+              this.getWorks();
+              // Можно добавить уведомление об успешном удалении
+              alert('Подобъект успешно удалён');
+            })
+            .catch(error => {
+              console.error('Ошибка:', error);
+              alert('Не удалось удалить подобъект');
+            });
+      }
+    },
   }
 }
 

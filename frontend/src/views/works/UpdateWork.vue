@@ -29,6 +29,17 @@
                      required v-model="work.quantity">
             </div>
           </div>
+          <!--Standard-->
+          <div class="input-group mb-3 mt-3">
+            <label class="input-group-text" for="inputGroupSelect01">СП:</label>
+            <select class="form-select" id="inputGroupSelect01"
+                    v-model="work.standardId">
+              <option selected>Choose...</option>
+              <option style="width: min-content"
+                      v-for="standard in standards" :value="standard.id">{{ standard.name }}
+              </option>
+            </select>
+          </div>
           <div class="row">
             <div class="col-md-12 form-group mb-3">
               <label for="done" class="form-label">Выполнено</label>
@@ -64,13 +75,16 @@ export default {
         name: '',
         units: '',
         quantity: '',
-        done: ''
-      }
+        done: '',
+        standardId: '',
+      },
+      standards: [],
     }
   },
 
   mounted() {
     this.getWork();
+    this.getStandards();
   },
 
   methods: {
@@ -80,6 +94,15 @@ export default {
           .then(data => {
             this.work = data
             console.log(data)
+          })
+    },
+
+    getStandards() {
+      fetch(`http://localhost:8080/standards`,
+      )
+          .then(res => res.json())
+          .then(data => {
+            this.standards = data
           })
     },
 
@@ -93,7 +116,7 @@ export default {
       })
           .then(data => {
             console.log(data);
-            this.$router.push('/works');
+            this.$router.push(`/works/${this.work.subObject.id}`);
           })
     },
   }
