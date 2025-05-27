@@ -11,13 +11,13 @@ import com.executive_documentation.materials.repository.MaterialRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileOutputStream;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -39,20 +39,16 @@ public class MaterialServiceImplementation implements MaterialService {
     }
 
     @Override
-    public List<MaterialResponseDto> getAll() {
-        return materialRepository.findAllByOrderByName()
-                .stream()
+    public Page<MaterialResponseDto> getAll(Pageable pageable) {
+        return materialRepository.findAllByOrderByName(pageable)
                 .map(material -> {
                     MaterialResponseDto dto = materialMapper.toResponseDto(material);
-                    // Добавляем ссылку на сертификат, если он есть
                     if (material.getCertificate() != null && material.getCertificate().getPath() != null) {
-                        // Формируем полный URL для скачивания файла
                         String fileUrl = baseUrl + "/files/" + material.getCertificate().getPath();
                         dto.setCertificateUrl(fileUrl);
                     }
                     return dto;
-                })
-                .collect(Collectors.toList());
+                });
     }
 
     @Transactional
@@ -78,6 +74,26 @@ public class MaterialServiceImplementation implements MaterialService {
 
         if (material.getName() != null) {
             updatedMaterial.setName(material.getName());
+        }
+
+        if (material.getUnits() != null) {
+            updatedMaterial.setUnits(material.getUnits());
+        }
+
+        if (material.getDocuments() != null) {
+            updatedMaterial.setDocuments(material.getDocuments());
+        }
+
+        if (material.getStandard() != null) {
+            updatedMaterial.setStandard(material.getStandard());
+        }
+
+        if (material.getAuthor() != null) {
+            updatedMaterial.setAuthor(material.getAuthor());
+        }
+
+        if (material.getNumberOfPages() != null) {
+            updatedMaterial.setNumberOfPages(material.getNumberOfPages());
         }
 
         return updatedMaterial;

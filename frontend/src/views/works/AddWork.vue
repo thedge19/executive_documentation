@@ -43,24 +43,26 @@
           <div class="input-group mb-3 mt-3">
             <label class="input-group-text" for="inputGroupSelect01">СП:</label>
             <select class="form-select" id="inputGroupSelect01"
-                    v-model="work.standardId">
-              <option selected>Choose...</option>
+                    v-model="work.standardId" required>
+              <option value="" selected disabled>Выберите стандарт...</option>
               <option style="width: min-content"
                       v-for="standard in standards" :value="standard.id">{{ standard.name }}
               </option>
             </select>
           </div>
 
+          <div v-if="error" class="alert alert-danger">{{ error }}</div>
+
           <div class="row">
             <div class="col-md-12 form-group">
-              <input class="btn btn-primary w-100" type="submit" value="Submit">
+              <input class="btn btn-primary w-25" type="submit" value="Submit">
             </div>
           </div>
-          <div class="row">
-            <button @click.prevent="getSomething" class="btn btn-outline-success w-50" type="submit" value="Submit">
-              Жми
-            </button>
-          </div>
+<!--          <div class="row">-->
+<!--            <button @click.prevent="getSomething" class="btn btn-outline-success w-50" type="submit" value="Submit">-->
+<!--              Жми-->
+<!--            </button>-->
+<!--          </div>-->
         </form>
       </div>
     </div>
@@ -80,7 +82,7 @@ export default {
   data() {
     return {
       projectId: 1,
-
+      error: '',
       subObject: "",
       standards: [],
 
@@ -107,6 +109,13 @@ export default {
     },
 
     addWork() {
+      // Проверка выбранного стандарта
+      if (!this.work.standardId) {
+        this.error = 'Пожалуйста, выберите стандарт';
+        return;
+      }
+
+      this.error = ''; // Очищаем сообщение об ошибке, если оно было
       fetch('http://localhost:8080/workings', {
         method: 'POST',
         headers: {
@@ -118,16 +127,7 @@ export default {
       })
           .then(data => {
             console.log(data)
-            this.$router.push("/works");
-          })
-    },
-
-    getSubObjects() {
-      fetch(`http://localhost:8080/subobjects/${this.projectId}`,
-      )
-          .then(res => res.json())
-          .then(data => {
-            this.subObjects = data
+            this.$router.push(`/works/${this.$route.params.id}`);
           })
     },
 

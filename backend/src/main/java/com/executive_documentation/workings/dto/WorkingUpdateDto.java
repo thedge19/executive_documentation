@@ -17,4 +17,6 @@ public class WorkingUpdateDto {
     private BigDecimal quantity;
 
     private BigDecimal done;
+
+    private Long standardId;
 }

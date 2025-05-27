@@ -1,6 +1,8 @@
 package com.executive_documentation.workings.service;
 
 import com.executive_documentation.exception.NotFoundException;
+import com.executive_documentation.standard.model.Standard;
+import com.executive_documentation.standard.repository.StandardRepository;
 import com.executive_documentation.workings.dto.WorkingMapper;
 import com.executive_documentation.workings.dto.WorkingRequestDto;
 import com.executive_documentation.workings.dto.WorkingUpdateDto;
@@ -8,6 +10,8 @@ import com.executive_documentation.workings.model.Working;
 import com.executive_documentation.workings.repository.WorkingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +24,7 @@ import java.util.List;
 public class WorkingServiceImplementation implements WorkingService {
 
     private final WorkingRepository workingRepository;
+    private final StandardRepository standardRepository;
     private final WorkingMapper workingMapper;
 
     @Override
@@ -28,8 +33,8 @@ public class WorkingServiceImplementation implements WorkingService {
     }
 
     @Override
-    public List<Working> getAll(long id) {
-        return workingRepository.findAllBySubObjectIdOrderByIdAsc(id);
+    public Page<Working> getAll(long id, Pageable pageable) {
+        return workingRepository.findAllBySubObjectIdOrderByIdAsc(id, pageable);
     }
 
     @Override
@@ -56,7 +61,7 @@ public class WorkingServiceImplementation implements WorkingService {
             updatedWorking.setUnits(dto.getUnits());
         }
 
-        if (dto.getQuantity() != null)  {
+        if (dto.getQuantity() != null) {
             updatedWorking.setQuantity(dto.getQuantity());
         }
 
@@ -64,12 +69,17 @@ public class WorkingServiceImplementation implements WorkingService {
             updatedWorking.setDone(dto.getDone());
         }
 
+        if (dto.getStandardId() != null) {
+            Standard updatedStandard = standardRepository.findById(dto.getStandardId()).orElse(null);
+            updatedWorking.setStandard(updatedStandard);
+        }
+
         log.info("Updating working standard {}, units {}, quantity {}",
                 updatedWorking.getStandard().getName(),
                 updatedWorking.getUnits(),
                 updatedWorking.getQuantity());
 
-        return workingRepository.save(updatedWorking);
+        return updatedWorking;
     }
 
     @Transactional

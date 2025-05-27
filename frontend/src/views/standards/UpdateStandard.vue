@@ -59,7 +59,7 @@ export default {
         },
         updateStandard() {
             fetch(`http://localhost:8080/standards/${this.$route.params.id}`, {
-                method: 'PUT',
+                method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json'
                 },
