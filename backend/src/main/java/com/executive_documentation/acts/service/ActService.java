@@ -1,9 +1,6 @@
 package com.executive_documentation.acts.service;
 
-import com.executive_documentation.acts.dto.ActRequestDto;
-import com.executive_documentation.acts.dto.ActResponseDto;
-import com.executive_documentation.acts.dto.ActUpdateRequestDto;
-import com.executive_documentation.acts.dto.ActUpdateResponseDto;
+import com.executive_documentation.acts.dto.*;
 import com.executive_documentation.acts.model.Act;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,9 +16,11 @@ public interface ActService {
 
 //    List<ActResponseDto> findAllByEndDateBetween(LocalDate startDate, LocalDate endDate);
 
-//    List<EntranceControlResponseDto> getAllEntranceControl();
+    List<EntranceControlResponseDto> getAllEntranceControl();
 
-//    Act create(ActRequestDto requestDto);
+    void create(ActRequestDto requestDto, MultipartFile file);
+
+    ActResponseDto actUpdate(long id, MultipartFile file);
 
 //    Act update(long id, ActUpdateRequestDto requestDto);
 

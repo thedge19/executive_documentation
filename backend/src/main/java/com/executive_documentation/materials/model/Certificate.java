@@ -17,10 +17,6 @@ public class Certificate {
     @Column(name = "certificate_id")
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "material_id")
-    private Material material;
-
     @NotBlank
     @Column(name="certificate_path")
     private String path;

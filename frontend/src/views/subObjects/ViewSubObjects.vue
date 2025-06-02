@@ -11,13 +11,13 @@
           <a href="/addSubObject" class="btn btn-primary">Добавить подобъект</a>
           <div class="d-flex justify-content-start mt-3">
             <label class="radio mr-1">
-              <input type="radio" @change="onChangeProject()" name="add" :value="1"
+              <input type="radio" @change="onChangeProject()" name="add" :value="4"
                      v-model="projectId"
                      checked>
               <span> <i class="fa fa-user"></i> Грушовая </span>
             </label>
             <label class="radio m-lg-auto">
-              <input type="radio" @change="onChangeProject()" name="add" :value="2"
+              <input type="radio" @change="onChangeProject()" name="add" :value="5"
                      v-model="projectId">
               <span> <i class="fa fa-plus-circle"></i> Шесхарис </span>
             </label>
@@ -64,7 +64,7 @@ export default {
   data() {
     return {
       subObjects: [],
-      projectId: 1
+      projectId: 4
     }
   },
 

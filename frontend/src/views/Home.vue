@@ -22,7 +22,7 @@
                   работы
                 </th>
                 <th class="text-center" scope="col" style="color: black; width: 6%">Начало</th>
-                <th class="text-center" scope="col" style="color: black; width: 25%">Материалы</th>
+                <th class="text-center" scope="col" style="color: black; width: 25%">Исполнительная схема</th>
                 <th class="text-center" scope="col" style="color: black; width: 20%">Предъявлены
                   документы
                 </th>
@@ -42,7 +42,17 @@
                 <td style="width: 15%">{{ act.projectName }}</td>
                 <td style="width: 20%">{{ act.works }}</td>
                 <td style="width: 6%">{{ act.startDate }}</td>
-                <td style="width: 25%">{{ act.materials }}</td>
+                <td style="width: 25%">
+                  <span v-if="!act.executiveSchemaUrl">{{ act.actNumber }}</span>
+                  <a v-else
+                     :href="act.executiveSchemaUrl"
+                     target="_blank"
+                     class="text-decoration-none"
+                     :title="act.actNumber">
+                    {{ act.actNumber || 'Скачать сертификат' }}
+                    <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>
+                  </a>
+                </td>
                 <td style="width: 20%">{{ act.submittedDocuments }}</td>
                 <td style="width: 25%">{{ act.inAccordWith }}</td>
                 <td style="width: 20%">{{ act.nextWorks }}</td>

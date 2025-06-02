@@ -1,5 +1,6 @@
 package com.executive_documentation.fileStorage.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -21,6 +22,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class FileStorageService {
 
@@ -54,17 +56,19 @@ public class FileStorageService {
     }
 
     public ResponseEntity<Resource> loadFileAsResource(String fileName) {
+        log.info("Здесь");
         try {
             Resource resource = getResource(fileName);
             String originalFilename = extractOriginalFilename(fileName);
 
-            String encodedFilename = URLEncoder.encode(originalFilename, StandardCharsets.UTF_8.toString())
+            String encodedFilename = URLEncoder.encode(originalFilename, StandardCharsets.UTF_8)
                     .replaceAll("\\+", "%20");
 
             String contentDisposition = String.format(
                     "inline; filename*=UTF-8''%s",
                     encodedFilename
             );
+
 
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_PDF)
@@ -102,6 +106,27 @@ public class FileStorageService {
             return Files.exists(filePath);
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    public void deleteFile(String fileName) {
+        try {
+            Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
+
+            // Проверяем, что файл существует и находится в разрешенной директории
+            if (!Files.exists(filePath)) {
+                throw new RuntimeException("Файл не существует: " + fileName);
+            }
+
+            // Дополнительная проверка безопасности
+            if (!filePath.startsWith(this.fileStorageLocation)) {
+                throw new RuntimeException("Попытка удалить файл вне разрешенной директории");
+            }
+
+            Files.delete(filePath);
+            log.info("Файл успешно удален: {}", filePath);
+        } catch (IOException ex) {
+            throw new RuntimeException("Не удалось удалить файл: " + fileName, ex);
         }
     }
 }

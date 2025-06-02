@@ -57,7 +57,7 @@ export default {
 
   methods: {
     getAct() {
-      fetch(`http://localhost:8080/acts/update/${this.$route.params.id}`,)
+      fetch(`http://localhost:8080/acts/${this.$route.params.id}`,)
           .then(res => res.json())
           .then(data => {
             this.act = data
@@ -70,8 +70,8 @@ export default {
       const formData = new FormData();
       console.log(this.selectedFile);
       formData.append("file", this.selectedFile);
-      fetch(`http://localhost:8080/acts/schema/${this.$route.params.id}`, {
-        method: 'POST',
+      fetch(`http://localhost:8080/acts/${this.$route.params.id}`, {
+        method: 'PATCH',
         // headers: {
         //   'Accept': 'application/json',
         //   'Content-Type': 'multipart/form-data'

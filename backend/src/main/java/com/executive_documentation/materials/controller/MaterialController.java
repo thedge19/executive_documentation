@@ -37,7 +37,7 @@ public class MaterialController {
     }
 
     @GetMapping
-    ResponseEntity<Page<MaterialResponseDto>> getAll(
+    ResponseEntity<Page<MaterialResponseDto>> getAllPageable(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String[] sort) {
@@ -74,6 +74,12 @@ public class MaterialController {
         }
     }
 
+    @GetMapping("/notPageable")
+    List<Material> getAllNotPageable() {
+        log.info("Get all Materials not pageable");
+        return materialService.getAllNotPageable();
+    }
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Material> createMaterial(
             @RequestPart("material") Material material,
@@ -81,12 +87,6 @@ public class MaterialController {
 
         Material createdMaterial = materialService.create(material, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdMaterial);
-    }
-
-    @PostMapping("/certificate/{id}")
-    public void addCertificate(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
-        log.info("Certificate Material: {}", id);
-        materialService.addCertificate(id, file);
     }
 
     @PatchMapping("/{id}")

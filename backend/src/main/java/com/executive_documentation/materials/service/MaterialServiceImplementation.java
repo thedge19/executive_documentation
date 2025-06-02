@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileOutputStream;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -44,11 +45,16 @@ public class MaterialServiceImplementation implements MaterialService {
                 .map(material -> {
                     MaterialResponseDto dto = materialMapper.toResponseDto(material);
                     if (material.getCertificate() != null && material.getCertificate().getPath() != null) {
-                        String fileUrl = baseUrl + "/files/" + material.getCertificate().getPath();
+                        String fileUrl = baseUrl + "/api/files/" + material.getCertificate().getPath();
                         dto.setCertificateUrl(fileUrl);
                     }
                     return dto;
                 });
+    }
+
+    @Override
+    public List<Material> getAllNotPageable() {
+        return materialRepository.findAll();
     }
 
     @Transactional
@@ -57,6 +63,7 @@ public class MaterialServiceImplementation implements MaterialService {
         if (file != null && !file.isEmpty()) {
             String storedFileName = fileStorageService.storeFile(file);
             Certificate certificate = new Certificate();
+
             certificate.setPath(storedFileName);
 
             Certificate savedCertificate = certificateRepository.save(certificate);
@@ -111,32 +118,32 @@ public class MaterialServiceImplementation implements MaterialService {
         return materialRepository.findById(id).orElseThrow(() -> new NotFoundException("Подобъект не найден"));
     }
 
-    @Transactional
-    @Override
-    public void addCertificate(long id, MultipartFile file) {
-        Material material = findMaterialOrNot(id);
-        Certificate certificate = new Certificate();
-        certificate.setMaterial(material);
-
-        String PATH_FOLDER = "C:\\Users\\PC\\IdeaProjects\\AOSR\\AOSR\\act\\certificates\\";
-        String path = PATH_FOLDER + material.getId() + ".pdf";
-        certificate.setPath(path);
-
-        try {
-            // Creating an object of FileOutputStream class
-            FileOutputStream fos = new FileOutputStream(path);
-            fos.write(file.getBytes());
-
-            // Closing the connection
-            fos.close();
-        } catch (Exception e) {
-            log.info(e.getMessage());
-        }
-
-        certificateRepository.save(certificate);
-
-        log.info("Номер загруженного сертификата: {}", certificate.getId());
-
-        material.setCertificate(certificate);
-    }
+//    @Transactional
+//    @Override
+//    public void addCertificate(long id, MultipartFile file) {
+//        Material material = findMaterialOrNot(id);
+//        Certificate certificate = new Certificate();
+//        certificate.setMaterial(material);
+//
+//        String PATH_FOLDER = "C:\\Users\\PC\\IdeaProjects\\AOSR\\AOSR\\act\\certificates\\";
+//        String path = PATH_FOLDER + material.getId() + ".pdf";
+//        certificate.setPath(path);
+//
+//        try {
+//            // Creating an object of FileOutputStream class
+//            FileOutputStream fos = new FileOutputStream(path);
+//            fos.write(file.getBytes());
+//
+//            // Closing the connection
+//            fos.close();
+//        } catch (Exception e) {
+//            log.info(e.getMessage());
+//        }
+//
+//        certificateRepository.save(certificate);
+//
+//        log.info("Номер загруженного сертификата: {}", certificate.getId());
+//
+//        material.setCertificate(certificate);
+//    }
 }

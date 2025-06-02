@@ -30,9 +30,6 @@ public interface ActMapper {
                 .inAccordWith(act.getInAccordWith())
                 .nextWorks(act.getNextWorks())
                 .inRegistry(act.getInRegistry())
-                .executiveSchemaId(act.getExecutiveSchema() != null
-                        ? act.getExecutiveSchema().getId()
-                        : null)
                 .build();
     }
 

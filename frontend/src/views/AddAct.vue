@@ -16,13 +16,13 @@ import Navbar from "@/components/Navbar.vue";
           </div>
           <div class="d-flex">
             <label class="radio mr-1">
-              <input type="radio" @change="onChangeProject()" name="add" :value="4"
+              <input type="radio" @change="onChangeProject()" name="add" :value="1"
                      v-model="projectId"
                      checked>
               <span> <i class="fa fa-user"></i> Грушовая </span>
             </label>
             <label class="radio">
-              <input type="radio" @change="onChangeProject()" name="add" :value="5"
+              <input type="radio" @change="onChangeProject()" name="add" :value="2"
                      v-model="projectId">
               <span> <i class="fa fa-plus-circle"></i> Шесхарис </span>
             </label>
@@ -227,8 +227,8 @@ export default {
         finalQuantity: 0.1
       },
 
-      projectId: 4,
-      subObjectId: 22,
+      projectId: 1,
+      subObjectId: 8,
       workId: null,
       nextWorkId: null,
       workDone: "",
@@ -383,7 +383,7 @@ export default {
     },
 
     getMaterials() {
-      fetch(`http://localhost:8080/materials`,
+      fetch(`http://localhost:8080/materials/notPageable`,
       )
           .then(res => res.json())
           .then(data => {
@@ -443,39 +443,81 @@ export default {
     },
 
     addMaterials() {
-      let materialsArray = [this.firstMaterial, this.secondMaterial, this.thirdMaterial, this.fourthMaterial, this.fifthMaterial];
-      let addingMaterialsArray = [];
+      const materials = [];
 
-      for (let i = 0; i < this.materialQuantity; i++) {
-        addingMaterialsArray.push(materialsArray[i])
+      if (this.firstMaterialId && this.firstMaterial.quantity) {
+        materials.push({
+          materialId: this.firstMaterialId,
+          quantity: this.firstMaterial.quantity
+        });
       }
-      return addingMaterialsArray;
+
+      if (this.secondMaterialId && this.secondMaterial.quantity) {
+        materials.push({
+          materialId: this.secondMaterialId,
+          quantity: this.secondMaterial.quantity
+        });
+      }
+
+      if (this.thirdMaterialId && this.thirdMaterial.quantity) {
+        materials.push({
+          materialId: this.thirdMaterialId,
+          quantity: this.thirdMaterial.quantity
+        });
+      }
+
+      if (this.fourthMaterialId && this.fourthMaterial.quantity) {
+        materials.push({
+          materialId: this.fourthMaterialId,
+          quantity: this.fourthMaterial.quantity
+        });
+      }
+
+      if (this.fifthMaterialId && this.fifthMaterial.quantity) {
+        materials.push({
+          materialId: this.fifthMaterialId,
+          quantity: this.fifthMaterial.quantity
+        });
+      }
+
+      return materials;
     },
 
-    addAct() {
-      fetch('http://localhost:8080/acts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          projectId: this.projectId,
-          subObjectId: this.subObjectId,
-          workId: this.workId,
-          nextWorkId: this.nextWorkId,
-          workDone: this.workDone,
-          startDate: this.startDate.toDateString(),
-          endDate: this.endDate.toDateString(),
-          controlDate: this.setControlDate.toDateString(),
-          actMaterials: this.addMaterials(),
-          executiveSchema: this.executiveSchema
-        })
-      })
-          .then(data => {
-            console.log(data)
-            this.$router.push("/");
+    async addAct() {
+      try {
+        const materials = this.addMaterials();
+
+        const response = await fetch('http://localhost:8080/acts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            projectId: this.projectId,
+            subObjectId: this.subObjectId,
+            workId: this.workId,
+            nextWorkId: this.nextWorkId,
+            workDone: parseFloat(this.workDone),
+            startDate: this.startDate.toISOString().split('T')[0],
+            endDate: this.endDate.toISOString().split('T')[0],
+            controlDate: this.setControlDate.toISOString().split('T')[0],
+            materials: materials, // Передаем массив материалов
+            executiveSchema: this.executiveSchema
           })
-    },
+        });
+
+        if (!response.ok) {
+          throw new Error('Ошибка при сохранении акта');
+        }
+
+        const result = await response.json();
+        console.log('Акт успешно сохранен:', result);
+        this.$router.push("/");
+      } catch (error) {
+        console.error('Ошибка:', error);
+        this.errors.push('Не удалось сохранить акт');
+      }
+    }
   },
 
   computed: {
