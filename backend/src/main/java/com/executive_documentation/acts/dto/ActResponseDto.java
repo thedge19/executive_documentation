@@ -1,5 +1,6 @@
 package com.executive_documentation.acts.dto;
 
+import com.executive_documentation.acts.model.ExecutiveSchema;
 import lombok.Builder;
 import lombok.Data;
 
@@ -28,5 +29,5 @@ public class ActResponseDto {
 
     private String inRegistry;
 
-    private Long executiveSchemaId;
+    private String executiveSchemaUrl;
 }

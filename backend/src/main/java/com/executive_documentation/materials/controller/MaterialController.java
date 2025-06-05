@@ -3,7 +3,6 @@ package com.executive_documentation.materials.controller;
 import com.executive_documentation.materials.dto.MaterialResponseDto;
 import com.executive_documentation.materials.model.Material;
 import com.executive_documentation.materials.service.MaterialService;
-import com.executive_documentation.workings.model.Working;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -16,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -37,7 +35,7 @@ public class MaterialController {
     }
 
     @GetMapping
-    ResponseEntity<Page<MaterialResponseDto>> getAll(
+    ResponseEntity<Page<MaterialResponseDto>> getAllPageable(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String[] sort) {
@@ -74,6 +72,12 @@ public class MaterialController {
         }
     }
 
+    @GetMapping("/notPageable")
+    List<Material> getAllNotPageable() {
+        log.info("Get all Materials not pageable");
+        return materialService.getAllNotPageable();
+    }
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Material> createMaterial(
             @RequestPart("material") Material material,
@@ -83,19 +87,10 @@ public class MaterialController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdMaterial);
     }
 
-    @PostMapping("/certificate/{id}")
-    public void addCertificate(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
-        log.info("Certificate Material: {}", id);
-        materialService.addCertificate(id, file);
-    }
-
     @PatchMapping("/{id}")
-    public Material update(@PathVariable long id,
-                           @RequestBody Material material) {
-        log.info("Update Material: {}", material.getName());
-        Material materialUpdated = materialService.update(id, material);
-        log.info("Update Material: {}", materialUpdated);
-        return materialUpdated;
+    public Material update(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        log.info("Здесь");
+        return materialService.update(id, file);
     }
 
     @DeleteMapping("/{id}")
