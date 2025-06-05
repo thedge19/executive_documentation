@@ -37,7 +37,7 @@ import Navbar from "@/components/Navbar.vue";
 <script>
 
 export default {
-  name: 'UpdateWork',
+  name: 'EditAct',
 
   data() {
     return {

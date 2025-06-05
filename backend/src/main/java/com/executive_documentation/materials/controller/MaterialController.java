@@ -90,12 +90,9 @@ public class MaterialController {
     }
 
     @PatchMapping("/{id}")
-    public Material update(@PathVariable long id,
-                           @RequestBody Material material) {
-        log.info("Update Material: {}", material.getName());
-        Material materialUpdated = materialService.update(id, material);
-        log.info("Update Material: {}", materialUpdated);
-        return materialUpdated;
+    public Material update(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        log.info("Здесь");
+        return materialService.update(id, file);
     }
 
     @DeleteMapping("/{id}")

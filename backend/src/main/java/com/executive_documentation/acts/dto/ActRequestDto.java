@@ -1,5 +1,6 @@
 package com.executive_documentation.acts.dto;
 
+import com.executive_documentation.materials.dto.MaterialQuantityDto;
 import lombok.Builder;
 import lombok.Data;
 

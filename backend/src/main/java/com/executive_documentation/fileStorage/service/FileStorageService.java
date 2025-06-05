@@ -1,20 +1,20 @@
 package com.executive_documentation.fileStorage.service;
 
+import com.executive_documentation.exception.FileStorageException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,62 +27,80 @@ import java.util.UUID;
 public class FileStorageService {
 
     private final Path fileStorageLocation;
+    private final String storageBaseUrl;  // Базовый URL хранилища (например, "http://storage:80")
+    private final String storagePublicUrl;
 
-    public FileStorageService(@Value("${file.upload-dir}") String uploadDir) {
+    public FileStorageService(
+            @Value("${file.upload-dir}") String uploadDir,
+            @Value("${app.storage.base-url}") String storageBaseUrl,
+            @Value("${app.storage.public-url}") String storagePublicUrl) {
+
         this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
+        this.storageBaseUrl = storageBaseUrl;
+        this.storagePublicUrl = storagePublicUrl;
+
         try {
             Files.createDirectories(this.fileStorageLocation);
         } catch (Exception ex) {
-            throw new RuntimeException("Не удалось создать директорию для хранения файлов", ex);
+            throw new RuntimeException("Не удалось создать директорию для временного хранения файлов", ex);
         }
     }
 
     public String storeFile(MultipartFile file) {
         String fileName = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
 
+        log.info("Attempting to store file: {}", file.getOriginalFilename());
+        log.info("Storage location: {}", this.fileStorageLocation);
         try {
+            log.info("Directory exists: {}", Files.exists(this.fileStorageLocation));
+            log.info("Directory writable: {}", Files.isWritable(this.fileStorageLocation));
+        } catch (Exception e) {
+            log.error("Directory check failed", e);
+        }
+
+        try {
+            // Проверка на ../ в имени файла
             if (fileName.contains("..")) {
-                throw new RuntimeException("Неверное имя файла: " + fileName);
+                throw new RuntimeException("Invalid file path: " + fileName);
+            }
+
+            // Создаем поддиректорию pdf если нужно
+            Path pdfDir = this.fileStorageLocation.resolve("pdf");
+            if (!Files.exists(pdfDir)) {
+                Files.createDirectories(pdfDir);
             }
 
             String newFileName = UUID.randomUUID() + "_" + fileName;
-            Path targetLocation = this.fileStorageLocation.resolve(newFileName);
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            Path targetLocation = pdfDir.resolve(newFileName);
 
+            // Сохраняем файл с проверкой
+            try (InputStream inputStream = file.getInputStream()) {
+                Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            log.info("File saved to: {}", targetLocation);
             return newFileName;
         } catch (IOException ex) {
-            throw new RuntimeException("Не удалось сохранить файл " + fileName, ex);
+            throw new RuntimeException("Failed to store file: " + fileName, ex);
         }
     }
 
+    // Загрузка файла как Resource (теперь файлы отдаёт Nginx, поэтому этот метод может не понадобиться)
     public ResponseEntity<Resource> loadFileAsResource(String fileName) {
-        log.info("Здесь");
-        try {
-            Resource resource = getResource(fileName);
-            String originalFilename = extractOriginalFilename(fileName);
-
-            String encodedFilename = URLEncoder.encode(originalFilename, StandardCharsets.UTF_8)
-                    .replaceAll("\\+", "%20");
-
-            String contentDisposition = String.format(
-                    "inline; filename*=UTF-8''%s",
-                    encodedFilename
-            );
-
-
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
-                    .body(resource);
-        } catch (Exception e) {
-            throw new RuntimeException("Could not read file: " + fileName, e);
-        }
+        // Перенаправляем запрос к Nginx
+        String fileUrl = storageBaseUrl + "/" + fileName;
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .header(HttpHeaders.LOCATION, fileUrl)
+                .build();
     }
 
-    private String extractOriginalFilename(String storedFilename) {
-        // Извлекаем оригинальное имя файла после UUID
-        int underscoreIndex = storedFilename.indexOf('_');
-        return underscoreIndex > 0 ? storedFilename.substring(underscoreIndex + 1) : storedFilename;
+    public String getFilePublicUrl(String fileName) {
+        return fileName != null ? storagePublicUrl + "/pdf/pdf/" + fileName : null;
+    }
+
+    // Генерация уникального имени файла
+    private String generateUniqueFileName(String originalFilename) {
+        return UUID.randomUUID() + "_" + StringUtils.cleanPath(originalFilename);
     }
 
     public Resource getResource(String fileName) {
@@ -110,23 +128,30 @@ public class FileStorageService {
     }
 
     public void deleteFile(String fileName) {
-        try {
-            Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
+        if (fileName == null || fileName.isBlank()) {
+            throw new IllegalArgumentException("File name cannot be null or empty");
+        }
 
-            // Проверяем, что файл существует и находится в разрешенной директории
-            if (!Files.exists(filePath)) {
-                throw new RuntimeException("Файл не существует: " + fileName);
+        try {
+            // Учитываем поддиректорию pdf, как в методе storeFile
+            Path pdfDir = this.fileStorageLocation.resolve("pdf");
+            Path filePath = pdfDir.resolve(fileName).normalize();
+
+            // Усиленная проверка безопасности
+            if (!filePath.startsWith(this.fileStorageLocation.normalize())) {
+                throw new SecurityException("Attempt to delete file outside allowed directory: " + filePath);
             }
 
-            // Дополнительная проверка безопасности
-            if (!filePath.startsWith(this.fileStorageLocation)) {
-                throw new RuntimeException("Попытка удалить файл вне разрешенной директории");
+            if (!Files.exists(filePath)) {
+                log.warn("File not found for deletion: {}", filePath);
+                return; // или можно кидать исключение, в зависимости от требований
             }
 
             Files.delete(filePath);
-            log.info("Файл успешно удален: {}", filePath);
+            log.info("File deleted successfully: {}", filePath);
         } catch (IOException ex) {
-            throw new RuntimeException("Не удалось удалить файл: " + fileName, ex);
+            log.error("Failed to delete file: {}", fileName, ex);
+            throw new FileStorageException("Could not delete file: " + fileName);
         }
     }
 }

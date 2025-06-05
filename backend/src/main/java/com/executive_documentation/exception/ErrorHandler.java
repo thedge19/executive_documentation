@@ -29,4 +29,22 @@ public class ErrorHandler {
                 "errorMessage", e.getMessage()
         );
     }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleMethodFileStorageException(final FileStorageException e) {
+        return Map.of(
+                "error", "Ошибка обращения к хранилищу",
+                "errorMessage", e.getMessage()
+        );
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleMethodValidationException(final ValidationException e) {
+        return Map.of(
+                "error", "Ошибка обращения к хранилищу",
+                "errorMessage", e.getMessage()
+        );
+    }
 }

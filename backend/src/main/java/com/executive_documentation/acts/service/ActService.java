@@ -6,6 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 public interface ActService {
     ActResponseDto get(Long id);
@@ -18,13 +19,13 @@ public interface ActService {
 
     List<EntranceControlResponseDto> getAllEntranceControl();
 
-    void create(ActRequestDto requestDto, MultipartFile file);
+    void create(Map<String, String> formData, MultipartFile file);
 
     ActResponseDto actUpdate(long id, MultipartFile file);
 
 //    Act update(long id, ActUpdateRequestDto requestDto);
 
-//    void delete(long id);
+    void delete(Long actId);
 
 //    void deleteControl(long id);
 

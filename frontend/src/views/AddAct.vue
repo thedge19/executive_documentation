@@ -185,6 +185,16 @@ import Navbar from "@/components/Navbar.vue";
                 <input type="radio" id="one" class="m-lg-3" value="Есть" v-model="executiveSchema"/>
                 <label for="one">Есть</label>
               </div>
+              <div v-if="executiveSchema === 'Есть'">
+                <label class="form-label">Загрузить исполнительную схему (PDF)</label>
+                <input
+                    type="file"
+                    class="form-control"
+                    accept=".pdf"
+                    @change="handleFileUpload"
+                    ref="fileInput"
+                >
+              </div>
             </div>
           </div>
           <h6 class="information mt-4">Разрешается производство работ</h6>
@@ -227,7 +237,7 @@ export default {
         finalQuantity: 0.1
       },
 
-      projectId: 1,
+      projectId: 4,
       subObjectId: 8,
       workId: null,
       nextWorkId: null,
@@ -237,6 +247,8 @@ export default {
       controlDate: this.setControlDate,
       materialQuantity: 0,
       executiveSchema: "Нет",
+      file: null,
+      fileInput: null,
 
       firstMaterial: {
         units: "-",
@@ -487,37 +499,53 @@ export default {
       try {
         const materials = this.addMaterials();
 
-        const response = await fetch('http://localhost:8080/acts', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            projectId: this.projectId,
-            subObjectId: this.subObjectId,
-            workId: this.workId,
-            nextWorkId: this.nextWorkId,
-            workDone: parseFloat(this.workDone),
-            startDate: this.startDate.toISOString().split('T')[0],
-            endDate: this.endDate.toISOString().split('T')[0],
-            controlDate: this.setControlDate.toISOString().split('T')[0],
-            materials: materials, // Передаем массив материалов
-            executiveSchema: this.executiveSchema
-          })
-        });
+        // Создаем FormData вместо JSON
+        const formData = new FormData();
+        formData.append('projectId', this.projectId);
+        formData.append('subObjectId', this.subObjectId);
+        formData.append('workId', this.workId);
+        formData.append('nextWorkId', this.nextWorkId);
+        formData.append('workDone', parseFloat(this.workDone));
+        formData.append('startDate', this.startDate.toISOString().split('T')[0]);
+        formData.append('endDate', this.endDate.toISOString().split('T')[0]);
 
-        if (!response.ok) {
-          throw new Error('Ошибка при сохранении акта');
+        formData.append('executiveSchema', this.executiveSchema);
+
+        // Добавляем материалы как JSON строку
+        formData.append('materials', JSON.stringify(materials));
+
+        if (this.materialQuantity > 0) {
+          formData.append('controlDate', this.setControlDate.toISOString().split('T')[0]);
         }
 
-        const result = await response.json();
+        // Добавляем файл, если есть
+        if (this.executiveSchema === 'Есть' && this.file) {
+          formData.append('file', this.file);
+        }
+
+        const response = await fetch('http://localhost:8080/acts', {
+          method: 'POST',
+          // Не устанавливайте Content-Type вручную - браузер сделает это автоматически
+          // с правильным boundary для FormData
+          body: formData
+        });
+
         console.log('Акт успешно сохранен:', result);
         this.$router.push("/");
       } catch (error) {
         console.error('Ошибка:', error);
         this.errors.push('Не удалось сохранить акт');
       }
-    }
+    },
+
+    handleFileUpload(event) {
+      this.file = event.target.files[0];
+      if (this.file && this.file.type !== 'application/pdf') {
+        alert('Пожалуйста, загрузите файл в формате PDF');
+        this.file = null;
+        this.$refs.fileInput.value = '';
+      }
+    },
   },
 
   computed: {

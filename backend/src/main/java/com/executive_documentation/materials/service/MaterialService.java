@@ -17,11 +17,9 @@ public interface MaterialService {
 
     Material create(Material material, MultipartFile file);
 
-    Material update(long id, Material material);
+    Material update(long id, MultipartFile file);
 
     void delete(long id);
 
-    Material findMaterialOrNot(long id);
-
-//    void addCertificate(long id, MultipartFile file);
+    void addCertificate(long id, MultipartFile file);
 }
