@@ -3,7 +3,6 @@ package com.executive_documentation.materials.controller;
 import com.executive_documentation.materials.dto.MaterialResponseDto;
 import com.executive_documentation.materials.model.Material;
 import com.executive_documentation.materials.service.MaterialService;
-import com.executive_documentation.workings.model.Working;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -16,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Arrays;
 import java.util.List;
 
 @RestController

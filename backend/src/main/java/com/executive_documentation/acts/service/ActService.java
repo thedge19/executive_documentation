@@ -1,10 +1,9 @@
 package com.executive_documentation.acts.service;
 
-import com.executive_documentation.acts.dto.*;
-import com.executive_documentation.acts.model.Act;
+import com.executive_documentation.acts.dto.ActResponseDto;
+import com.executive_documentation.acts.dto.EntranceControlResponseDto;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 

@@ -1,6 +1,5 @@
 package com.executive_documentation.materials.service;
 
-import com.executive_documentation.acts.model.ExecutiveSchema;
 import com.executive_documentation.exception.FileStorageException;
 import com.executive_documentation.exception.NotFoundException;
 import com.executive_documentation.exception.ValidationException;
@@ -20,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileOutputStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;

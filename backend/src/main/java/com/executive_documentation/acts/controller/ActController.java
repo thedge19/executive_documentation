@@ -1,6 +1,5 @@
 package com.executive_documentation.acts.controller;
 
-import com.executive_documentation.acts.dto.ActRequestDto;
 import com.executive_documentation.acts.dto.ActResponseDto;
 import com.executive_documentation.acts.dto.EntranceControlResponseDto;
 import com.executive_documentation.acts.service.ActService;
