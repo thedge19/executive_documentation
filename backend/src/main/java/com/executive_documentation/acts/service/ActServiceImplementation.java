@@ -177,13 +177,13 @@ public class ActServiceImplementation implements ActService {
         actRepository.delete(act);
     }
 
-
-    // Вспомогательные методы
-    private Act findActOrThrow(long id) {
+    @Override
+    public Act findActOrThrow(long id) {
         return actRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Act not found with id: " + id));
     }
 
+    // Вспомогательные методы
     private void validateFile(MultipartFile file) {
         if (!Objects.requireNonNull(file.getContentType()).equalsIgnoreCase("application/pdf")) {
             throw new ValidationException("Only PDF files are allowed");
