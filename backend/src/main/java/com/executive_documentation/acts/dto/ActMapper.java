@@ -33,6 +33,19 @@ public interface ActMapper {
                 .build();
     }
 
+    default ActLogResponseDto actToActLogResponseDto(Act act) {
+        if (act == null) {
+            return null;
+        }
 
+        return ActLogResponseDto.builder()
+                .id(act.getId())
+                .actNumber(act.getActNumber())
+                .works(act.getWorks())
+                .endDate(act.getEndDate() != null
+                        ? act.getEndDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+                        : null)
+                .build();
+    }
 }
 

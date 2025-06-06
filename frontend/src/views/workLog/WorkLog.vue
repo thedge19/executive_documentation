@@ -8,7 +8,6 @@
           <!--Add button -->
           <div class="d-flex justify-content-start">
             <a @click="fillInTheLog" class="btn btn-outline-primary mx-3">Сформировать ОЖР</a>
-            <a @click="toExcel3" class="btn btn-outline-success mx-3">Выгрузить в эксель</a>
             <a @click="toPdf3" class="btn btn-outline-secondary mx-3">Выгрузить в pdf</a>
           </div>
           <div class="table-responsive table-scroll" data-mdb-perfect-scrollbar="true"
@@ -85,13 +84,6 @@ export default {
 
     fillInTheLog() {
       fetch(`http://localhost:8080/worklog/fill3`)
-          .then(data => {
-            console.log("Запрос отправлен")
-          })
-    },
-
-    toExcel3() {
-      fetch(`http://localhost:8080/worklog/excel3`)
           .then(data => {
             console.log("Запрос отправлен")
           })
