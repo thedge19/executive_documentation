@@ -8,7 +8,6 @@
           <!--Add button -->
           <div class="d-flex justify-content-start">
             <a @click="fillInTheLog" class="btn btn-outline-primary mx-3">Сформировать 6 раздел</a>
-            <a @click="toExcel6" class="btn btn-outline-success mx-3">Выгрузить в эксель</a>
             <a @click="toPdf6" class="btn btn-outline-secondary mx-3">Выгрузить в pdf</a>
           </div>
           <div class="table-responsive table-scroll" data-mdb-perfect-scrollbar="true"
@@ -73,25 +72,9 @@ export default {
             this.getActs()
           })
     },
-    // deleteAct(id) {
-    //   fetch(`http://localhost:8080/acts/${id}`, {
-    //     method: 'DELETE'
-    //   })
-    //       .then(data => {
-    //         console.log(data)
-    //         this.getActs()
-    //       })
-    // },
 
     fillInTheLog() {
       fetch(`http://localhost:8080/worklog/fill`)
-          .then(data => {
-            console.log("Запрос отправлен")
-          })
-    },
-
-    toExcel6() {
-      fetch(`http://localhost:8080/worklog/excel6`)
           .then(data => {
             console.log("Запрос отправлен")
           })
