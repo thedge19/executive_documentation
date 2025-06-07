@@ -6,7 +6,6 @@ import com.executive_documentation.acts.model.EntranceControl;
 import com.executive_documentation.acts.repository.ActRepository;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.executive_documentation.acts.service.ActService;
-import com.executive_documentation.exception.NotFoundException;
 import com.executive_documentation.fileStorage.service.FileStorageService;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -18,14 +17,16 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
