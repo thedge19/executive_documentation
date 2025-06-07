@@ -37,6 +37,9 @@
             <li class="nav-item">
               <a class="nav-link" href="/registry">Реестр</a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/schemas">Схемы</a>
+            </li>
           </ul>
         </div>
       </div>

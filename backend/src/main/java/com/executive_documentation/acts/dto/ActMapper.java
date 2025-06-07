@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter;
 @Mapper(componentModel = "spring")
 public interface ActMapper {
 
-    default ActResponseDto ActToActResponseDto(Act act) {
+    default ActResponseDto actToActResponseDto(Act act) {
         if (act == null) {
             return null;
         }

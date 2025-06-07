@@ -63,7 +63,15 @@ public class ActServiceImplementation implements ActService {
 
     @Override
     public ActResponseDto get(Long id) {
-        return actMapper.ActToActResponseDto(findActOrThrow(id));
+
+        Act act = actRepository.findById(id).get();
+
+        ActResponseDto dto = actMapper.actToActResponseDto(act);
+        if (act.getExecutiveSchema() != null) {
+            dto.setExecutiveSchemaUrl(act.getExecutiveSchema().getSchemaPath());
+        }
+
+        return dto;
     }
 
     @Override
@@ -71,7 +79,7 @@ public class ActServiceImplementation implements ActService {
         return actRepository.findAllByOrderByEndDateAscActNumberAsc()
                 .stream()
                 .map(act -> {
-                    ActResponseDto dto = actMapper.ActToActResponseDto(act);
+                    ActResponseDto dto = actMapper.actToActResponseDto(act);
                     if (act.getExecutiveSchema() != null) {
                         dto.setExecutiveSchemaUrl(
                                 fileStorageService.getFilePublicUrl(act.getExecutiveSchema().getSchemaPath())
@@ -79,6 +87,16 @@ public class ActServiceImplementation implements ActService {
                     }
                     return dto;
                 }).toList();
+    }
+
+    @Override
+    public ExecutiveSchema getExecutiveSchema(long id) {
+        return executiveSchemaRepository.findById(id).get();
+    }
+
+    @Override
+    public List<ExecutiveSchema> getExecutiveSchemas() {
+        return executiveSchemaRepository.findAll();
     }
 
     @Override
@@ -93,8 +111,6 @@ public class ActServiceImplementation implements ActService {
     @Transactional
     @Override
     public void create(Map<String, String> formData, MultipartFile file) {
-
-        log.info("Здесь: {}", formData);
 
         Act createdAct = new Act();
 
@@ -146,7 +162,7 @@ public class ActServiceImplementation implements ActService {
     public ActResponseDto actUpdate(long id, MultipartFile file) {
         Act act = findActOrThrow(id);
         act.setExecutiveSchema(addExecutiveSchema(act.getActNumber(), file));
-        return actMapper.ActToActResponseDto(actRepository.save(act));
+        return actMapper.actToActResponseDto(actRepository.save(act));
     }
 
     @Transactional
@@ -168,9 +184,8 @@ public class ActServiceImplementation implements ActService {
         if (act.getExecutiveSchema() != null) {
             ExecutiveSchema schema = act.getExecutiveSchema();
             if (schema.getSchemaPath() != null) {
-                fileStorageService.deleteFile(schema.getSchemaPath());
+                deleteSchema(schema.getId());
             }
-            executiveSchemaRepository.delete(schema);
         }
 
         // 3. Удаляем сам Act
@@ -183,20 +198,20 @@ public class ActServiceImplementation implements ActService {
                 .orElseThrow(() -> new NotFoundException("Act not found with id: " + id));
     }
 
+    @Transactional
+    @Override
+    public void deleteSchema(long id) {
+        ExecutiveSchema schema = executiveSchemaRepository.findById(id).orElseThrow(() -> new NotFoundException("ExecutiveSchema not found with id: " + id));;
+        Act act = actRepository.findByExecutiveSchema(schema).orElseThrow(() -> new NotFoundException("Act not found with id: " + id));;
+        act.setExecutiveSchema(null);
+        executiveSchemaRepository.deleteById(id);
+        fileStorageService.deleteFile(schema.getSchemaPath());
+    }
+
     // Вспомогательные методы
     private void validateFile(MultipartFile file) {
         if (!Objects.requireNonNull(file.getContentType()).equalsIgnoreCase("application/pdf")) {
             throw new ValidationException("Only PDF files are allowed");
-        }
-    }
-
-    private void deleteSchemaAndFile(ExecutiveSchema schema) {
-        try {
-            fileStorageService.deleteFile(schema.getSchemaPath());
-            executiveSchemaRepository.delete(schema);
-        } catch (Exception e) {
-            log.error("Failed to delete schema file: {}", schema.getSchemaPath(), e);
-            throw new FileStorageException("Could not delete old schema file");
         }
     }
 

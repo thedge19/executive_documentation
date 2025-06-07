@@ -1,10 +1,8 @@
 package com.executive_documentation.fileStorage.service;
 
-import com.executive_documentation.exception.FileStorageException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -98,60 +95,44 @@ public class FileStorageService {
         return fileName != null ? storagePublicUrl + "/pdf/pdf/" + fileName : null;
     }
 
+    public String getStorageBaseUrl(String fileName) {
+        return fileName != null ? storageBaseUrl + "/pdf/pdf/" + fileName : null;
+    }
+
     // Генерация уникального имени файла
     private String generateUniqueFileName(String originalFilename) {
         return UUID.randomUUID() + "_" + StringUtils.cleanPath(originalFilename);
     }
 
-    public Resource getResource(String fileName) {
-        try {
-            Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
-            Resource resource = new UrlResource(filePath.toUri());
-
-            if (resource.exists()) {
-                return resource;
-            } else {
-                throw new RuntimeException("Файл не найден: " + fileName);
-            }
-        } catch (MalformedURLException ex) {
-            throw new RuntimeException("Файл не найден: " + fileName, ex);
-        }
-    }
-
-    public boolean fileExists(String fileName) {
-        try {
-            Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
-            return Files.exists(filePath);
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
     public void deleteFile(String fileName) {
-        if (fileName == null || fileName.isBlank()) {
-            throw new IllegalArgumentException("File name cannot be null or empty");
+        if (fileName == null || fileName.isEmpty()) {
+            throw new IllegalArgumentException("Имя файла не может быть пустым");
         }
 
         try {
-            // Учитываем поддиректорию pdf, как в методе storeFile
-            Path pdfDir = this.fileStorageLocation.resolve("pdf");
-            Path filePath = pdfDir.resolve(fileName).normalize();
-
-            // Усиленная проверка безопасности
-            if (!filePath.startsWith(this.fileStorageLocation.normalize())) {
-                throw new SecurityException("Attempt to delete file outside allowed directory: " + filePath);
+            // Проверка на ../ в имени файла
+            if (fileName.contains("..")) {
+                throw new SecurityException("Недопустимое имя файла: " + fileName);
             }
 
+            // Получаем путь к файлу в поддиректории pdf
+            Path filePath = this.fileStorageLocation.resolve("pdf").resolve(fileName).normalize();
+
+            // Проверяем, что путь находится внутри разрешенной директории
+            if (!filePath.startsWith(this.fileStorageLocation.resolve("pdf"))) {
+                throw new SecurityException("Попытка доступа к файлу вне разрешенной директории");
+            }
+
+            // Проверяем существование файла
             if (!Files.exists(filePath)) {
-                log.warn("File not found for deletion: {}", filePath);
-                return; // или можно кидать исключение, в зависимости от требований
+                log.warn("Файл {} не существует, удаление не требуется", fileName);
             }
 
+            // Удаляем файл
             Files.delete(filePath);
-            log.info("File deleted successfully: {}", filePath);
+            log.info("Файл {} успешно удален", fileName);
         } catch (IOException ex) {
-            log.error("Failed to delete file: {}", fileName, ex);
-            throw new FileStorageException("Could not delete file: " + fileName);
+            throw new RuntimeException("Не удалось удалить файл: " + fileName, ex);
         }
     }
 }

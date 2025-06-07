@@ -40,7 +40,12 @@
                 <td >{{ act.actNumber }}</td>
                 <td :style="[act.executiveSchemaId != null ? `color:blue` : `color: red`]">{{ act.endDate }}</td>
                 <td style="width: 15%">{{ act.projectName }}</td>
-                <td style="width: 20%">{{ act.works }}</td>
+                <td style="width: 20%">
+                  <a href="#" @click.prevent="generatePdf(act.id)" class="text-decoration-none">
+                    {{ act.works }}
+                  </a>
+                  <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>
+                </td>
                 <td style="width: 6%">{{ act.startDate }}</td>
                 <td style="width: 25%">
                   <span v-if="!act.executiveSchemaUrl">{{ act.actNumber }}</span>
@@ -49,7 +54,7 @@
                      target="_blank"
                      class="text-decoration-none"
                      :title="act.actNumber">
-                    {{ act.actNumber || 'Скачать сертификат' }}
+                    {{ act.actNumber || 'Скачать схему' }}
                     <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>
                   </a>
                 </td>
@@ -123,8 +128,12 @@ export default {
 
     getPaths() {
       fetch(`http://localhost:8080/toPdf`, {})
-    }
+    },
 
+    generatePdf(actId) {
+      // Открываем PDF в новой вкладке
+      window.open(`http://localhost:8080/acts/${actId}/pdf`, '_blank');
+    }
   },
 
 }

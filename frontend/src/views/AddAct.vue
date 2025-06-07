@@ -244,7 +244,6 @@ export default {
       workDone: "",
       startDate: new Date(),
       endDate: this.startDate,
-      controlDate: this.setControlDate,
       materialQuantity: 0,
       executiveSchema: "Нет",
       file: null,
@@ -300,7 +299,7 @@ export default {
 
       this.errors = [];
 
-      if (this.materialQuantity !== 0 && this.controlDate > this.startDate) {
+      if (this.materialQuantity !== 0 && this.setControlDate > this.startDate) {
         this.errors.push('Дата входного контроля не должна быть позднее, чем дата начала работ.');
       }
 
@@ -310,6 +309,11 @@ export default {
 
       if (this.workId === null || this.workId === undefined) {
         this.errors.push("Укажите работы.")
+      }
+
+      // Добавленная проверка на загрузку файла
+      if (this.executiveSchema === 'Есть' && !this.file) {
+        this.errors.push('Загрузите исполнительную схему (PDF файл).');
       }
 
       // if (this.materialQuantity !== this.addMaterials().length) {
@@ -325,7 +329,9 @@ export default {
 
 
     getSomething() {
-      console.log(this.workDone === '');
+      console.log(this.setControlDate);
+      console.log(this.startDate);
+      console.log(this.endDate);
     },
 
     onChangeProject() {
@@ -523,7 +529,7 @@ export default {
           formData.append('file', this.file);
         }
 
-        const response = await fetch('http://localhost:8080/acts', {
+        await fetch('http://localhost:8080/acts', {
           method: 'POST',
           // Не устанавливайте Content-Type вручную - браузер сделает это автоматически
           // с правильным boundary для FormData
