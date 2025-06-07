@@ -99,4 +99,11 @@ public class MaterialController {
         materialService.delete(id);
         log.info("Material with id: {} deleted", id);
     }
+
+    @DeleteMapping("/certificate/{id}")
+    public void deleteCertificate(@PathVariable Long id) {
+        log.info("Delete Material: {}", id);
+        materialService.deleteCertificate(id);
+        log.info("Material with id: {} deleted", id);
+    }
 }

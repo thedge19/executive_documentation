@@ -4,6 +4,7 @@ import com.executive_documentation.acts.dto.ActResponseDto;
 import com.executive_documentation.acts.dto.EntranceControlResponseDto;
 import com.executive_documentation.acts.model.ExecutiveSchema;
 import com.executive_documentation.acts.pdf.ActPdfService;
+import com.executive_documentation.acts.pdf.ControlPdfService;
 import com.executive_documentation.acts.service.ActService;
 import com.itextpdf.text.DocumentException;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,6 +28,7 @@ import java.util.Map;
 public class ActController {
     private final ActService actService;
     private final ActPdfService actPdfService;
+    private final ControlPdfService controlPdfService;
 
     @GetMapping("/{id}")
     public ActResponseDto get(@PathVariable Long id) {
@@ -57,7 +59,6 @@ public class ActController {
     public ResponseEntity<ActResponseDto> createAct(
             @RequestParam Map<String, String> formData,
             @RequestPart(required = false) MultipartFile file) {
-        log.info("Здесь");
         actService.create(formData, file);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -70,7 +71,16 @@ public class ActController {
     @GetMapping("/{id}/pdf")
     public void generateActPdf(@PathVariable Long id, HttpServletResponse response) throws IOException {
         try {
-            actPdfService.exportAOSRtoPdf(id, response);
+            actPdfService.exportCombinedDocuments(id, response);
+        } catch (DocumentException e) {
+            response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Ошибка генерации PDF");
+        }
+    }
+
+    @GetMapping("/{id}/pdf/control")
+    public void generateControlPdf(@PathVariable Long id, HttpServletResponse response) throws IOException {
+        try {
+            controlPdfService.exportControlToPdf(id, response);
         } catch (DocumentException e) {
             response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Ошибка генерации PDF");
         }

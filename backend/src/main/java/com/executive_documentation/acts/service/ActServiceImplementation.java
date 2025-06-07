@@ -141,7 +141,10 @@ public class ActServiceImplementation implements ActService {
         String inAccordWith = project.getName() + "; " + SETS_OF_RULES + "; " + standard;
         createdAct.setInAccordWith(inAccordWith);
         createdAct.setWorkDone(parseBigDecimal(formData.get("workDone")));
+        log.info("Здесь");
         createdAct.setSubmittedDocuments(addSubmittedDocuments(formData, actNumber));
+        log.info("Материалы: {}", createdAct.getMaterials());
+
         createdAct.setMaterials(getMaterials(formData));
         createdAct.setExecutiveSchema(addExecutiveSchema(actNumber, file));
 
@@ -200,8 +203,10 @@ public class ActServiceImplementation implements ActService {
     @Transactional
     @Override
     public void deleteSchema(long id) {
-        ExecutiveSchema schema = executiveSchemaRepository.findById(id).orElseThrow(() -> new NotFoundException("ExecutiveSchema not found with id: " + id));;
-        Act act = actRepository.findByExecutiveSchema(schema).orElseThrow(() -> new NotFoundException("Act not found with id: " + id));;
+        ExecutiveSchema schema = executiveSchemaRepository.findById(id).orElseThrow(() -> new NotFoundException("ExecutiveSchema not found with id: " + id));
+
+        Act act = actRepository.findByExecutiveSchema(schema).orElseThrow(() -> new NotFoundException("Act not found with id: " + id));
+
         act.setExecutiveSchema(null);
         executiveSchemaRepository.deleteById(id);
         fileStorageService.deleteFile(schema.getSchemaPath());
@@ -214,12 +219,6 @@ public class ActServiceImplementation implements ActService {
         }
     }
 
-    private ExecutiveSchema createNewSchema(String actNumber, String fileName) {
-        ExecutiveSchema schema = new ExecutiveSchema();
-        schema.setSchemasActNumber(actNumber);
-        schema.setSchemaPath(fileName);
-        return schema;
-    }
 
     private static Long parseLong(String value) {
         if (value == null || value.isEmpty()) {
@@ -320,9 +319,7 @@ public class ActServiceImplementation implements ActService {
     private String addSubmittedDocuments(Map<String, String> formData, String actNumber) {
         List<String> submittedDocuments = new ArrayList<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-        LocalDate controlDate = parseDate(formData.get("controlDate"));
         LocalDate endDate = parseDate(formData.get("endDate"));
-        String formattedControlDate = controlDate.format(formatter);
         String formattedEndDate = endDate.format(formatter);
 
         if (Objects.equals(formData.get("executiveSchema"), "Есть")) {
@@ -330,6 +327,8 @@ public class ActServiceImplementation implements ActService {
         }
 
         List<MaterialQuantityDto> materials = parseMaterials(formData.get("materials"));
+
+        String formattedControlDate = !materials.isEmpty() ? parseDate(formData.get("controlDate")).format(formatter) : null;
 
         switch (materials.size()) {
             case 0:
@@ -433,4 +432,10 @@ public class ActServiceImplementation implements ActService {
         }
     }
 
+    private ExecutiveSchema createNewSchema(String actNumber, String fileName) {
+        ExecutiveSchema schema = new ExecutiveSchema();
+        schema.setSchemasActNumber(actNumber);
+        schema.setSchemaPath(fileName);
+        return schema;
+    }
 }

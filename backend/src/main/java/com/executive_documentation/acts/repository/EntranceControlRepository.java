@@ -9,5 +9,7 @@ import java.util.List;
 public interface EntranceControlRepository extends JpaRepository<EntranceControl, Long> {
     List<EntranceControl> findAllByAct(Act act);
 
+    EntranceControl findFirstByAct(Act act);
+
     List<EntranceControl> findAllByOrderByDateAsc();
 }

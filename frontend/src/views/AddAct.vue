@@ -330,8 +330,6 @@ export default {
 
     getSomething() {
       console.log(this.setControlDate);
-      console.log(this.startDate);
-      console.log(this.endDate);
     },
 
     onChangeProject() {
@@ -536,7 +534,7 @@ export default {
           body: formData
         });
 
-        console.log('Акт успешно сохранен:', result);
+        console.log('Акт успешно сохранен:');
         this.$router.push("/");
       } catch (error) {
         console.error('Ошибка:', error);

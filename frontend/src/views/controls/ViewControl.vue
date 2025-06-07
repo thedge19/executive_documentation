@@ -7,7 +7,6 @@
       <div style="position: absolute; top: 0; bottom: 0; left: 0; right: 0;">
         <h1 class="text-center">Входняк</h1>
         <!--Add button -->
-        <button @click.prevent="exportExcel" class="btn btn-outline-success my-1 mx-3">Выгрузить журнал</button>
         <button @click.prevent="toPdf" class="btn btn-outline-secondary my-1 mx-3">Выгрузить в pdf</button>
         <table class="table table-striped">
           <thead>
@@ -26,7 +25,12 @@
           <tr v-for="control in controls" :key="control.id">
             <td style="width: 5%">{{ control.controlNumber }}</td>
             <td style="width: 7%">{{ control.date }}</td>
-            <td>{{ control.materials }}</td>
+            <td style="width: 20%">
+              <a href="#" @click.prevent="generatePdf(control.id)" class="text-decoration-none">
+                {{ control.materials }}
+              </a>
+              <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>
+            </td>
             <td style="width: 30%">{{ control.documents }}</td>
             <td>{{ control.author }}</td>
             <td style="width: 15%">{{ control.standard }}</td>
@@ -77,11 +81,9 @@ export default {
           })
     },
 
-    exportExcel() {
-      fetch(`http://localhost:8080/acts/excelControl`)
-          .then(data => {
-            console.log("Запрос отправлен")
-          })
+    generatePdf(id) {
+      // Открываем PDF в новой вкладке
+      window.open(`http://localhost:8080/acts/${id}/pdf/control`, '_blank');
     },
 
     toPdf() {

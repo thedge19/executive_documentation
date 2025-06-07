@@ -1,7 +1,12 @@
 package com.executive_documentation.acts.pdf;
 
 import com.executive_documentation.acts.dto.ActResponseDto;
+import com.executive_documentation.acts.model.Act;
+import com.executive_documentation.acts.model.EntranceControl;
+import com.executive_documentation.acts.repository.ActRepository;
+import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.executive_documentation.acts.service.ActService;
+import com.executive_documentation.exception.NotFoundException;
 import com.executive_documentation.fileStorage.service.FileStorageService;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -9,6 +14,7 @@ import com.itextpdf.text.Font;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.pdf.*;
 import jakarta.annotation.PostConstruct;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,10 +25,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -32,8 +35,11 @@ public class ActPdfService {
     private static final String FONT_PATH = "/fonts/times.ttf"; // Путь в ресурсах
 
     private final ActService actService;
+    private final ControlPdfService controlPdfService;
     private final ActPdfCellStyler cellStyler;
     private final FileStorageService fileStorageService;
+    private final EntranceControlRepository entranceControlRepository;
+    private final ActRepository actRepository;
 
     private BaseFont baseFont;
     private Font f5;
@@ -42,10 +48,13 @@ public class ActPdfService {
     private Font f13;
     private Font f14;
 
-    public ActPdfService(ActService actService, RestTemplate restTemplate, FileStorageService fileStorageService) {
+    public ActPdfService(ActService actService, ControlPdfService controlPdfService, FileStorageService fileStorageService, EntranceControlRepository entranceControlRepository, ActRepository actRepository) {
         this.actService = actService;
+        this.controlPdfService = controlPdfService;
         this.fileStorageService = fileStorageService;
+        this.entranceControlRepository = entranceControlRepository;
         this.cellStyler = new ActPdfCellStyler();
+        this.actRepository = actRepository;
     }
 
     @PostConstruct
@@ -96,20 +105,158 @@ public class ActPdfService {
         }
     }
 
-    public void exportAOSRtoPdf(long id, HttpServletResponse response) throws IOException, DocumentException {
-        ActResponseDto dto = actService.get(id);
+//    public void exportAOSRtoPdf(long id, HttpServletResponse response) throws IOException, DocumentException {
+//        ActResponseDto dto = actService.get(id);
+//
+//        String fileName = "Акт_" + dto.getActNumber().replace("/", "_") + ".pdf";
+//        response.setContentType("application/pdf");
+//        response.setHeader("Content-Disposition",
+//                "inline; filename=\"" + URLEncoder.encode(fileName, StandardCharsets.UTF_8) + "\"");
+//
+//        // 1. Создаем PDF акта
+//        ByteArrayOutputStream actPdfStream = new ByteArrayOutputStream();
+//        Document actDocument = new Document();
+//        try {
+//            PdfWriter.getInstance(actDocument, actPdfStream);
+//            actDocument.open();
+//
+//            PdfPTable table = new PdfPTable(36);
+//            table.setWidthPercentage(105);
+//            float[] widths = new float[36];
+//            Arrays.fill(widths, 1f);
+//            table.setWidths(widths);
+//
+//            addAOSRTableData(table, dto);
+//            actDocument.add(table);
+//        } finally {
+//            if (actDocument != null && actDocument.isOpen()) {
+//                actDocument.close();
+//            }
+//        }
+//
+//        // 2. Если нет схемы - просто отдаем акт
+//        if (dto.getExecutiveSchemaUrl() == null) {
+//            response.getOutputStream().write(actPdfStream.toByteArray());
+//            return;
+//        }
+//
+//        // 3. Объединяем PDF через HTTP
+//        ByteArrayOutputStream mergedPdf = new ByteArrayOutputStream();
+//        Document mergedDoc = new Document();
+//        PdfCopy copy = null;
+//        PdfReader actReader = null;
+//        PdfReader schemaReader = null;
+//
+//        try {
+//            copy = new PdfCopy(mergedDoc, mergedPdf);
+//            mergedDoc.open();
+//
+//            // Добавляем акт
+//            actReader = new PdfReader(new ByteArrayInputStream(actPdfStream.toByteArray()));
+//            copy.addDocument(actReader);
+//
+//            // Добавляем схему через HTTP
+//            URL schemaUrl = new URL(fileStorageService.getStorageBaseUrl(dto.getExecutiveSchemaUrl()));
 
-        String fileName = "Акт_" + dto.getActNumber().replace("/", "_") + ".pdf";
+    /// /            URL schemaUrl = new URL(fileStorageService.getFilePublicUrl(dto.getExecutiveSchemaUrl()));
+//            schemaReader = new PdfReader(schemaUrl);
+//            copy.addDocument(schemaReader);
+//            mergedDoc.close();
+//
+//            response.getOutputStream().write(mergedPdf.toByteArray());
+//            log.info("Объединенный PDF акта {} и схемы сгенерирован", dto.getActNumber());
+//            return;
+//        } catch (Exception e) {
+//            log.error("Ошибка при объединении со схемой: {}", e.getMessage());
+//            response.getOutputStream().write(actPdfStream.toByteArray());
+//        } finally {
+//            // Закрываем все ресурсы в правильном порядке
+//            if (schemaReader != null) schemaReader.close();
+//            if (actReader != null) actReader.close();
+//            if (copy != null) copy.close();
+//            if (mergedDoc.isOpen()) mergedDoc.close();
+//        }
+//
+//        log.info("PDF акта {} сгенерирован", dto.getActNumber());
+//    }
+    public void exportCombinedDocuments(long actId, HttpServletResponse response)
+            throws IOException, DocumentException {
+
+        // 1. Получаем основной акт
+        ActResponseDto actDto = actService.get(actId);
+        Act act = actRepository.findById(actId).orElseThrow(EntityNotFoundException::new);
+
+        // 2. Подготавливаем файл для скачивания
+        String fileName = "Комплект_документов_" + actDto.getActNumber().replace("/", "_") + ".pdf";
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition",
                 "inline; filename=\"" + URLEncoder.encode(fileName, StandardCharsets.UTF_8) + "\"");
 
-        // 1. Создаем PDF акта
-        ByteArrayOutputStream actPdfStream = new ByteArrayOutputStream();
-        Document actDocument = new Document();
+        // 3. Генерируем PDF для акта
+        ByteArrayOutputStream actPdf = generateActPdf(actDto);
+
+        // 4. Объединяем документы
+        ByteArrayOutputStream mergedPdf = new ByteArrayOutputStream();
+        Document mergedDoc = new Document();
+        PdfCopy copy = new PdfCopy(mergedDoc, mergedPdf);
+        mergedDoc.open();
+
         try {
-            PdfWriter.getInstance(actDocument, actPdfStream);
-            actDocument.open();
+            // 4.1. Добавляем основной акт
+            addDocumentToMerge(copy, new ByteArrayInputStream(actPdf.toByteArray()));
+
+            // 4.2. Добавляем исполнительную схему (если есть)
+            if (actDto.getExecutiveSchemaUrl() != null) {
+                try {
+                    addRemoteDocumentToMerge(copy,
+                            fileStorageService.getStorageBaseUrl(actDto.getExecutiveSchemaUrl()));
+                } catch (Exception e) {
+                    log.warn("Не удалось добавить исполнительную схему: {}", e.getMessage());
+                }
+            }
+
+            // 4.3. Пытаемся найти и добавить акт входного контроля (если есть)
+            if (entranceControlRepository.findFirstByAct(act) != null) {
+                EntranceControl control = entranceControlRepository.findFirstByAct(act);
+                ByteArrayOutputStream controlPdf = controlPdfService.generateControlPdf(control);
+                addDocumentToMerge(copy, new ByteArrayInputStream(controlPdf.toByteArray()));
+
+                // 4.4. Добавляем сертификат (если есть у контроля)
+                if (control.getMaterial() != null &&
+                        control.getMaterial().getCertificate() != null &&
+                        control.getMaterial().getCertificate().getPath() != null) {
+
+                    try {
+                        addRemoteDocumentToMerge(copy, fileStorageService.getStorageBaseUrl(
+                                control.getMaterial().getCertificate().getPath()));
+                    } catch (Exception e) {
+                        log.warn("Не удалось добавить сертификат: {}", e.getMessage());
+                    }
+                }
+            }
+
+            mergedDoc.close();
+            response.getOutputStream().write(mergedPdf.toByteArray());
+
+        } catch (Exception e) {
+            log.error("Ошибка при объединении документов: {}", e.getMessage());
+            // Если не удалось объединить, отдаем хотя бы основной акт
+            response.getOutputStream().write(actPdf.toByteArray());
+        } finally {
+            if (mergedDoc.isOpen()) mergedDoc.close();
+            if (copy != null) copy.close();
+        }
+
+        log.info("Сформирован комплект документов для акта {}", actDto.getActNumber());
+    }
+
+    private ByteArrayOutputStream generateActPdf(ActResponseDto dto) throws DocumentException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        Document document = new Document();
+
+        try {
+            PdfWriter.getInstance(document, outputStream);
+            document.open();
 
             PdfPTable table = new PdfPTable(36);
             table.setWidthPercentage(105);
@@ -118,58 +265,34 @@ public class ActPdfService {
             table.setWidths(widths);
 
             addAOSRTableData(table, dto);
-            actDocument.add(table);
+            document.add(table);
+
         } finally {
-            if (actDocument != null && actDocument.isOpen()) {
-                actDocument.close();
-            }
+            if (document.isOpen()) document.close();
         }
 
-        // 2. Если нет схемы - просто отдаем акт
-        if (dto.getExecutiveSchemaUrl() == null) {
-            response.getOutputStream().write(actPdfStream.toByteArray());
-            return;
-        }
-
-        // 3. Объединяем PDF через HTTP
-        ByteArrayOutputStream mergedPdf = new ByteArrayOutputStream();
-        Document mergedDoc = new Document();
-        PdfCopy copy = null;
-        PdfReader actReader = null;
-        PdfReader schemaReader = null;
-
-        try {
-            copy = new PdfCopy(mergedDoc, mergedPdf);
-            mergedDoc.open();
-
-            // Добавляем акт
-            actReader = new PdfReader(new ByteArrayInputStream(actPdfStream.toByteArray()));
-            copy.addDocument(actReader);
-
-            // Добавляем схему через HTTP
-            URL schemaUrl = new URL(fileStorageService.getStorageBaseUrl(dto.getExecutiveSchemaUrl()));
-//            URL schemaUrl = new URL(fileStorageService.getFilePublicUrl(dto.getExecutiveSchemaUrl()));
-            schemaReader = new PdfReader(schemaUrl);
-            copy.addDocument(schemaReader);
-            mergedDoc.close();
-
-            response.getOutputStream().write(mergedPdf.toByteArray());
-            log.info("Объединенный PDF акта {} и схемы сгенерирован", dto.getActNumber());
-            return;
-        } catch (Exception e) {
-            log.error("Ошибка при объединении со схемой: {}", e.getMessage());
-            response.getOutputStream().write(actPdfStream.toByteArray());
-        } finally {
-            // Закрываем все ресурсы в правильном порядке
-            if (schemaReader != null) schemaReader.close();
-            if (actReader != null) actReader.close();
-            if (copy != null) copy.close();
-            if (mergedDoc.isOpen()) mergedDoc.close();
-        }
-
-        log.info("PDF акта {} сгенерирован", dto.getActNumber());
+        return outputStream;
     }
 
+    private void addDocumentToMerge(PdfCopy copy, InputStream inputStream) throws IOException, DocumentException {
+        PdfReader reader = new PdfReader(inputStream);
+        try {
+            copy.addDocument(reader);
+        } finally {
+            reader.close();
+        }
+    }
+
+    private void addRemoteDocumentToMerge(PdfCopy copy, String url) throws IOException {
+        PdfReader reader = new PdfReader(new URL(url));
+        try {
+            copy.addDocument(reader);
+        } catch (DocumentException e) {
+            throw new RuntimeException(e);
+        } finally {
+            reader.close();
+        }
+    }
 
     // АОСР
 // --------------------------------------------------------------------------------------------------------------------------------

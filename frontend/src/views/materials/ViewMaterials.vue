@@ -21,11 +21,12 @@
               <th scope="col">Автор</th>
               <th scope="col">ГОСТ, ТУ</th>
               <th scope="col">Кол. стр.</th>
-              <th scope="col" class="text-center" style="width:15%">Действие</th>
+              <th scope="col" class="text-center" style="width:20%">Действие</th>
             </tr>
             </thead>
             <tbody>
-            <tr v-if="materials.content && materials.content.length > 0" v-for="material in materials.content" :key="material.id">
+            <tr v-if="materials.content && materials.content.length > 0" v-for="material in materials.content"
+                :key="material.id">
               <td>{{ material.name }}</td>
               <td>{{ material.units }}</td>
               <td>
@@ -45,6 +46,7 @@
               <td class="text-center">
                 <a class="btn btn-primary" :href="`/editMaterial/${material.id}`">Edit</a>
                 <button class="btn btn-danger mx-2" @click="deleteMaterial(material.id)">Delete</button>
+                <button v-if="material.certificateUrl" class="btn btn-outline-danger mx-2" @click="deleteCertificate(material.id)">Удалить сертификат</button>
               </td>
             </tr>
             <tr v-else>
@@ -191,6 +193,16 @@ export default {
               alert('Не удалось удалить материал')
             })
       }
+    },
+
+    deleteCertificate(id) {
+      fetch(`http://localhost:8080/materials/certificate/${id}`, {
+        method: 'DELETE'
+      })
+          .then(data => {
+            console.log(data)
+            this.getMaterials()
+          })
     }
   }
 }
