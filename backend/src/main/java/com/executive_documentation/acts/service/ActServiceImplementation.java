@@ -10,7 +10,6 @@ import com.executive_documentation.acts.model.ExecutiveSchema;
 import com.executive_documentation.acts.repository.ActRepository;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.executive_documentation.acts.repository.ExecutiveSchemaRepository;
-import com.executive_documentation.exception.FileStorageException;
 import com.executive_documentation.exception.NotFoundException;
 import com.executive_documentation.exception.ValidationException;
 import com.executive_documentation.fileStorage.service.FileStorageService;
