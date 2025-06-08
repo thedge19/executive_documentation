@@ -106,14 +106,20 @@ public class MaterialServiceImplementation implements MaterialService {
         materialRepository.save(material);
     }
 
+    @Override
+    @Transactional
+    public void deleteCertificate(long id) {
+        Material material = findMaterialOrThrow(id);
+        Certificate certificate = material.getCertificate();
+        fileStorageService.deleteFile(material.getCertificate().getPath());
+        material.setCertificate(null);
+        certificateRepository.delete(certificate);
+    }
+
     // Вспомогательные методы
     private Material findMaterialOrThrow(long id) {
         return materialRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Material not found with id: " + id));
-    }
-
-    private String getFileUrl(String fileName) {
-        return fileName != null ? storageBaseUrl + "/" + fileName : null;
     }
 
     private Certificate createCertificate(MultipartFile file) {

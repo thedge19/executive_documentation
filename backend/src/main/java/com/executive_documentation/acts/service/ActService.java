@@ -3,6 +3,7 @@ package com.executive_documentation.acts.service;
 import com.executive_documentation.acts.dto.ActResponseDto;
 import com.executive_documentation.acts.dto.EntranceControlResponseDto;
 import com.executive_documentation.acts.model.Act;
+import com.executive_documentation.acts.model.ExecutiveSchema;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -12,6 +13,10 @@ public interface ActService {
     ActResponseDto get(Long id);
 
     Act findActOrThrow(long id);
+
+    ExecutiveSchema getExecutiveSchema(long id);
+
+    List<ExecutiveSchema> getExecutiveSchemas();
 
 //    ActUpdateResponseDto getUpdatedAct(long id);
 
@@ -29,6 +34,8 @@ public interface ActService {
 
     void delete(Long actId);
 
+    void deleteSchema(long id);
+
 //    void deleteControl(long id);
 
 //    Act findActOrNot(long id);
@@ -45,5 +52,6 @@ public interface ActService {
 
 //    List<ActResponseDto> getAllWithNullInRegistries();
 
-//    void addSchema(MultipartFile file, Long id);
+
+
 }

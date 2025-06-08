@@ -10,7 +10,6 @@ import com.executive_documentation.acts.model.ExecutiveSchema;
 import com.executive_documentation.acts.repository.ActRepository;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.executive_documentation.acts.repository.ExecutiveSchemaRepository;
-import com.executive_documentation.exception.FileStorageException;
 import com.executive_documentation.exception.NotFoundException;
 import com.executive_documentation.exception.ValidationException;
 import com.executive_documentation.fileStorage.service.FileStorageService;
@@ -63,7 +62,15 @@ public class ActServiceImplementation implements ActService {
 
     @Override
     public ActResponseDto get(Long id) {
-        return actMapper.ActToActResponseDto(findActOrThrow(id));
+
+        Act act = actRepository.findById(id).get();
+
+        ActResponseDto dto = actMapper.actToActResponseDto(act);
+        if (act.getExecutiveSchema() != null) {
+            dto.setExecutiveSchemaUrl(act.getExecutiveSchema().getSchemaPath());
+        }
+
+        return dto;
     }
 
     @Override
@@ -71,7 +78,7 @@ public class ActServiceImplementation implements ActService {
         return actRepository.findAllByOrderByEndDateAscActNumberAsc()
                 .stream()
                 .map(act -> {
-                    ActResponseDto dto = actMapper.ActToActResponseDto(act);
+                    ActResponseDto dto = actMapper.actToActResponseDto(act);
                     if (act.getExecutiveSchema() != null) {
                         dto.setExecutiveSchemaUrl(
                                 fileStorageService.getFilePublicUrl(act.getExecutiveSchema().getSchemaPath())
@@ -79,6 +86,16 @@ public class ActServiceImplementation implements ActService {
                     }
                     return dto;
                 }).toList();
+    }
+
+    @Override
+    public ExecutiveSchema getExecutiveSchema(long id) {
+        return executiveSchemaRepository.findById(id).get();
+    }
+
+    @Override
+    public List<ExecutiveSchema> getExecutiveSchemas() {
+        return executiveSchemaRepository.findAll();
     }
 
     @Override
@@ -93,8 +110,6 @@ public class ActServiceImplementation implements ActService {
     @Transactional
     @Override
     public void create(Map<String, String> formData, MultipartFile file) {
-
-        log.info("Здесь: {}", formData);
 
         Act createdAct = new Act();
 
@@ -126,7 +141,10 @@ public class ActServiceImplementation implements ActService {
         String inAccordWith = project.getName() + "; " + SETS_OF_RULES + "; " + standard;
         createdAct.setInAccordWith(inAccordWith);
         createdAct.setWorkDone(parseBigDecimal(formData.get("workDone")));
+        log.info("Здесь");
         createdAct.setSubmittedDocuments(addSubmittedDocuments(formData, actNumber));
+        log.info("Материалы: {}", createdAct.getMaterials());
+
         createdAct.setMaterials(getMaterials(formData));
         createdAct.setExecutiveSchema(addExecutiveSchema(actNumber, file));
 
@@ -146,7 +164,7 @@ public class ActServiceImplementation implements ActService {
     public ActResponseDto actUpdate(long id, MultipartFile file) {
         Act act = findActOrThrow(id);
         act.setExecutiveSchema(addExecutiveSchema(act.getActNumber(), file));
-        return actMapper.ActToActResponseDto(actRepository.save(act));
+        return actMapper.actToActResponseDto(actRepository.save(act));
     }
 
     @Transactional
@@ -168,9 +186,8 @@ public class ActServiceImplementation implements ActService {
         if (act.getExecutiveSchema() != null) {
             ExecutiveSchema schema = act.getExecutiveSchema();
             if (schema.getSchemaPath() != null) {
-                fileStorageService.deleteFile(schema.getSchemaPath());
+                deleteSchema(schema.getId());
             }
-            executiveSchemaRepository.delete(schema);
         }
 
         // 3. Удаляем сам Act
@@ -183,6 +200,18 @@ public class ActServiceImplementation implements ActService {
                 .orElseThrow(() -> new NotFoundException("Act not found with id: " + id));
     }
 
+    @Transactional
+    @Override
+    public void deleteSchema(long id) {
+        ExecutiveSchema schema = executiveSchemaRepository.findById(id).orElseThrow(() -> new NotFoundException("ExecutiveSchema not found with id: " + id));
+
+        Act act = actRepository.findByExecutiveSchema(schema).orElseThrow(() -> new NotFoundException("Act not found with id: " + id));
+
+        act.setExecutiveSchema(null);
+        executiveSchemaRepository.deleteById(id);
+        fileStorageService.deleteFile(schema.getSchemaPath());
+    }
+
     // Вспомогательные методы
     private void validateFile(MultipartFile file) {
         if (!Objects.requireNonNull(file.getContentType()).equalsIgnoreCase("application/pdf")) {
@@ -190,22 +219,6 @@ public class ActServiceImplementation implements ActService {
         }
     }
 
-    private void deleteSchemaAndFile(ExecutiveSchema schema) {
-        try {
-            fileStorageService.deleteFile(schema.getSchemaPath());
-            executiveSchemaRepository.delete(schema);
-        } catch (Exception e) {
-            log.error("Failed to delete schema file: {}", schema.getSchemaPath(), e);
-            throw new FileStorageException("Could not delete old schema file");
-        }
-    }
-
-    private ExecutiveSchema createNewSchema(String actNumber, String fileName) {
-        ExecutiveSchema schema = new ExecutiveSchema();
-        schema.setSchemasActNumber(actNumber);
-        schema.setSchemaPath(fileName);
-        return schema;
-    }
 
     private static Long parseLong(String value) {
         if (value == null || value.isEmpty()) {
@@ -306,9 +319,7 @@ public class ActServiceImplementation implements ActService {
     private String addSubmittedDocuments(Map<String, String> formData, String actNumber) {
         List<String> submittedDocuments = new ArrayList<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-        LocalDate controlDate = parseDate(formData.get("controlDate"));
         LocalDate endDate = parseDate(formData.get("endDate"));
-        String formattedControlDate = controlDate.format(formatter);
         String formattedEndDate = endDate.format(formatter);
 
         if (Objects.equals(formData.get("executiveSchema"), "Есть")) {
@@ -316,6 +327,8 @@ public class ActServiceImplementation implements ActService {
         }
 
         List<MaterialQuantityDto> materials = parseMaterials(formData.get("materials"));
+
+        String formattedControlDate = !materials.isEmpty() ? parseDate(formData.get("controlDate")).format(formatter) : null;
 
         switch (materials.size()) {
             case 0:
@@ -419,4 +432,10 @@ public class ActServiceImplementation implements ActService {
         }
     }
 
+    private ExecutiveSchema createNewSchema(String actNumber, String fileName) {
+        ExecutiveSchema schema = new ExecutiveSchema();
+        schema.setSchemasActNumber(actNumber);
+        schema.setSchemaPath(fileName);
+        return schema;
+    }
 }

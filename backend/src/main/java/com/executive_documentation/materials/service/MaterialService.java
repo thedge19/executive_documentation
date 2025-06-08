@@ -22,4 +22,6 @@ public interface MaterialService {
     void delete(long id);
 
     void addCertificate(long id, MultipartFile file);
+
+    void deleteCertificate(long id);
 }

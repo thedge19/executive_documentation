@@ -6,6 +6,7 @@ import ViewStandards from "@/views/standards/ViewStandards.vue";
 import ViewSubObjects from "@/views/subObjects/ViewSubObjects.vue";
 import ViewWorks from "@/views/works/ViewWorks.vue";
 import ViewControl from "@/views/controls/ViewControl.vue";
+import ViewSchemas from "@/views/schemas/ViewSchemas.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -134,6 +135,11 @@ const router = createRouter({
       path: '/editRegistry/:id',
       name: 'editRegistry',
       component: () => import('../views/registry/UpdateRegistry.vue')
+    },
+    {
+      path: '/schemas',
+      name: 'viewSchemas',
+      component: ViewSchemas
     },
   ]
 })
