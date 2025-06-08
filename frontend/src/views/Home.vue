@@ -21,7 +21,7 @@
                 <th class="text-center" scope="col" style="color: black; width: 20%">Выполненные
                   работы
                 </th>
-                <th class="text-center" scope="col" style="color: black; width: 6%">Начало</th>
+                <th class="text-center" scope="col" style="color: black; width: 7%">Начало</th>
                 <th class="text-center" scope="col" style="color: black; width: 25%">Исполнительная схема</th>
                 <th class="text-center" scope="col" style="color: black; width: 20%">Предъявлены
                   документы
@@ -47,7 +47,7 @@
                   <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>
                 </td>
                 <td style="width: 6%">{{ act.startDate }}</td>
-                <td style="width: 25%">
+                <td style="width: 25%" class="text-center">
                   <span v-if="!act.executiveSchemaUrl">{{ act.actNumber }}</span>
                   <a v-else
                      :href="act.executiveSchemaUrl"
