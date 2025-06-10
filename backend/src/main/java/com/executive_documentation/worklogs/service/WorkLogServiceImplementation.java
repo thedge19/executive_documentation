@@ -27,7 +27,6 @@ public class WorkLogServiceImplementation implements WorkLogService {
     private final WorkLogRepository workLogRepository;
     private final SubObjectService subObjectService;
     private final WorkLogMapper workLogMapper;
-    private final ActMapper actMapper;
 
     @Override
     public List<WorkLogDto> getWorkLog3() {
@@ -141,14 +140,5 @@ public class WorkLogServiceImplementation implements WorkLogService {
 
             i++;
         }
-    }
-
-    private int lastRow(Sheet sheet) {
-        int rowNumber = 4;
-
-        while (!Objects.equals(sheet.getRow(rowNumber).getCell(6), null)) {
-            rowNumber++;
-        }
-        return rowNumber;
     }
 }

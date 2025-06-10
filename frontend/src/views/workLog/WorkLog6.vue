@@ -82,9 +82,6 @@ onMounted(getActs)
 <style scoped>
 html,
 body,
-.intro {
-  height: 100%;
-}
 
 table {
   table-layout: fixed;

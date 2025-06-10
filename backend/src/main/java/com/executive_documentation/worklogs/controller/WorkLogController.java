@@ -2,7 +2,6 @@ package com.executive_documentation.worklogs.controller;
 
 import com.executive_documentation.acts.dto.ActLogResponseDto;
 import com.executive_documentation.worklogs.dto.WorkLogDto;
-import com.executive_documentation.worklogs.dto.WorkLogMapper;
 import com.executive_documentation.worklogs.pdf.WorkLogPdfService;
 import com.executive_documentation.worklogs.service.WorkLogService;
 import com.itextpdf.text.DocumentException;
@@ -10,7 +9,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.List;

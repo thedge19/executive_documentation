@@ -36,13 +36,12 @@ public class WorkLogPdfService {
     private final ActPdfCellStyler cellStyler;
     private final ActRepository actRepository;
 
-    private BaseFont baseFont;
     private Font f3;
     private Font f4;
     private Font f5;
     private Font f6;
 
-    public WorkLogPdfService(WorkLogService workLogService, ActRepository actRepository, ActMapper actMapper) {
+    public WorkLogPdfService(WorkLogService workLogService, ActRepository actRepository) {
         this.workLogService = workLogService;
         this.cellStyler = new ActPdfCellStyler();
         this.actRepository = actRepository;
@@ -53,19 +52,20 @@ public class WorkLogPdfService {
         try {
             // Загрузка шрифта из ресурсов
             InputStream fontStream = getClass().getResourceAsStream(FONT_PATH);
+            BaseFont baseFont;
             if (fontStream == null) {
                 // Попробуем альтернативный путь
                 String alternativePath = "src/main/resources" + FONT_PATH;
                 File fontFile = new File(alternativePath);
                 if (fontFile.exists()) {
-                    this.baseFont = BaseFont.createFont(
+                    baseFont = BaseFont.createFont(
                             alternativePath,
                             BaseFont.IDENTITY_H,
                             BaseFont.EMBEDDED
                     );
                 } else {
                     // Используем системный шрифт как последнее средство
-                    this.baseFont = BaseFont.createFont(
+                    baseFont = BaseFont.createFont(
                             "c:/windows/fonts/arial.ttf",
                             BaseFont.IDENTITY_H,
                             BaseFont.EMBEDDED
@@ -73,7 +73,7 @@ public class WorkLogPdfService {
                     log.warn("Using fallback font (Arial) as main font was not found");
                 }
             } else {
-                this.baseFont = BaseFont.createFont(
+                baseFont = BaseFont.createFont(
                         FONT_PATH,
                         BaseFont.IDENTITY_H,
                         BaseFont.EMBEDDED,

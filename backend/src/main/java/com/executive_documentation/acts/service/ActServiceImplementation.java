@@ -50,7 +50,6 @@ public class ActServiceImplementation implements ActService {
     private final FileStorageService fileStorageService;
     private final ExecutiveSchemaRepository executiveSchemaRepository;
     private final MaterialRepository materialRepository;
-    private final WorkingRepository workingRepository;
 
     private final static String CONTROL_ACT = "Акт результатов входного контроля МТР и оборудования №";
     private final static String EXECUTIVE_SCHEMA = "Исполнительная схема №";
@@ -59,12 +58,11 @@ public class ActServiceImplementation implements ActService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_DATE;
 
     @Value("${app.storage.base-url}") // Изменили с ${app.base-url}
-    private String storageBaseUrl;
 
     @Override
     public ActResponseDto get(Long id) {
 
-        Act act = actRepository.findById(id).get();
+        Act act = actRepository.findById(id).orElseThrow();
 
         ActResponseDto dto = actMapper.actToActResponseDto(act);
         if (act.getExecutiveSchema() != null) {
@@ -91,7 +89,7 @@ public class ActServiceImplementation implements ActService {
 
     @Override
     public ExecutiveSchema getExecutiveSchema(long id) {
-        return executiveSchemaRepository.findById(id).get();
+        return executiveSchemaRepository.findById(id).orElseThrow();
     }
 
     @Override

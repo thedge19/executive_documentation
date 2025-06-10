@@ -27,10 +27,10 @@
               </thead>
               <tbody>
               <tr v-for="workLog in workLogs">
-                <td class="text-center" scope="col" style="color: black; width: 6%">{{ workLog.workLogNumber }}</td>
-                <td class="text-center" scope="col" style="color: black; width: 7%">{{ workLog.workDate }}</td>
-                <td class="text-center" scope="col" style="color: black; width: 50%">{{ workLog.name }}</td>
-                <td class="text-center" scope="col" style="color: black; width: 15%">
+                <td class="text-center" style="color: black; width: 6%">{{ workLog.workLogNumber }}</td>
+                <td class="text-center" style="color: black; width: 7%">{{ workLog.workDate }}</td>
+                <td class="text-center" style="color: black; width: 50%">{{ workLog.name }}</td>
+                <td class="text-center" style="color: black; width: 15%">
                   Руководитель работ Трифонов А.Е.
                 </td>
                 <td style="width: 12%">

@@ -40,7 +40,6 @@ public class ActPdfService {
     private final EntranceControlRepository entranceControlRepository;
     private final ActRepository actRepository;
 
-    private BaseFont baseFont;
     private Font f5;
     private Font fontToFillIn;
     private Font subscript;
@@ -57,23 +56,24 @@ public class ActPdfService {
     }
 
     @PostConstruct
-    public void initFonts() throws IOException, DocumentException {
+    public void initFonts() {
         try {
             // Загрузка шрифта из ресурсов
             InputStream fontStream = getClass().getResourceAsStream(FONT_PATH);
+            BaseFont baseFont;
             if (fontStream == null) {
                 // Попробуем альтернативный путь
                 String alternativePath = "src/main/resources" + FONT_PATH;
                 File fontFile = new File(alternativePath);
                 if (fontFile.exists()) {
-                    this.baseFont = BaseFont.createFont(
+                    baseFont = BaseFont.createFont(
                             alternativePath,
                             BaseFont.IDENTITY_H,
                             BaseFont.EMBEDDED
                     );
                 } else {
                     // Используем системный шрифт как последнее средство
-                    this.baseFont = BaseFont.createFont(
+                    baseFont = BaseFont.createFont(
                             "c:/windows/fonts/arial.ttf",
                             BaseFont.IDENTITY_H,
                             BaseFont.EMBEDDED
@@ -81,7 +81,7 @@ public class ActPdfService {
                     log.warn("Using fallback font (Arial) as main font was not found");
                 }
             } else {
-                this.baseFont = BaseFont.createFont(
+                baseFont = BaseFont.createFont(
                         FONT_PATH,
                         BaseFont.IDENTITY_H,
                         BaseFont.EMBEDDED,
@@ -245,7 +245,7 @@ public class ActPdfService {
             response.getOutputStream().write(actPdf.toByteArray());
         } finally {
             if (mergedDoc.isOpen()) mergedDoc.close();
-            if (copy != null) copy.close();
+            copy.close();
         }
 
         log.info("Сформирован комплект документов для акта {}", actDto.getActNumber());
