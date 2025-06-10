@@ -7,7 +7,7 @@
       <div style="position: absolute; top: 0; bottom: 0; left: 0; right: 0;">
         <h1 class="text-center">Входняк</h1>
         <!--Add button -->
-        <button @click.prevent="toPdf" class="btn btn-outline-secondary my-1 mx-3">Выгрузить в pdf</button>
+        <a href="#" @click.prevent="generateLogPdf" class="btn btn-outline-secondary my-1 mx-3">Выгрузить журнал в pdf</a>
         <table class="table table-striped">
           <thead>
           <tr>
@@ -86,11 +86,9 @@ export default {
       window.open(`http://localhost:8080/acts/${id}/pdf/control`, '_blank');
     },
 
-    toPdf() {
-      fetch(`http://localhost:8080/toPdf/entranceControlLog`)
-          .then(data => {
-            console.log("Запрос отправлен")
-          })
+    generateLogPdf() {
+      // Открываем PDF в новой вкладке
+      window.open(`http://localhost:8080/acts/pdf/controlLog`, '_blank');
     },
 
     deleteControl(id) {

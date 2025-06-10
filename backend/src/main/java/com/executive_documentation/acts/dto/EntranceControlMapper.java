@@ -3,6 +3,8 @@ package com.executive_documentation.acts.dto;
 import com.executive_documentation.acts.model.EntranceControl;
 import org.springframework.stereotype.Component;
 
+import java.time.format.DateTimeFormatter;
+
 @Component
 public class EntranceControlMapper {
 
@@ -20,6 +22,21 @@ public class EntranceControlMapper {
                 .author(entranceControl.getAuthor())
                 .standard(entranceControl.getStandard())
                 .controlSheetNumbers(entranceControl.getControlSheetNumbers())
+                .build();
+    }
+
+    public static EntranceControlExportDto toExportDto(EntranceControl entranceControl) {
+        if (entranceControl == null) {
+            return null;
+        }
+
+        return EntranceControlExportDto.builder()
+                .id(entranceControl.getId())
+                .date(entranceControl.getDate() != null
+                        ? entranceControl.getDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+                        : null)
+                .materials(entranceControl.getMaterials())
+                .documents(entranceControl.getDocuments())
                 .build();
     }
 }

@@ -4,6 +4,7 @@ import com.executive_documentation.acts.dto.ActResponseDto;
 import com.executive_documentation.acts.dto.EntranceControlResponseDto;
 import com.executive_documentation.acts.model.ExecutiveSchema;
 import com.executive_documentation.acts.pdf.ActPdfService;
+import com.executive_documentation.acts.pdf.ControlLogPdfService;
 import com.executive_documentation.acts.pdf.ControlPdfService;
 import com.executive_documentation.acts.service.ActService;
 import com.itextpdf.text.DocumentException;
@@ -29,6 +30,7 @@ public class ActController {
     private final ActService actService;
     private final ActPdfService actPdfService;
     private final ControlPdfService controlPdfService;
+    private final ControlLogPdfService controlLogPdfService;
 
     @GetMapping("/{id}")
     public ActResponseDto get(@PathVariable Long id) {
@@ -59,6 +61,7 @@ public class ActController {
     public ResponseEntity<ActResponseDto> createAct(
             @RequestParam Map<String, String> formData,
             @RequestPart(required = false) MultipartFile file) {
+        log.info("startDate: {}, endDate: {}", formData.get("startDate"), formData.get("endDate"));
         actService.create(formData, file);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -81,6 +84,15 @@ public class ActController {
     public void generateControlPdf(@PathVariable Long id, HttpServletResponse response) throws IOException {
         try {
             controlPdfService.exportControlToPdf(id, response);
+        } catch (DocumentException e) {
+            response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Ошибка генерации PDF");
+        }
+    }
+
+    @GetMapping("/pdf/controlLog")
+    public void generateControlLogPdf(HttpServletResponse response) throws IOException {
+        try {
+            controlLogPdfService.exportEntranceControlLogToPdf(response);
         } catch (DocumentException e) {
             response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Ошибка генерации PDF");
         }

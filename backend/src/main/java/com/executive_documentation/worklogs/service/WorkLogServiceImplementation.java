@@ -40,7 +40,7 @@ public class WorkLogServiceImplementation implements WorkLogService {
     public List<ActLogResponseDto> getWorkLog6() {
         List<Act> acts = actRepository.findAllByOrderByEndDateAscActNumberAsc();
 
-        return acts.stream().map(actMapper::actToActLogResponseDto).toList();
+        return acts.stream().map(ActMapper::actToActLogResponseDto).toList();
     }
 
     @Transactional

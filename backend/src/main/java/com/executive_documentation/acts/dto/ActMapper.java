@@ -33,7 +33,7 @@ public interface ActMapper {
                 .build();
     }
 
-    default ActLogResponseDto actToActLogResponseDto(Act act) {
+    static ActLogResponseDto actToActLogResponseDto(Act act) {
         if (act == null) {
             return null;
         }

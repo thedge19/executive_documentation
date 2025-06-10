@@ -8,21 +8,21 @@
           <!--Add button -->
           <div class="d-flex justify-content-start">
             <a href="/addAct" class="btn btn-outline-primary">Добавить акт</a>
-            <a href="/excel" class="btn btn-outline-success mx-3">Выгрузить в pdf</a>
+            <a href="#" @click.prevent="generatePdf(act.id)">Выгрузить в pdf</a>
           </div>
           <div class="table-responsive table-scroll" data-mdb-perfect-scrollbar="true"
                style="position: relative">
             <table class="table table-striped mb-0">
               <thead style="background-color: #002d72;">
               <tr style="color: red;">
-                <th href="#" @click.prevent="filterBySubObject" class="text-center" scope="col" style="color: black; width: 6%">##</th>
+                <th href="#" @click.prevent="filterBySubObject" class="text-center" scope="col" style="color: black; width: 7%">##</th>
                 <th class="text-center" scope="col" style="color: black; width: 5%">Дата</th>
                 <th class="text-center" scope="col" style="color: black; width: 15%">Объект</th>
                 <th class="text-center" scope="col" style="color: black; width: 20%">Выполненные
                   работы
                 </th>
                 <th class="text-center" scope="col" style="color: black; width: 7%">Начало</th>
-                <th class="text-center" scope="col" style="color: black; width: 25%">Исполнительная схема</th>
+                <th class="text-center" scope="col" style="color: black; width: 25%">Материалы</th>
                 <th class="text-center" scope="col" style="color: black; width: 20%">Предъявлены
                   документы
                 </th>
@@ -48,15 +48,16 @@
                 </td>
                 <td style="width: 6%">{{ act.startDate }}</td>
                 <td style="width: 25%" class="text-center">
-                  <span v-if="!act.executiveSchemaUrl">{{ act.actNumber }}</span>
-                  <a v-else
-                     :href="act.executiveSchemaUrl"
-                     target="_blank"
-                     class="text-decoration-none"
-                     :title="act.actNumber">
-                    {{ act.actNumber || 'Скачать схему' }}
-                    <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>
-                  </a>
+                  {{ act.materials }}
+<!--                  <span v-if="!act.executiveSchemaUrl">{{ act.actNumber }}</span>-->
+<!--                  <a v-else-->
+<!--                     :href="act.executiveSchemaUrl"-->
+<!--                     target="_blank"-->
+<!--                     class="text-decoration-none"-->
+<!--                     :title="act.actNumber">-->
+<!--                    {{ act.actNumber || 'Скачать схему' }}-->
+<!--                    <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>-->
+<!--                  </a>-->
                 </td>
                 <td style="width: 20%">{{ act.submittedDocuments }}</td>
                 <td style="width: 25%">{{ act.inAccordWith }}</td>

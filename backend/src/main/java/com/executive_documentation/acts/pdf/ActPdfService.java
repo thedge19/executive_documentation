@@ -22,9 +22,7 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -187,6 +185,7 @@ public class ActPdfService {
         ActResponseDto actDto = actService.get(actId);
         Act act = actRepository.findById(actId).orElseThrow(EntityNotFoundException::new);
 
+
         // 2. Подготавливаем файл для скачивания
         String fileName = "Комплект_документов_" + actDto.getActNumber().replace("/", "_") + ".pdf";
         response.setContentType("application/pdf");
@@ -195,6 +194,7 @@ public class ActPdfService {
 
         // 3. Генерируем PDF для акта
         ByteArrayOutputStream actPdf = generateActPdf(actDto);
+        log.info("Filename {}", fileName);
 
         // 4. Объединяем документы
         ByteArrayOutputStream mergedPdf = new ByteArrayOutputStream();
@@ -300,6 +300,7 @@ public class ActPdfService {
     private void addAOSRTableData(PdfPTable table, ActResponseDto act) {
         addFirstStaticBlock(table);
 
+
         table.addCell(createCell(act.getProjectName(), "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
 
         addSecondStaticBlock(table);
@@ -328,6 +329,7 @@ public class ActPdfService {
                 "centerTopNoBorder", subscript, 36, 1, 0.0F));
 
         table.addCell(createCell("3. При выполнении работ применены", "leftCenterNoBorder", f5, 15, 1, 0.0F));
+        log.info(act.getMaterials());
         addMaterials(act.getMaterials(), table);
 
         table.addCell(createCell("4. Предъявлены документы, подтверждающие соответствие работ предъявляемым к ним  требованиям",
@@ -624,26 +626,6 @@ public class ActPdfService {
         return cell;
     }
 
-    public LocalDate jsDateToLocalDate(String date) {
-        String[] arr = date.split(" ");
-
-        int year = Integer.parseInt(arr[3]);
-        int day = Integer.parseInt(arr[2]);
-        String stringMonth = arr[1];
-
-        Integer[] values = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
-        String[] keys = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-
-        Map<String, Integer> monthMap = new HashMap<>();
-
-        for (int i = 0; i < keys.length; i++) {
-            monthMap.put(keys[i], values[i]);
-        }
-
-        int month = monthMap.get(stringMonth);
-
-        return LocalDate.of(year, month, day);
-    }
 
     public String[] actDate(String date) {
         String[] endDateList = date.split("-");
@@ -679,6 +661,11 @@ public class ActPdfService {
     }
 
     private void addMaterials(String materials, PdfPTable table) {
+
+        if(materials == null || materials.isEmpty()) {
+            materials = "н/п";
+        }
+
         if (materials.length() < 60) {
             table.addCell(createCell(materials, "centerBorderBottom", fontToFillIn, 21, 1, 0.0F));
             table.addCell(createCell("", "leftCenterNoBorder", f5, 15, 1, 0.0F));

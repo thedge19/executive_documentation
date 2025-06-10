@@ -238,12 +238,12 @@ export default {
       },
 
       projectId: 4,
-      subObjectId: 8,
+      subObjectId: 22,
       workId: null,
       nextWorkId: null,
       workDone: "",
       startDate: new Date(),
-      endDate: this.startDate,
+      endDate: "",
       materialQuantity: 0,
       executiveSchema: "Нет",
       file: null,
@@ -330,6 +330,8 @@ export default {
 
     getSomething() {
       console.log(this.setControlDate);
+      console.log(this.startDate);
+      console.log(this.endDate);
     },
 
     onChangeProject() {
@@ -503,6 +505,12 @@ export default {
       try {
         const materials = this.addMaterials();
 
+        const formatDate = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
         // Создаем FormData вместо JSON
         const formData = new FormData();
         formData.append('projectId', this.projectId);
@@ -510,8 +518,8 @@ export default {
         formData.append('workId', this.workId);
         formData.append('nextWorkId', this.nextWorkId);
         formData.append('workDone', parseFloat(this.workDone));
-        formData.append('startDate', this.startDate.toISOString().split('T')[0]);
-        formData.append('endDate', this.endDate.toISOString().split('T')[0]);
+        formData.append('startDate', formatDate(this.startDate));
+        formData.append('endDate', formatDate(this.endDate));
 
         formData.append('executiveSchema', this.executiveSchema);
 
@@ -519,7 +527,7 @@ export default {
         formData.append('materials', JSON.stringify(materials));
 
         if (this.materialQuantity > 0) {
-          formData.append('controlDate', this.setControlDate.toISOString().split('T')[0]);
+          formData.append('controlDate', formatDate(this.setControlDate));
         }
 
         // Добавляем файл, если есть

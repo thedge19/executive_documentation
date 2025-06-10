@@ -7,8 +7,8 @@
           <h1 class="text-center">Работы</h1>
           <!--Add button -->
           <div class="d-flex justify-content-start">
-            <a @click="fillInTheLog" class="btn btn-outline-primary mx-3">Сформировать 6 раздел</a>
-            <a @click="toPdf6" class="btn btn-outline-secondary mx-3">Выгрузить в pdf</a>
+            <button @click="fillInTheLog" class="btn btn-outline-primary mx-3">Сформировать 6 раздел</button>
+            <button @click="generatePdf" class="btn btn-outline-secondary mx-3">Выгрузить в pdf</button>
           </div>
           <div class="table-responsive table-scroll" data-mdb-perfect-scrollbar="true"
                style="position: relative">
@@ -21,7 +21,7 @@
               </tr>
               </thead>
               <tbody>
-              <tr v-for="act in acts">
+              <tr v-for="act in acts" :key="act.id">
                 <td class="text-center" style="color: black; width: 6%">Акт освидетельствования скрытых работ № {{ act.actNumber }} {{ act.works }}</td>
                 <td class="text-center" style="color: black; width: 50%">{{ act.endDate }}</td>
                 <td style="width: 12%">
@@ -38,58 +38,47 @@
   </main>
 </template>
 
+<script setup>
+import { ref, onMounted } from 'vue'
+import Navbar from '../../components/Navbar.vue'
 
-<script>
-import Navbar from '../../components/Navbar.vue';
+const acts = ref([])
 
-export default {
-  name: 'WorkLog6',
-  components: {
-    Navbar
-  },
-
-  data() {
-    return {
-      acts: []
-    }
-  },
-
-  mounted() {
-    this.getActs()
-  },
-
-  methods: {
-    getActs() {
-      fetch('http://localhost:8080/worklog/6',{
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      })
-          .then(res => res.json())
-          .then(data => {
-            this.acts = data
-            this.getActs()
-          })
-    },
-
-    fillInTheLog() {
-      fetch(`http://localhost:8080/worklog/fill`)
-          .then(data => {
-            console.log("Запрос отправлен")
-          })
-    },
-
-    toPdf6() {
-      fetch(`http://localhost:8080/toPdf/workLog6`)
-          .then(data => {
-            console.log("Запрос отправлен")
-          })
-    }
-  },
-
+// Получение актов
+const getActs = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/worklog/6', {
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    acts.value = await response.json()
+  } catch (error) {
+    console.error('Ошибка при загрузке актов:', error)
+  }
 }
+
+// Формирование раздела
+const fillInTheLog = async () => {
+  try {
+    await fetch('http://localhost:8080/worklog/fill')
+    console.log("Запрос отправлен")
+    await getActs() // Обновляем список после формирования
+  } catch (error) {
+    console.error('Ошибка при формировании раздела:', error)
+  }
+}
+
+// Генерация PDF
+const generatePdf = () => {
+  window.open('http://localhost:8080/worklog/6/pdf', '_blank')
+}
+
+// Загружаем акты при монтировании компонента
+onMounted(getActs)
 </script>
+
 <style scoped>
 html,
 body,
@@ -100,7 +89,6 @@ body,
 table {
   table-layout: fixed;
 }
-
 
 table td,
 table th {
