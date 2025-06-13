@@ -6,6 +6,7 @@ import com.executive_documentation.acts.model.Act;
 import com.executive_documentation.acts.model.EntranceControl;
 import com.executive_documentation.acts.pdf.ActPdfService;
 import com.executive_documentation.acts.pdf.ControlPdfService;
+import com.executive_documentation.acts.pdf.PdfCellCreator;
 import com.executive_documentation.acts.repository.ActRepository;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.executive_documentation.fileStorage.service.FileStorageService;
@@ -27,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,12 +41,13 @@ public class RegistryPdfService {
     private final AtomicInteger globalPageCounter = new AtomicInteger(0);
 
     private final ActRepository actRepository;
-    private final RegistryPdfCellStyler cellStyler;
     private final EntranceControlRepository entranceControlRepository;
     private final ActPdfService actPdfService;
     private final ControlPdfService controlPdfService;
     private final ActMapper actMapper;
     private final FileStorageService fileStorageService;
+    private final PdfCellCreator creator;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private final static String ENERGY = "ООО «Энергомонтаж»";
     private final Path fileStorageLocation;
@@ -52,6 +55,7 @@ public class RegistryPdfService {
     private Font f1;
     private Font f2;
     private Font f3;
+    private Font fontForPageNumbers;
 
     public RegistryPdfService(ActRepository actRepository,
                               EntranceControlRepository entranceControlRepository,
@@ -59,10 +63,10 @@ public class RegistryPdfService {
                               ControlPdfService controlPdfService,
                               ActMapper actMapper,
                               FileStorageService fileStorageService,
-                              @Value("${file.upload-dir}") String uploadDir, Path fileStorageLocation) {
+                              @Value("${file.upload-dir}") String uploadDir, PdfCellCreator creator, Path fileStorageLocation) {
         this.actRepository = actRepository;
+        this.creator = creator;
         this.fileStorageLocation = fileStorageLocation;
-        this.cellStyler = new RegistryPdfCellStyler();
         this.entranceControlRepository = entranceControlRepository;
         this.actPdfService = actPdfService;
         this.controlPdfService = controlPdfService;
@@ -112,6 +116,7 @@ public class RegistryPdfService {
             this.f1 = new Font(baseFont, 11);
             this.f2 = new Font(baseFont, 12, Font.BOLD);
             this.f3 = new Font(baseFont, 9, Font.ITALIC);
+            this.fontForPageNumbers = new Font(baseFont, 9, Font.BOLDITALIC);
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize PDF fonts", e);
@@ -234,7 +239,7 @@ public class RegistryPdfService {
         try {
             // 1. Инициализация PDF-документа
             writer = PdfWriter.getInstance(document, outputStream);
-            writer.setPageEvent(new GlobalPageNumberFooter(f1));
+//            writer.setPageEvent(new GlobalPageNumberFooter(f1));
             document.open();
 
             // 2. Подготовка данных для таблицы
@@ -257,12 +262,12 @@ public class RegistryPdfService {
 
             // Добавляем все строки реестра
             for (Registry registry : registries) {
-                tempTable.addCell(createCell(String.valueOf(registry.getRowNumber()), "centerBorder", f1, 1, 1, 0.0F));
-                tempTable.addCell(createCell(registry.getDocumentName(), "centerBorder", f1, 1, 1, 0.0F));
-                tempTable.addCell(createCell(registry.getDocumentNumber(), "centerBorder", f1, 1, 1, 0.0F));
-                tempTable.addCell(createCell(registry.getDocumentAuthor(), "centerBorder", f1, 1, 1, 0.0F));
-                tempTable.addCell(createCell("", "centerBorder", f1, 1, 1, 0.0F));
-                tempTable.addCell(createCell("", "centerBorder", f1, 1, 1, 0.0F));
+                tempTable.addCell(creator.createCell(String.valueOf(registry.getRowNumber()), "centerBorder", f1, 1, 1, 0.0F));
+                tempTable.addCell(creator.createCell(registry.getDocumentName(), "centerBorder", f1, 1, 1, 0.0F));
+                tempTable.addCell(creator.createCell(registry.getDocumentNumber(), "centerBorder", f1, 1, 1, 0.0F));
+                tempTable.addCell(creator.createCell(registry.getDocumentAuthor(), "centerBorder", f1, 1, 1, 0.0F));
+                tempTable.addCell(creator.createCell("", "centerBorder", f1, 1, 1, 0.0F));
+                tempTable.addCell(creator.createCell("", "centerBorder", f1, 1, 1, 0.0F));
             }
 
             addPdfFooter(tempTable);
@@ -320,16 +325,16 @@ public class RegistryPdfService {
             String documentNumber = registry.getDocumentNumber();
 
 
-            log.info("Документ {}, {}", registry.getListInOrder(), registry.getNumberOfSheets() );
-            table.addCell(createCell(String.valueOf(registry.getRowNumber()), "centerBorder", f1, 1, 1, 0.0F));
-            table.addCell(createCell(String.valueOf(registry.getDocumentName()), "centerBorder", f1, 1, 1, 0.0F));
-            table.addCell(createCell(documentNumber, "centerBorder", f1, 1, 1, 0.0F));
-            table.addCell(createCell(registry.getDocumentAuthor(), "centerBorder", f1, 1, 1, 0.0F));
-            table.addCell(createCell(String.valueOf(registry.getNumberOfSheets()), "centerBorder", f1, 1, 1, 0.0F));
+            log.info("Документ {}, {}", registry.getDocumentNumber(), registry.getDocumentDate() );
+            table.addCell(creator.createCell(String.valueOf(registry.getRowNumber()), "centerBorder", f1, 1, 1, 0.0F));
+            table.addCell(creator.createCell(String.valueOf(registry.getDocumentName()), "centerBorder", f1, 1, 1, 0.0F));
+            table.addCell(creator.createCell(documentNumber, "centerBorder", f1, 1, 1, 0.0F));
+            table.addCell(creator.createCell(registry.getDocumentAuthor(), "centerBorder", f1, 1, 1, 0.0F));
+            table.addCell(creator.createCell(String.valueOf(registry.getNumberOfSheets()), "centerBorder", f1, 1, 1, 0.0F));
             if (counter > 0) {
                 registry.setListInOrder(registries.get(counter - 1).getListInOrder() + registries.get(counter - 1).getNumberOfSheets());
             }
-            table.addCell(createCell(String.valueOf(registry.getListInOrder()), "centerBorder", f1, 1, 1, 0.0F));
+            table.addCell(creator.createCell(String.valueOf(registry.getListInOrder()), "centerBorder", f1, 1, 1, 0.0F));
             counter++;
         }
 
@@ -338,117 +343,50 @@ public class RegistryPdfService {
 
     private void addPdfRegistryHeader(PdfPTable table) {
 //      1 строка
-        table.addCell(createCell("", "centerNoBorder", f1, 3, 1, 0.0F));
-        table.addCell(createCell("Форма", "leftCenterNoBorder", f1, 1, 1, 0.0F));
-        table.addCell(createCell("№1.2", "leftCenterNoBorder", f1, 2, 1, 0.0F));
+        table.addCell(creator.createCell("", "centerNoBorder", f1, 3, 1, 0.0F));
+        table.addCell(creator.createCell("Форма", "leftCenterNoBorder", f1, 1, 1, 0.0F));
+        table.addCell(creator.createCell("№1.2", "leftCenterNoBorder", f1, 2, 1, 0.0F));
 //      2 строка
-        table.addCell(createCell("Заказчик: АО «Черномортранснефть»", "leftCenterNoBorder", f1, 3, 1, 0.0F));
-        table.addCell(createCell("Основание", "leftCenterNoBorder", f1, 1, 1, 0.0F));
-        table.addCell(createCell("ВСН 012-88 (часть II)", "leftCenterNoBorder", f1, 2, 1, 0.0F));
+        table.addCell(creator.createCell("Заказчик: АО «Черномортранснефть»", "leftCenterNoBorder", f1, 3, 1, 0.0F));
+        table.addCell(creator.createCell("Основание", "leftCenterNoBorder", f1, 1, 1, 0.0F));
+        table.addCell(creator.createCell("ВСН 012-88 (часть II)", "leftCenterNoBorder", f1, 2, 1, 0.0F));
 //      3 строка
-        table.addCell(createCell("Подрядчик: ООО «Энергомонтаж»", "leftTopNoBorder", f1, 3, 1, 0.0F));
-        table.addCell(createCell("Строительство", "leftTopNoBorder", f1, 1, 1, 0.0F));
-        table.addCell(createCell("14.295.24 ТЕКУЩИЙ РЕМОНТ ЗДАНИЙ И СООРУЖЕНИЙ ПК «ШЕСХАРИС»", "leftCenterNoBorder", f1, 2, 1, 0.0F));
+        table.addCell(creator.createCell("Подрядчик: ООО «Энергомонтаж»", "leftTopNoBorder", f1, 3, 1, 0.0F));
+        table.addCell(creator.createCell("Строительство", "leftTopNoBorder", f1, 1, 1, 0.0F));
+        table.addCell(creator.createCell("14.295.24 ТЕКУЩИЙ РЕМОНТ ЗДАНИЙ И СООРУЖЕНИЙ ПК «ШЕСХАРИС»", "leftCenterNoBorder", f1, 2, 1, 0.0F));
 //      4 строка
-        table.addCell(createCell("Субподрядчик:", "leftTopNoBorder", f1, 3, 1, 0.0F));
-        table.addCell(createCell("Объект: ", "leftTopNoBorder", f1, 1, 1, 0.0F));
-        table.addCell(createCell("«Текущий ремонт зданий ПП «Грушовая» ПК «Шесхарис». " +
+        table.addCell(creator.createCell("Субподрядчик:", "leftTopNoBorder", f1, 3, 1, 0.0F));
+        table.addCell(creator.createCell("Объект: ", "leftTopNoBorder", f1, 1, 1, 0.0F));
+        table.addCell(creator.createCell("«Текущий ремонт зданий ПП «Грушовая» ПК «Шесхарис». " +
                 "Текущий ремонт». «Текущий ремонт зданий ПП «Шесхарис». " +
                 "ПК «Шесхарис». Текущий ремонт", "leftTopNoBorder", f1, 2, 1, 0.0F));
 //      Заголовок
-        table.addCell(createCell("РЕЕСТР", "centerBottomNoBorder", f1, 6, 1, 50F));
-        table.addCell(createCell("исполнительной  документации", "centerTopNoBorder", f1, 6, 1, 30F));
+        table.addCell(creator.createCell("РЕЕСТР", "centerBottomNoBorder", f1, 6, 1, 50F));
+        table.addCell(creator.createCell("исполнительной  документации", "centerTopNoBorder", f1, 6, 1, 30F));
     }
 
     private void addTableRegistryHeader(PdfPTable table) {
-        table.addCell(createCell("№ п/п", "centerBorder", f2, 1, 1, 0.0F));
-        table.addCell(createCell("Наименование документа", "centerBorder", f2, 1, 1, 0.0F));
-        table.addCell(createCell("№ документа, дата", "centerBorder", f2, 1, 1, 0.0F));
-        table.addCell(createCell("Организация, составившая документ", "centerBorder", f2, 1, 1, 0.0F));
-        table.addCell(createCell("Кол-во листов", "centerBorder", f2, 1, 1, 0.0F));
-        table.addCell(createCell("Страница по списку", "centerBorder", f2, 1, 1, 0.0F));
+        table.addCell(creator.createCell("№ п/п", "centerBorder", f2, 1, 1, 0.0F));
+        table.addCell(creator.createCell("Наименование документа", "centerBorder", f2, 1, 1, 0.0F));
+        table.addCell(creator.createCell("№ документа, дата", "centerBorder", f2, 1, 1, 0.0F));
+        table.addCell(creator.createCell("Организация, составившая документ", "centerBorder", f2, 1, 1, 0.0F));
+        table.addCell(creator.createCell("Кол-во листов", "centerBorder", f2, 1, 1, 0.0F));
+        table.addCell(creator.createCell("Страница по списку", "centerBorder", f2, 1, 1, 0.0F));
     }
 
     private void addPdfFooter(PdfPTable table) {
-        table.addCell(createCell("Сдал", "leftBottomNoBorder", f1, 2, 1, 50F));
+        table.addCell(creator.createCell("Сдал", "leftBottomNoBorder", f1, 2, 1, 50F));
         addRegistrySignature(table);
-        table.addCell(createCell("Принял", "leftBottomNoBorder", f1, 2, 1, 40F));
+        table.addCell(creator.createCell("Принял", "leftBottomNoBorder", f1, 2, 1, 40F));
         addRegistrySignature(table);
     }
 
     private void addRegistrySignature(PdfPTable table) {
-        table.addCell(createCell("", "emptyCellBottomBorder", f1, 4, 1, 50F));
-        table.addCell(createCell("", "centerNoBorder", f1, 2, 1, 0.0F));
-        table.addCell(createCell("(фамилия, инициалы)", "centerTopNoBorder", f3, 2, 1, 0.0F));
-        table.addCell(createCell("(подпись)", "centerTopNoBorder", f3, 1, 1, 0.0F));
-        table.addCell(createCell("(дата)", "centerTopNoBorder", f3, 1, 1, 0.0F));
-    }
-
-
-    private PdfPCell createCell(String text, String position, Font font, int numberOfColumns, int numberOfRows,
-                                float cellHeight) {
-        Paragraph paragraph = new Paragraph(text, font);
-        PdfPCell cell = new PdfPCell(paragraph);
-
-        if (numberOfColumns > 1) {
-            cell.setColspan(numberOfColumns);
-        }
-
-        if (numberOfRows > 1) {
-            cell.setRowspan(numberOfRows);
-        }
-
-        if (cellHeight > 0.0F) {
-            cell.setFixedHeight(cellHeight);
-        }
-
-
-        switch (position) {
-            case "centerBorder":
-                cellStyler.createCellStyleHorizontalCenterBorder(cell);
-                break;
-            case "centerNoBorder":
-                cellStyler.createCellStyleHorizontalCenterAndVerticalCenter(cell);
-                break;
-            case "centerBottomNoBorder":
-                cellStyler.createCellStyleHorizontalCenterAndVerticalBottomNoBorder(cell);
-                break;
-            case "leftTopNoBorder":
-                cellStyler.createCellStyleHorizontalLeftAndVerticalTopNoBorder(cell);
-                break;
-            case "leftCenterNoBorder":
-                cellStyler.createCellStyleHorizontalLeftAndVerticalCenterNoBorder(cell);
-                break;
-            case "leftBottomNoBorder":
-                cellStyler.createCellStyleHorizontalLeftAndVerticalBottomNoBorder(cell);
-                break;
-            case "emptyCellBottomBorder":
-                cellStyler.createCellStyleBottomBorder(cell);
-                break;
-            case "centerTopNoBorder":
-                cellStyler.createCellStyleHorizontalCenterAndVerticalTopNoBorder(cell);
-                break;
-            case "rightBottomNoBorder":
-                cellStyler.createCellStyleHorizontalRightAndVerticalBottomNoBorder(cell);
-                break;
-            case "rightCenterNoBorder":
-                cellStyler.createCellStyleHorizontalRightAndVerticalCenterNoBorder(cell);
-                break;
-            case "rightTopNoBorder":
-                cellStyler.createCellStyleHorizontalRightAndVerticalTopNoBorder(cell);
-                break;
-            case "centerBorderBottom":
-                cellStyler.createCellStyleHorizontalCenterAndVerticalCenterBottomBorder(cell);
-                break;
-            case "centerBottomBorderBottom":
-                cellStyler.createCellStyleHorizontalCenterAndVerticalBottomBottomBorder(cell);
-                break;
-            case "leftBottomBorderBottom":
-                cellStyler.createCellStyleHorizontalLeftAndVerticalBottomBottomBorder(cell);
-                break;
-        }
-
-        return cell;
+        table.addCell(creator.createCell("", "emptyCellBottomBorder", f1, 4, 1, 50F));
+        table.addCell(creator.createCell("", "centerNoBorder", f1, 2, 1, 0.0F));
+        table.addCell(creator.createCell("(фамилия, инициалы)", "centerTopNoBorder", f3, 2, 1, 0.0F));
+        table.addCell(creator.createCell("(подпись)", "centerTopNoBorder", f3, 1, 1, 0.0F));
+        table.addCell(creator.createCell("(дата)", "centerTopNoBorder", f3, 1, 1, 0.0F));
     }
 
     private List<Registry> prepareRegistryData(Registry registryHeader, List<Act> acts) {
@@ -496,7 +434,8 @@ public class RegistryPdfService {
     private Registry createActRegistryEntry(Act act) {
         Registry registry = new Registry();
         registry.setDocumentName("Акт освидетельствования скрытых работ: «" + act.getWorks() + "»");
-        registry.setDocumentNumber(act.getActNumber() != null ? act.getActNumber() : "б/н");
+        String numberWithDate = act.getActNumber() + " от " + formatter.format(act.getEndDate()) + " г.";
+        registry.setDocumentNumber(numberWithDate);
         registry.setDocumentAuthor(ENERGY);
         registry.setDocumentDate(act.getEndDate() != null ? act.getEndDate() : LocalDate.now());
         registry.setNumberOfSheets(1);
@@ -508,7 +447,8 @@ public class RegistryPdfService {
     private Registry createSchemaRegistryEntry(Act act) {
         Registry registry = new Registry();
         registry.setDocumentName("Исполнительная схема: «" + act.getWorks() + "»");
-        registry.setDocumentNumber(act.getActNumber() != null ? act.getActNumber() : "б/н");
+        String numberWithDate = act.getActNumber() + " от " + formatter.format(act.getEndDate()) + " г.";
+        registry.setDocumentNumber(numberWithDate);
         registry.setDocumentAuthor(ENERGY);
         registry.setDocumentDate(act.getEndDate() != null ? act.getEndDate() : LocalDate.now());
         registry.setNumberOfSheets(act.getExecutiveSchema().getNumberOfPages());
@@ -521,7 +461,9 @@ public class RegistryPdfService {
         Registry registry = new Registry();
         registry.setDocumentName("Акт результатов входного контроля МТР и оборудования " +
                 (control.getMaterials() != null ? control.getMaterials() : ""));
-        registry.setDocumentNumber(control.getControlNumber() != null ? control.getControlNumber() : "б/н");
+
+        String numberWithDate = control.getControlNumber() + " от " + formatter.format(control.getDate()) + " г.";
+        registry.setDocumentNumber(numberWithDate);
         registry.setDocumentAuthor(ENERGY);
         registry.setDocumentDate(control.getDate() != null ? control.getDate() : LocalDate.now());
         registry.setNumberOfSheets(1);
@@ -627,24 +569,6 @@ public class RegistryPdfService {
         return lastSlash >= 0 ? url.substring(lastSlash + 1) : url;
     }
 
-    /**
-     * Добавляет PDF из потока в объединенный документ
-     */
-    private int addPdfFromStream(PdfCopy copy, InputStream inputStream)
-            throws IOException, DocumentException {
-
-        PdfReader reader = new PdfReader(inputStream);
-        try {
-            int pageCount = reader.getNumberOfPages();
-            for (int i = 1; i <= pageCount; i++) {
-                copy.addPage(copy.getImportedPage(reader, i));
-            }
-            return pageCount;
-        } finally {
-            reader.close();
-        }
-    }
-
     private class GlobalPageNumberFooter extends PdfPageEventHelper {
         private final Font font;
 
@@ -665,67 +589,18 @@ public class RegistryPdfService {
 
         private void addPageNumber(PdfWriter writer, Document document, int number) {
             PdfContentByte cb = writer.getDirectContent();
-            Phrase footer = new Phrase(String.format("Лист %d", number), font);
 
+            Phrase footer = new Phrase(String.format("Лист %d", number), fontForPageNumbers);
+
+            // Позиционирование в правом нижнем углу с отступами
             ColumnText.showTextAligned(
                     cb,
-                    Element.ALIGN_CENTER,
+                    Element.ALIGN_RIGHT,  // Выравнивание по правому краю
                     footer,
-                    (document.right() - document.left()) / 2 + document.leftMargin(),
-                    document.bottom() - 10,
+                    document.right() - 30,  // 30 пунктов от правого края
+                    document.bottom() - 3, // 3 пункта от нижнего края
                     0
             );
         }
     }
-
-    private int addDocumentWithNumbering(PdfCopy copy, InputStream inputStream)
-            throws IOException, DocumentException {
-
-        PdfReader reader = new PdfReader(inputStream);
-        try {
-            int pageCount = reader.getNumberOfPages();
-
-            // Создаем временный документ для добавления нумерации
-            ByteArrayOutputStream tempOutput = new ByteArrayOutputStream();
-            Document tempDoc = new Document();
-            PdfWriter writer = PdfWriter.getInstance(tempDoc, tempOutput);
-            writer.setPageEvent(new GlobalPageNumberFooter(f1));
-            tempDoc.open();
-
-            // Копируем страницы с добавлением нумерации
-            for (int i = 1; i <= pageCount; i++) {
-                tempDoc.newPage();
-                PdfImportedPage page = writer.getImportedPage(reader, i);
-                writer.getDirectContent().addTemplate(page, 0, 0);
-            }
-
-            tempDoc.close();
-            writer.close();
-
-            // Добавляем пронумерованные страницы в основной документ
-            PdfReader numberedReader = new PdfReader(tempOutput.toByteArray());
-            for (int i = 1; i <= numberedReader.getNumberOfPages(); i++) {
-                copy.addPage(copy.getImportedPage(numberedReader, i));
-            }
-            numberedReader.close();
-
-            return pageCount;
-        } finally {
-            reader.close();
-        }
-    }
-
-    private int addRemoteDocumentWithNumbering(PdfCopy copy, String documentUrl)
-            throws IOException, DocumentException {
-
-        Path filePath = getFilePathFromUrl(documentUrl);
-        if (!Files.exists(filePath)) {
-            throw new IOException("Файл не найден: " + filePath);
-        }
-
-        try (InputStream inputStream = Files.newInputStream(filePath)) {
-            return addDocumentWithNumbering(copy, inputStream);
-        }
-    }
-
 }

@@ -1,32 +1,13 @@
 package com.executive_documentation.registries.dto;
 
-import com.executive_documentation.registries.model.Registry;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
 
 @Component
 public class RegistryMapper {
-
-    public RegistryResponseDto registryToRegistryResponseDto(Registry registry) {
-        if (registry == null) {
-            return null;
-        }
-
-        return RegistryResponseDto.builder()
-                .id(registry.getId())
-                .rowNumber(registry.getRowNumber())
-                .documentName(registry.getDocumentName())
-                .documentDate(formatLocalDate(registry.getDocumentDate()))
-                .documentNumber(registry.getDocumentNumber())
-                .documentAuthor(registry.getDocumentAuthor())
-                .numberOfSheets(registry.getNumberOfSheets())
-                .listInOrder(registry.getListInOrder())
-                .build();
-    }
 
     public RegistryPeriodDto requestDtoToPeriodDto(RegistryRequestDto dto) {
         if (dto == null) {

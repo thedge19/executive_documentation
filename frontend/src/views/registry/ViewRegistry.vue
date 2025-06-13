@@ -64,7 +64,7 @@ export default {
           return `${year}-${month}-${day}`;
         };
 
-        const response = await fetch('http://localhost:8080/registries', {
+        const response = await fetch('http://localhost:8080/acts/registries', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
