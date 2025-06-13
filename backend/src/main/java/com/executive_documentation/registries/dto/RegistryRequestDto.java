@@ -6,5 +6,6 @@ import lombok.Data;
 @Data
 @Builder
 public class RegistryRequestDto {
-    private Integer numberOfSheets;
+    private String startDate;
+    private String endDate;
 }

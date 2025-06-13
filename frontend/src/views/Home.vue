@@ -8,7 +8,6 @@
           <!--Add button -->
           <div class="d-flex justify-content-start">
             <a href="/addAct" class="btn btn-outline-primary">Добавить акт</a>
-            <a href="#" @click.prevent="generatePdf(act.id)">Выгрузить в pdf</a>
           </div>
           <div class="table-responsive table-scroll" data-mdb-perfect-scrollbar="true"
                style="position: relative">

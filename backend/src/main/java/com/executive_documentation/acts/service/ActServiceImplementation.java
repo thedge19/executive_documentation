@@ -12,6 +12,7 @@ import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.executive_documentation.acts.repository.ExecutiveSchemaRepository;
 import com.executive_documentation.exception.NotFoundException;
 import com.executive_documentation.exception.ValidationException;
+import com.executive_documentation.fileStorage.dto.FileStorageResponse;
 import com.executive_documentation.fileStorage.service.FileStorageService;
 import com.executive_documentation.materials.dto.MaterialQuantityDto;
 import com.executive_documentation.materials.model.Material;
@@ -58,11 +59,12 @@ public class ActServiceImplementation implements ActService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_DATE;
 
     @Value("${app.storage.base-url}") // Изменили с ${app.base-url}
+    private String storageBaseUrl;
 
     @Override
     public ActResponseDto get(Long id) {
 
-        Act act = actRepository.findById(id).orElseThrow();
+        Act act = actRepository.findById(id).get();
 
         ActResponseDto dto = actMapper.actToActResponseDto(act);
         if (act.getExecutiveSchema() != null) {
@@ -89,7 +91,7 @@ public class ActServiceImplementation implements ActService {
 
     @Override
     public ExecutiveSchema getExecutiveSchema(long id) {
-        return executiveSchemaRepository.findById(id).orElseThrow();
+        return executiveSchemaRepository.findById(id).get();
     }
 
     @Override
@@ -449,14 +451,15 @@ public class ActServiceImplementation implements ActService {
             validateFile(file); // Добавили валидацию файла
 
             // Сохранение нового файла
-            String storedFileName = fileStorageService.storeFile(file);
+            FileStorageResponse response = fileStorageService.storeFile(file);
 
             // Создание новой схемы
-            ExecutiveSchema schema = createNewSchema(actNumber, storedFileName);
+            ExecutiveSchema schema = createNewSchema(actNumber, response.fileName());
+            schema.setNumberOfPages(response.pageCount());
 
             executiveSchemaRepository.save(schema);
 
-            log.info("Updated schema for Act number {} with file: {}", actNumber, storedFileName);
+            log.info("Updated schema for Act number {} with file: {}", actNumber, response.fileName());
 
             return schema;
         } else {

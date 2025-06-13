@@ -3,8 +3,8 @@
     <Navbar/>
 
     <!-- Table-->
-    <div class="container">
-      <div class="row mx-5" style="position: absolute; top: 0; bottom: 0; left: 0; right: 0;">
+    <div class="container w-75">
+      <div class="row mx-5 w-75" style="position: absolute; top: 0; bottom: 0; left: 0; right: 0;">
         <div class="col-md-24">
           <h1 class="text-center mt-5">Материалы</h1>
           <!--Add button -->

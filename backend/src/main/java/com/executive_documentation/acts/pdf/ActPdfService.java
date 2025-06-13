@@ -251,7 +251,7 @@ public class ActPdfService {
         log.info("Сформирован комплект документов для акта {}", actDto.getActNumber());
     }
 
-    private ByteArrayOutputStream generateActPdf(ActResponseDto dto) throws DocumentException {
+    public ByteArrayOutputStream generateActPdf(ActResponseDto dto) throws DocumentException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Document document = new Document();
 

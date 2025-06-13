@@ -238,7 +238,7 @@ export default {
       },
 
       projectId: 4,
-      subObjectId: 22,
+      subObjectId: 9,
       workId: null,
       nextWorkId: null,
       workDone: "",
