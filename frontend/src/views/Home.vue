@@ -11,7 +11,7 @@
               <a href="/addAct" class="btn btn-outline-primary">Добавить акт</a>
             </div>
             <div class="mx-4">
-              <button @click.prevent="showRegistryDates" class="btn btn-outline-dark">Сформировать реестр</button>
+              <button @click.prevent="showRegistryDates" class="btn btn-outline-dark">Реестр</button>
             </div>
           </div>
           <div v-if="showDates">
