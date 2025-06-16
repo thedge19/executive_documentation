@@ -7,14 +7,38 @@
           <h1 class="text-center">Работы</h1>
           <!--Add button -->
           <div class="d-flex justify-content-start">
-            <a href="/addAct" class="btn btn-outline-primary">Добавить акт</a>
+            <div>
+              <a href="/addAct" class="btn btn-outline-primary">Добавить акт</a>
+            </div>
+            <div class="mx-4">
+              <button @click.prevent="showRegistryDates" class="btn btn-outline-dark">Сформировать реестр</button>
+            </div>
+          </div>
+          <div v-if="showDates">
+            <div class="space-y-2 d-flex justify-content-start align-items-center">
+              <div>
+                <label class="input-group-text">Дата начала периода</label>
+                <VDatePicker :attributes="attributes" v-model="startDate" mode="date"/>
+              </div>
+              <div class="m-lg-2">
+                <label class="input-group-text">Дата окончания периода</label>
+                <VDatePicker :attributes="attributes" v-model="endDate" :model-value="setFirstEndDate" mode="date"/>
+              </div>
+            </div>
+            <div class="d-flex justify-content-start mt-2">
+              <button @click.prevent="addDates" class="btn btn-outline-dark btn-block confirm-button m-lg-2">
+                Сформировать реестр
+              </button>
+            </div>
           </div>
           <div class="table-responsive table-scroll" data-mdb-perfect-scrollbar="true"
                style="position: relative">
             <table class="table table-striped mb-0">
               <thead style="background-color: #002d72;">
               <tr style="color: red;">
-                <th href="#" @click.prevent="filterBySubObject" class="text-center" scope="col" style="color: black; width: 7%">##</th>
+                <th href="#" @click.prevent="filterBySubObject" class="text-center" scope="col"
+                    style="color: black; width: 7%">##
+                </th>
                 <th class="text-center" scope="col" style="color: black; width: 5%">Дата</th>
                 <th class="text-center" scope="col" style="color: black; width: 15%">Объект</th>
                 <th class="text-center" scope="col" style="color: black; width: 20%">Выполненные
@@ -36,7 +60,7 @@
               </thead>
               <tbody>
               <tr v-for="act in acts" :style="act.inRegistry === null ? `font-weight: bold` : ``">
-                <td >{{ act.actNumber }}</td>
+                <td>{{ act.actNumber }}</td>
                 <td :style="[act.executiveSchemaId != null ? `color:blue` : `color: red`]">{{ act.endDate }}</td>
                 <td style="width: 15%">{{ act.projectName }}</td>
                 <td style="width: 20%">
@@ -48,15 +72,15 @@
                 <td style="width: 6%">{{ act.startDate }}</td>
                 <td style="width: 25%" class="text-center">
                   {{ act.materials }}
-<!--                  <span v-if="!act.executiveSchemaUrl">{{ act.actNumber }}</span>-->
-<!--                  <a v-else-->
-<!--                     :href="act.executiveSchemaUrl"-->
-<!--                     target="_blank"-->
-<!--                     class="text-decoration-none"-->
-<!--                     :title="act.actNumber">-->
-<!--                    {{ act.actNumber || 'Скачать схему' }}-->
-<!--                    <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>-->
-<!--                  </a>-->
+                  <!--                  <span v-if="!act.executiveSchemaUrl">{{ act.actNumber }}</span>-->
+                  <!--                  <a v-else-->
+                  <!--                     :href="act.executiveSchemaUrl"-->
+                  <!--                     target="_blank"-->
+                  <!--                     class="text-decoration-none"-->
+                  <!--                     :title="act.actNumber">-->
+                  <!--                    {{ act.actNumber || 'Скачать схему' }}-->
+                  <!--                    <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>-->
+                  <!--                  </a>-->
                 </td>
                 <td style="width: 20%">{{ act.submittedDocuments }}</td>
                 <td style="width: 25%">{{ act.inAccordWith }}</td>
@@ -89,6 +113,16 @@ export default {
     return {
       acts: [],
       path: 'http://localhost:8080/acts',
+
+      startDate: new Date(),
+      endDate: "",
+
+      showDates: false,
+
+      attributes: {
+        highlight: true,
+        dates: this.setFirstEndDate,
+      }
     }
   },
 
@@ -98,7 +132,7 @@ export default {
 
   methods: {
     getActs() {
-      fetch(this.path,{
+      fetch(this.path, {
         mode: 'cors',
         headers: {
           'Content-Type': 'application/json',
@@ -133,6 +167,71 @@ export default {
     generatePdf(actId) {
       // Открываем PDF в новой вкладке
       window.open(`http://localhost:8080/acts/${actId}/pdf`, '_blank');
+    },
+
+    async addDates() {
+      try {
+        const formatDate = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+
+        const response = await fetch('http://localhost:8080/acts/registries', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            startDate: formatDate(this.startDate),
+            endDate: formatDate(this.endDate)
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Ошибка сервера');
+        }
+
+        // Получаем PDF как Blob
+        const blob = await response.blob();
+
+        // Создаем ссылку для скачивания
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        // Пытаемся получить имя файла из заголовков
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = 'реестр.pdf';
+
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename\*?=([^;]+)/i);
+          if (filenameMatch && filenameMatch[1]) {
+            filename = decodeURIComponent(filenameMatch[1].replace(/UTF-8''/i, ''));
+          }
+        }
+
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+
+        // Очистка
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+      } catch (error) {
+        console.error('Ошибка:', error);
+        this.errors.push('Не удалось сформировать реестр');
+      }
+    },
+
+    setFirstEndDate() {
+      return this.startDate
+    },
+
+    showRegistryDates() {
+      this.showDates = !this.showDates;
     }
   },
 
@@ -141,7 +240,6 @@ export default {
 <style scoped>
 html,
 body,
-
 table {
   table-layout: fixed;
 }

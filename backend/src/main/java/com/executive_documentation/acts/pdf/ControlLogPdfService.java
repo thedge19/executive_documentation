@@ -5,7 +5,6 @@ import com.executive_documentation.acts.dto.EntranceControlMapper;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.BaseFont;
-import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import jakarta.annotation.PostConstruct;
@@ -26,8 +25,8 @@ import java.util.List;
 public class ControlLogPdfService {
     private static final String FONT_PATH = "/fonts/times.ttf"; // Путь в ресурсах
 
-    private final ActPdfCellStyler cellStyler;
     private final EntranceControlRepository entranceControlRepository;
+    private final PdfCellCreator creator;
 
     private Font f1;
     private Font f3;
@@ -35,9 +34,9 @@ public class ControlLogPdfService {
     private Font f8;
     private Font f9;
 
-    public ControlLogPdfService(EntranceControlRepository entranceControlRepository) {
+    public ControlLogPdfService(EntranceControlRepository entranceControlRepository, PdfCellCreator creator) {
         this.entranceControlRepository = entranceControlRepository;
-        this.cellStyler = new ActPdfCellStyler();
+        this.creator = creator;
     }
 
     @PostConstruct
@@ -127,6 +126,40 @@ public class ControlLogPdfService {
         log.info("PDF ЖВК сгенерирован");
     }
 
+    public ByteArrayOutputStream generateControlLogPdf() throws DocumentException, IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Document document = new Document(PageSize.A4.rotate());
+        List<EntranceControlExportDto> controls = entranceControlRepository
+                .findAllByOrderByDateAsc()
+                .stream()
+                .map(EntranceControlMapper::toExportDto).toList();
+
+        try {
+            PdfWriter writer = PdfWriter.getInstance(document, output);
+            document.open();
+
+            PdfPTable table = new PdfPTable(9);
+            table.setWidthPercentage(105);
+            table.setTotalWidth(500f);
+            float[] widths = new float[]{19.93f, 38.71f, 98.51f, 47.84f, 138.38f, 41.58f, 33.61f, 34.17f, 47.28f};
+            table.setWidths(widths);
+
+            addEntranceControlLogTableData(table, controls);
+            document.add(table);
+
+            int currentPages = writer.getPageNumber();
+            if (currentPages % 2 != 0) {
+                // Добавляем пустую страницу
+                document.newPage();
+                document.add(new Paragraph(" ")); // Пустой контент
+                log.info("Добавлена пустая страница для журнала (раздел 3). Было {} страниц", currentPages);
+            }
+        } finally {
+            document.close();
+        }
+        return output;
+    }
+
     private void addEntranceControlLogTableData(PdfPTable table, List<EntranceControlExportDto> controls) {
         addEntranceControlLogTitle(table);
 
@@ -135,127 +168,62 @@ public class ControlLogPdfService {
         int counter = 1;
 
         for (EntranceControlExportDto control : controls) {
-            table.addCell(createCell(counter + "", "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(createCell(String.valueOf(control.getDate()), "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(createCell(control.getMaterials().split(" - ")[0], "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(createCell(control.getMaterials().split(" - ")[1], "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(createCell(control.getDocuments(), "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(createCell("Скл. хран.", "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(createCell("", "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(createCell("", "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(createCell("Годен", "centerBorder", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(counter + "", "centerBorder", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(String.valueOf(control.getDate()), "centerBorder", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(control.getMaterials().split(" - ")[0], "centerBorder", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(control.getMaterials().split(" - ")[1], "centerBorder", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(control.getDocuments(), "centerBorder", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell("Скл. хран.", "centerBorder", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell("", "centerBorder", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell("", "centerBorder", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell("Годен", "centerBorder", f3, 1, 1, 0.0F));
         }
     }
 
     private void addEntranceControlLogTitle(PdfPTable table) {
-        table.addCell(createCell("Журнал", "centerBottomNoBorder", f7, 9, 1, 200F));
-        table.addCell(createCell("входного учета и контроля качества получаемых деталей,", "centerBottomNoBorder", f8, 9, 1, 0.0F));
-        table.addCell(createCell("материалов, конструкций и оборудования", "centerBottomNoBorder", f8, 9, 1, 0.0F));
-        table.addCell(createCell("на объекте:", "centerNoBorder", f9, 9, 1, 80F));
-        table.addCell(createCell("14.295.24 «Текущий ремонт зданий и сооружений ПК «Шесхарис»", "centerTopNoBorder", f9, 9, 1, 200F));
-        table.addCell(createCell("", "centerTopNoBorder", f9, 9, 1, 520F));
-        table.addCell(createCell("ООО «Энергомонтаж»", "leftBottomNoBorder", f1, 8, 1, 20F));
-        table.addCell(createCell("Форма 12", "rightBottomNoBorder", f1, 1, 1, 20F));
-        table.addCell(createCell("(Наименование предприятия)", "leftCenterNoBorder", f1, 6, 1, 0.0F));
-        table.addCell(createCell("РД 39-00147105-015-98", "rightCenterNoBorder", f1, 3, 1, 0.0F));
-        table.addCell(createCell("Строительство: Текущий ремонт", "rightCenterNoBorder", f1, 9, 1, 0.0F));
-        table.addCell(createCell("Объект: 14.295.24 «Текущий ремонт зданий и сооружений ПК «Шесхарис»", "rightTopNoBorder", f1, 9, 1, 110F));
-        table.addCell(createCell("Журнал", "centerTopNoBorder", f9, 9, 1, 0.0F));
-        table.addCell(createCell("входного контроля качества", "centerTopNoBorder", f9, 9, 1, 0.0F));
-        table.addCell(createCell("", "centerBottomNoBorder", f1, 5, 1, 120F));
-        table.addCell(createCell("Начат:", "leftBottomNoBorder", f1, 1, 1, 120F));
-        table.addCell(createCell("« 02 » сентября 2024г.", "leftBottomNoBorder", f1, 3, 1, 120F));
-        table.addCell(createCell("", "centerBottomNoBorder", f1, 5, 1, 20F));
-        table.addCell(createCell("Окончен:", "leftBottomNoBorder", f1, 1, 1, 20F));
-        table.addCell(createCell("«      »                 20__г.", "leftBottomNoBorder", f1, 3, 1, 20F));
-        table.addCell(createCell("Руководитель подрядной организации", "leftBottomNoBorder", f1, 4, 1, 110F));
-        table.addCell(createCell("__________________________", "centerBottomNoBorder", f1, 1, 1, 110F));
-        table.addCell(createCell("_________________", "centerBottomNoBorder", f1, 2, 1, 110F));
-        table.addCell(createCell("_________________", "centerBottomNoBorder", f1, 2, 1, 110F));
-        table.addCell(createCell("М.П.", "leftTopNoBorder", f1, 4, 1, 20F));
-        table.addCell(createCell("Фамилия, инициалы", "centerTopNoBorder", f1, 1, 1, 70F));
-        table.addCell(createCell("Подпись", "centerTopNoBorder", f1, 2, 1, 70F));
-        table.addCell(createCell("Дата", "centerTopNoBorder", f1, 2, 1, 70F));
+        table.addCell(creator.createCell("Журнал", "centerBottomNoBorder", f7, 9, 1, 200F));
+        table.addCell(creator.createCell("входного учета и контроля качества получаемых деталей,", "centerBottomNoBorder", f8, 9, 1, 0.0F));
+        table.addCell(creator.createCell("материалов, конструкций и оборудования", "centerBottomNoBorder", f8, 9, 1, 0.0F));
+        table.addCell(creator.createCell("на объекте:", "centerNoBorder", f9, 9, 1, 80F));
+        table.addCell(creator.createCell("14.295.24 «Текущий ремонт зданий и сооружений ПК «Шесхарис»", "centerTopNoBorder", f9, 9, 1, 200F));
+        table.addCell(creator.createCell("", "centerTopNoBorder", f9, 9, 1, 520F));
+        table.addCell(creator.createCell("ООО «Энергомонтаж»", "leftBottomNoBorder", f1, 8, 1, 20F));
+        table.addCell(creator.createCell("Форма 12", "rightBottomNoBorder", f1, 1, 1, 20F));
+        table.addCell(creator.createCell("(Наименование предприятия)", "leftCenterNoBorder", f1, 6, 1, 0.0F));
+        table.addCell(creator.createCell("РД 39-00147105-015-98", "rightCenterNoBorder", f1, 3, 1, 0.0F));
+        table.addCell(creator.createCell("Строительство: Текущий ремонт", "rightCenterNoBorder", f1, 9, 1, 0.0F));
+        table.addCell(creator.createCell("Объект: 14.295.24 «Текущий ремонт зданий и сооружений ПК «Шесхарис»", "rightTopNoBorder", f1, 9, 1, 110F));
+        table.addCell(creator.createCell("Журнал", "centerTopNoBorder", f9, 9, 1, 0.0F));
+        table.addCell(creator.createCell("входного контроля качества", "centerTopNoBorder", f9, 9, 1, 0.0F));
+        table.addCell(creator.createCell("", "centerBottomNoBorder", f1, 5, 1, 120F));
+        table.addCell(creator.createCell("Начат:", "leftBottomNoBorder", f1, 1, 1, 120F));
+        table.addCell(creator.createCell("« 02 » сентября 2024г.", "leftBottomNoBorder", f1, 3, 1, 120F));
+        table.addCell(creator.createCell("", "centerBottomNoBorder", f1, 5, 1, 20F));
+        table.addCell(creator.createCell("Окончен:", "leftBottomNoBorder", f1, 1, 1, 20F));
+        table.addCell(creator.createCell("«      »                 20__г.", "leftBottomNoBorder", f1, 3, 1, 20F));
+        table.addCell(creator.createCell("Руководитель подрядной организации", "leftBottomNoBorder", f1, 4, 1, 110F));
+        table.addCell(creator.createCell("__________________________", "centerBottomNoBorder", f1, 1, 1, 110F));
+        table.addCell(creator.createCell("_________________", "centerBottomNoBorder", f1, 2, 1, 110F));
+        table.addCell(creator.createCell("_________________", "centerBottomNoBorder", f1, 2, 1, 110F));
+        table.addCell(creator.createCell("М.П.", "leftTopNoBorder", f1, 4, 1, 20F));
+        table.addCell(creator.createCell("Фамилия, инициалы", "centerTopNoBorder", f1, 1, 1, 70F));
+        table.addCell(creator.createCell("Подпись", "centerTopNoBorder", f1, 2, 1, 70F));
+        table.addCell(creator.createCell("Дата", "centerTopNoBorder", f1, 2, 1, 70F));
 
 
     }
 
     private void addEntranceControlLogTableHeader(PdfPTable table) {
-        table.addCell(createCell("№ п/п", "centerBorder", f3, 1, 2, 0.0F));
-        table.addCell(createCell("Дата поставки", "centerBorder", f3, 1, 2, 0.0F));
-        table.addCell(createCell("Объект контроля", "centerBorder", f3, 1, 2, 0.0F));
-        table.addCell(createCell("Количество ед. измерения", "centerBorder", f3, 1, 2, 0.0F));
-        table.addCell(createCell("Номер партии, сертификат, тех.паспорт", "centerBorder", f3, 1, 2, 0.0F));
-        table.addCell(createCell("Условия хранения", "centerBorder", f3, 1, 2, 0.0F));
-        table.addCell(createCell("Подпись принявших продукцию по качеству", "centerBorder", f3, 2, 1, 0.0F));
-        table.addCell(createCell("Определение степени годности", "centerBorder", f3, 1, 2, 0.0F));
+        table.addCell(creator.createCell("№ п/п", "centerBorder", f3, 1, 2, 0.0F));
+        table.addCell(creator.createCell("Дата поставки", "centerBorder", f3, 1, 2, 0.0F));
+        table.addCell(creator.createCell("Объект контроля", "centerBorder", f3, 1, 2, 0.0F));
+        table.addCell(creator.createCell("Количество ед. измерения", "centerBorder", f3, 1, 2, 0.0F));
+        table.addCell(creator.createCell("Номер партии, сертификат, тех.паспорт", "centerBorder", f3, 1, 2, 0.0F));
+        table.addCell(creator.createCell("Условия хранения", "centerBorder", f3, 1, 2, 0.0F));
+        table.addCell(creator.createCell("Подпись принявших продукцию по качеству", "centerBorder", f3, 2, 1, 0.0F));
+        table.addCell(creator.createCell("Определение степени годности", "centerBorder", f3, 1, 2, 0.0F));
 
-        table.addCell(createCell("Исполни-тель работ", "centerBorder", f3, 1, 1, 0.0F));
-        table.addCell(createCell("Контроллёр", "centerBorder", f3, 1, 1, 0.0F));
-    }
-
-    private PdfPCell createCell(String text, String position, Font font, int numberOfColumns, int numberOfRows, float cellHeight) {
-        Paragraph paragraph = new Paragraph(text, font);
-        PdfPCell cell = new PdfPCell(paragraph);
-
-        if (numberOfColumns > 1) {
-            cell.setColspan(numberOfColumns);
-        }
-
-        if (numberOfRows > 1) {
-            cell.setRowspan(numberOfRows);
-        }
-
-        if (cellHeight > 0.0F) {
-            cell.setFixedHeight(cellHeight);
-        }
-
-
-        switch (position) {
-            case "centerBorder":
-                cellStyler.createCellStyleHorizontalCenterBorder(cell);
-                break;
-            case "centerNoBorder":
-                cellStyler.createCellStyleHorizontalCenterAndVerticalCenter(cell);
-                break;
-            case "centerBottomNoBorder":
-                cellStyler.createCellStyleHorizontalCenterAndVerticalBottomNoBorder(cell);
-                break;
-            case "leftTopNoBorder":
-                cellStyler.createCellStyleHorizontalLeftAndVerticalTopNoBorder(cell);
-                break;
-            case "leftCenterNoBorder":
-                cellStyler.createCellStyleHorizontalLeftAndVerticalCenterNoBorder(cell);
-                break;
-            case "leftBottomNoBorder":
-                cellStyler.createCellStyleHorizontalLeftAndVerticalBottomNoBorder(cell);
-                break;
-            case "emptyCellBottomBorder":
-                cellStyler.createCellStyleBottomBorder(cell);
-                break;
-            case "centerTopNoBorder":
-                cellStyler.createCellStyleHorizontalCenterAndVerticalTopNoBorder(cell);
-                break;
-            case "rightBottomNoBorder":
-                cellStyler.createCellStyleHorizontalRightAndVerticalBottomNoBorder(cell);
-                break;
-            case "rightCenterNoBorder":
-                cellStyler.createCellStyleHorizontalRightAndVerticalCenterNoBorder(cell);
-                break;
-            case "rightTopNoBorder":
-                cellStyler.createCellStyleHorizontalRightAndVerticalTopNoBorder(cell);
-                break;
-            case "centerBorderBottom":
-                cellStyler.createCellStyleHorizontalCenterAndVerticalCenterBottomBorder(cell);
-                break;
-            case "centerBottomBorderBottom":
-                cellStyler.createCellStyleHorizontalCenterAndVerticalBottomBottomBorder(cell);
-                break;
-            case "leftBottomBorderBottom":
-                cellStyler.createCellStyleHorizontalLeftAndVerticalBottomBottomBorder(cell);
-                break;
-        }
-
-        return cell;
+        table.addCell(creator.createCell("Исполни-тель работ", "centerBorder", f3, 1, 1, 0.0F));
+        table.addCell(creator.createCell("Контроллёр", "centerBorder", f3, 1, 1, 0.0F));
     }
 }

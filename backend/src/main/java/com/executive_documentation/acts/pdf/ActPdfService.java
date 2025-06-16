@@ -34,7 +34,6 @@ public class ActPdfService {
 
     private final ActService actService;
     private final ControlPdfService controlPdfService;
-    private final ActPdfCellStyler cellStyler;
     private final FileStorageService fileStorageService;
     private final EntranceControlRepository entranceControlRepository;
     private final ActRepository actRepository;
@@ -52,7 +51,6 @@ public class ActPdfService {
         this.fileStorageService = fileStorageService;
         this.entranceControlRepository = entranceControlRepository;
         this.creator = creator;
-        this.cellStyler = new ActPdfCellStyler();
         this.actRepository = actRepository;
     }
 

@@ -5,6 +5,7 @@ import com.executive_documentation.acts.dto.ActResponseDto;
 import com.executive_documentation.acts.model.Act;
 import com.executive_documentation.acts.model.EntranceControl;
 import com.executive_documentation.acts.pdf.ActPdfService;
+import com.executive_documentation.acts.pdf.ControlLogPdfService;
 import com.executive_documentation.acts.pdf.ControlPdfService;
 import com.executive_documentation.acts.pdf.PdfCellCreator;
 import com.executive_documentation.acts.repository.ActRepository;
@@ -13,10 +14,12 @@ import com.executive_documentation.fileStorage.service.FileStorageService;
 import com.executive_documentation.materials.model.Material;
 import com.executive_documentation.registries.dto.RegistryPeriodDto;
 import com.executive_documentation.registries.model.Registry;
+import com.executive_documentation.worklogs.pdf.WorkLogPdfService;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -48,6 +51,8 @@ public class RegistryPdfService {
     private final FileStorageService fileStorageService;
     private final PdfCellCreator creator;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+    private final WorkLogPdfService workLogPdfService;
+    private final ControlLogPdfService controlLogPdfService;
 
     private final static String ENERGY = "ООО «Энергомонтаж»";
     private final Path fileStorageLocation;
@@ -63,9 +68,11 @@ public class RegistryPdfService {
                               ControlPdfService controlPdfService,
                               ActMapper actMapper,
                               FileStorageService fileStorageService,
-                              @Value("${file.upload-dir}") String uploadDir, PdfCellCreator creator, Path fileStorageLocation) {
+                              @Value("${file.upload-dir}") String uploadDir, PdfCellCreator creator, WorkLogPdfService workLogPdfService, ControlLogPdfService controlLogPdfService, Path fileStorageLocation) {
         this.actRepository = actRepository;
         this.creator = creator;
+        this.workLogPdfService = workLogPdfService;
+        this.controlLogPdfService = controlLogPdfService;
         this.fileStorageLocation = fileStorageLocation;
         this.entranceControlRepository = entranceControlRepository;
         this.actPdfService = actPdfService;
@@ -138,6 +145,23 @@ public class RegistryPdfService {
                 periodDto.getEndDate()
         );
 
+        List<Registry> journalRegistries = createJournalRegistryEntries();
+
+        ByteArrayOutputStream workLog3Pdf = workLogPdfService.generateWorkLog3Pdf();
+        ByteArrayOutputStream workLog6Pdf = workLogPdfService.generateWorkLog6Pdf();
+        ByteArrayOutputStream controlLogPdf = controlLogPdfService.generateControlLogPdf();
+
+        // Обновляем количество страниц для каждого журнала
+        for (Registry journal : journalRegistries) {
+            if ("Общий журнал работ (раздел 3)".equals(journal.getDocumentName())) {
+                journal.setNumberOfSheets(getPageCount(new ByteArrayInputStream(workLog3Pdf.toByteArray())) / 2);
+            } else if ("Общий журнал работ (раздел 6)".equals(journal.getDocumentName())) {
+                journal.setNumberOfSheets(getPageCount(new ByteArrayInputStream(workLog6Pdf.toByteArray())) / 2);
+            } else if ("Журнал входного контроля".equals(journal.getDocumentName())) {
+                journal.setNumberOfSheets(getPageCount(new ByteArrayInputStream(controlLogPdf.toByteArray())) / 2);
+            }
+        }
+
         // 3. Создаем итоговый PDF
         ByteArrayOutputStream mergedPdf = new ByteArrayOutputStream();
         Document mergedDoc = new Document();
@@ -146,7 +170,7 @@ public class RegistryPdfService {
 
         try {
             // 3.1. Добавляем реестр
-            ByteArrayOutputStream registryPdf = generateRegistryPdf(registryHeader, acts);
+            ByteArrayOutputStream registryPdf = generateRegistryPdf(registryHeader, acts, journalRegistries);
             int registryPages = addDocumentToMerge(copy, new ByteArrayInputStream(registryPdf.toByteArray()));
             registryHeader.setNumberOfSheets(registryPages);
 
@@ -199,6 +223,9 @@ public class RegistryPdfService {
                 }
             }
 
+            // 3.3. Добавляем журналы в конце реестра
+            addJournalDocuments(copy, journalRegistries);
+
             mergedDoc.close();
 
             // 4. Отправляем PDF клиенту
@@ -232,10 +259,11 @@ public class RegistryPdfService {
         return registry;
     }
 
-    private ByteArrayOutputStream generateRegistryPdf(Registry registryHeader, List<Act> acts) throws DocumentException, IOException {
+    private ByteArrayOutputStream generateRegistryPdf(Registry registryHeader, List<Act> acts, List<Registry> journalRegistries) throws DocumentException, IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Document document = new Document();
         PdfWriter writer = null;
+
         try {
             // 1. Инициализация PDF-документа
             writer = PdfWriter.getInstance(document, outputStream);
@@ -243,7 +271,7 @@ public class RegistryPdfService {
             document.open();
 
             // 2. Подготовка данных для таблицы
-            List<Registry> registries = prepareRegistryData(registryHeader, acts);
+            List<Registry> registries = prepareRegistryData(registryHeader, acts, journalRegistries);
 
             // 3. Создаем временный PDF для подсчета страниц всего реестра
             ByteArrayOutputStream tempStream = new ByteArrayOutputStream();
@@ -282,11 +310,7 @@ public class RegistryPdfService {
             // 4. Добавляем пустую страницу если нужно
 
             // 5. Устанавливаем количество листов
-            if (registryPages % 2 != 0) {
-                registries.getFirst().setNumberOfSheets(registryPages % 2 + 1);
-            } else {
-                registries.getFirst().setNumberOfSheets(registryPages / 2);
-            }
+            registries.getFirst().setNumberOfSheets((registryPages + 1) / 2); // Округляем вверх
             registries.getFirst().setListInOrder(1);
 
             // 6. Создаем основную таблицу
@@ -319,13 +343,11 @@ public class RegistryPdfService {
         addTableRegistryHeader(table);
 
         int counter = 0;
-
         for (Registry registry : registries) {
 
             String documentNumber = registry.getDocumentNumber();
 
-
-            log.info("Документ {}, {}", registry.getDocumentNumber(), registry.getDocumentDate() );
+            log.info("Документ {}, {}, {}", registry.getDocumentName(), registry.getDocumentNumber(), registry.getNumberOfSheets());
             table.addCell(creator.createCell(String.valueOf(registry.getRowNumber()), "centerBorder", f1, 1, 1, 0.0F));
             table.addCell(creator.createCell(String.valueOf(registry.getDocumentName()), "centerBorder", f1, 1, 1, 0.0F));
             table.addCell(creator.createCell(documentNumber, "centerBorder", f1, 1, 1, 0.0F));
@@ -389,14 +411,13 @@ public class RegistryPdfService {
         table.addCell(creator.createCell("(дата)", "centerTopNoBorder", f3, 1, 1, 0.0F));
     }
 
-    private List<Registry> prepareRegistryData(Registry registryHeader, List<Act> acts) {
+    private List<Registry> prepareRegistryData(Registry registryHeader, List<Act> acts, List<Registry> journalRegistries) {
         List<Registry> registries = new ArrayList<>();
 
 
         // 1. Добавляем заголовок реестра
         registries.add(registryHeader);
 
-        log.info("В списке актов {} актов", acts.size());
         // 2. Добавляем акты и связанные документы
         for (Act act : acts) {
             // Создаем запись для акта
@@ -422,6 +443,10 @@ public class RegistryPdfService {
                 }
             }
         }
+
+        // 3.3. Добавляем журналы в конце реестра
+
+        registries.addAll(journalRegistries);
 
         // 3. Обновляем номера строк
         for (int i = 0; i < registries.size(); i++) {
@@ -485,11 +510,76 @@ public class RegistryPdfService {
                 material.getAuthor() : "Производитель не указан");
         registry.setDocumentDate(LocalDate.now());
 
-        log.info("Документы {}", material.getDocuments());
         registry.setNumberOfSheets(material.getNumberOfPages());
         registry.setAddingTime(LocalDateTime.now());
         registry.setCurrentActId(control.getAct().getId());
         return registry;
+    }
+
+    @SneakyThrows
+    private void addJournalDocuments(PdfCopy copy, List<Registry> journalRegistries) {
+        // Добавляем PDF журналов и обновляем количество страниц
+        for (Registry journalRegistry : journalRegistries) {
+            String journalName = journalRegistry.getDocumentName();
+            try {
+                ByteArrayOutputStream pdfStream;
+
+                // Выбираем нужный генератор PDF в зависимости от типа журнала
+                if ("Общий журнал работ (раздел 3)".equals(journalName)) {
+                    pdfStream = workLogPdfService.generateWorkLog3Pdf();
+                } else if ("Общий журнал работ (раздел 6)".equals(journalName)) {
+                    pdfStream = workLogPdfService.generateWorkLog6Pdf();
+                } else if ("Журнал входного контроля".equals(journalName)) {
+                    pdfStream = controlLogPdfService.generateControlLogPdf();
+                } else {
+                    continue; // Пропускаем неизвестные типы журналов
+                }
+
+                // Добавляем PDF и получаем количество страниц
+                int pages = addDocumentToMerge(copy, new ByteArrayInputStream(pdfStream.toByteArray())) / 2;
+
+                // Обновляем количество листов в записи реестра
+                journalRegistry.setNumberOfSheets(pages);
+
+                log.info("Добавлен {} ({} страниц)", journalName, pages);
+            } catch (Exception e) {
+                log.error("Ошибка при добавлении {}: {}", journalName, e.getMessage());
+                throw e;
+            }
+        }
+    }
+
+    private List<Registry> createJournalRegistryEntries() {
+        List<Registry> journals = new ArrayList<>();
+
+        // Журнал работ (раздел 3)
+        Registry workLog3 = new Registry();
+        workLog3.setDocumentName("Общий журнал работ (раздел 3)");
+        workLog3.setDocumentNumber("1 от 02.09.2024г.");
+        workLog3.setDocumentAuthor(ENERGY);
+        workLog3.setDocumentDate(LocalDate.now());
+        workLog3.setNumberOfSheets(1); // Временное значение, будет обновлено
+        journals.add(workLog3);
+
+        // Журнал работ (раздел 6)
+        Registry workLog6 = new Registry();
+        workLog6.setDocumentName("Общий журнал работ (раздел 6)");
+        workLog6.setDocumentNumber("1 от 02.09.2024г.");
+        workLog6.setDocumentAuthor(ENERGY);
+        workLog6.setDocumentDate(LocalDate.now());
+        workLog6.setNumberOfSheets(1); // Временное значение, будет обновлено
+        journals.add(workLog6);
+
+        // Журнал входного контроля
+        Registry controlLog = new Registry();
+        controlLog.setDocumentName("Журнал входного контроля");
+        controlLog.setDocumentNumber("б/н от 02.09.2024 г.");
+        controlLog.setDocumentAuthor(ENERGY);
+        controlLog.setDocumentDate(LocalDate.now());
+        controlLog.setNumberOfSheets(1); // Временное значение, будет обновлено
+        journals.add(controlLog);
+
+        return journals;
     }
 
     /**
@@ -567,6 +657,13 @@ public class RegistryPdfService {
         if (url == null) return null;
         int lastSlash = url.lastIndexOf('/');
         return lastSlash >= 0 ? url.substring(lastSlash + 1) : url;
+    }
+
+    private int getPageCount(InputStream inputStream) throws IOException {
+        PdfReader reader = new PdfReader(inputStream);
+        int pages = reader.getNumberOfPages();
+        reader.close();
+        return pages;
     }
 
     private class GlobalPageNumberFooter extends PdfPageEventHelper {
