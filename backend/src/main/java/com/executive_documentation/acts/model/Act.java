@@ -2,6 +2,7 @@ package com.executive_documentation.acts.model;
 
 import com.executive_documentation.projects.model.Project;
 import com.executive_documentation.subobjects.model.SubObject;
+import com.executive_documentation.workings.model.Working;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -32,6 +33,10 @@ public class Act {
     @JoinColumn(name = "act_subobject_id")
     @NonNull
     private SubObject subObject;
+
+    @ManyToOne
+    @JoinColumn(name = "act_work_id")
+    private Working working;
 
     @Column(name = "act_works")
     @NotEmpty

@@ -8,7 +8,7 @@
           <!--Add button -->
           <div class="d-flex justify-content-start">
             <a @click="fillInTheLog" class="btn btn-outline-primary mx-3">Сформировать ОЖР</a>
-            <a @click="toPdf3" class="btn btn-outline-secondary mx-3">Выгрузить в pdf</a>
+            <a href="#" @click.prevent="generatePdf" class="btn btn-outline-secondary mx-3">Выгрузить в pdf</a>
           </div>
           <div class="table-responsive table-scroll" data-mdb-perfect-scrollbar="true"
                style="position: relative">
@@ -27,10 +27,10 @@
               </thead>
               <tbody>
               <tr v-for="workLog in workLogs">
-                <td class="text-center" scope="col" style="color: black; width: 6%">{{ workLog.workLogNumber }}</td>
-                <td class="text-center" scope="col" style="color: black; width: 7%">{{ workLog.workDate }}</td>
-                <td class="text-center" scope="col" style="color: black; width: 50%">{{ workLog.name }}</td>
-                <td class="text-center" scope="col" style="color: black; width: 15%">
+                <td class="text-center" style="color: black; width: 6%">{{ workLog.workLogNumber }}</td>
+                <td class="text-center" style="color: black; width: 7%">{{ workLog.workDate }}</td>
+                <td class="text-center" style="color: black; width: 50%">{{ workLog.name }}</td>
+                <td class="text-center" style="color: black; width: 15%">
                   Руководитель работ Трифонов А.Е.
                 </td>
                 <td style="width: 12%">
@@ -89,15 +89,11 @@ export default {
           })
     },
 
-    toPdf3() {
-      fetch(`http://localhost:8080/toPdf/workLog3`)
-          .then(data => {
-            console.log("Запрос отправлен")
-          })
+    generatePdf() {
+      // Открываем PDF в новой вкладке
+      window.open(`http://localhost:8080/worklog/3/pdf`, '_blank');
     }
-
   },
-
 }
 </script>
 <style scoped>

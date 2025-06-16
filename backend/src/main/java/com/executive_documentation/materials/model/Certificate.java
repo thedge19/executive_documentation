@@ -20,4 +20,7 @@ public class Certificate {
     @NotBlank
     @Column(name="certificate_path")
     private String path;
+
+    @Column(name="number_of_pages")
+    private Integer numberOfPages;
 }

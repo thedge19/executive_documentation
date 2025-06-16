@@ -24,9 +24,6 @@ public class Registry {
     @Column(name = "registry_row_number")
     private Long rowNumber;
 
-    @Column(name = "registry_month_id")
-    private Integer monthId;
-
     @NotBlank
     @Column(name = "document_name")
     private String documentName;
@@ -43,7 +40,6 @@ public class Registry {
     @Column(name = "document_author")
     private String documentAuthor;
 
-    @NotNull
     @Column(name = "number_of_sheets")
     private Integer numberOfSheets;
 

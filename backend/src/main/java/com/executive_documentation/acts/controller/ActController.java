@@ -4,8 +4,13 @@ import com.executive_documentation.acts.dto.ActResponseDto;
 import com.executive_documentation.acts.dto.EntranceControlResponseDto;
 import com.executive_documentation.acts.model.ExecutiveSchema;
 import com.executive_documentation.acts.pdf.ActPdfService;
+import com.executive_documentation.acts.pdf.ControlLogPdfService;
 import com.executive_documentation.acts.pdf.ControlPdfService;
 import com.executive_documentation.acts.service.ActService;
+import com.executive_documentation.registries.dto.RegistryMapper;
+import com.executive_documentation.registries.dto.RegistryPeriodDto;
+import com.executive_documentation.registries.dto.RegistryRequestDto;
+import com.executive_documentation.registries.pdf.RegistryPdfService;
 import com.itextpdf.text.DocumentException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +34,9 @@ public class ActController {
     private final ActService actService;
     private final ActPdfService actPdfService;
     private final ControlPdfService controlPdfService;
+    private final ControlLogPdfService controlLogPdfService;
+    private final RegistryMapper registryMapper;
+    private final RegistryPdfService registryPdfService;
 
     @GetMapping("/{id}")
     public ActResponseDto get(@PathVariable Long id) {
@@ -55,19 +63,6 @@ public class ActController {
         return actService.getAllEntranceControl();
     }
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ActResponseDto> createAct(
-            @RequestParam Map<String, String> formData,
-            @RequestPart(required = false) MultipartFile file) {
-        actService.create(formData, file);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    @PatchMapping("/{id}")
-    public ActResponseDto updateAct(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
-        return actService.actUpdate(id, file);
-    }
-
     @GetMapping("/{id}/pdf")
     public void generateActPdf(@PathVariable Long id, HttpServletResponse response) throws IOException {
         try {
@@ -84,6 +79,37 @@ public class ActController {
         } catch (DocumentException e) {
             response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Ошибка генерации PDF");
         }
+    }
+
+    @GetMapping("/pdf/controlLog")
+    public void generateControlLogPdf(HttpServletResponse response) throws IOException {
+        try {
+            controlLogPdfService.exportEntranceControlLogToPdf(response);
+        } catch (DocumentException e) {
+            response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Ошибка генерации PDF");
+        }
+    }
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ActResponseDto> createAct(
+            @RequestParam Map<String, String> formData,
+            @RequestPart(required = false) MultipartFile file) {
+        log.info("startDate: {}, endDate: {}", formData.get("startDate"), formData.get("endDate"));
+        actService.create(formData, file);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PostMapping("/registries")
+    public void getRegistry(@RequestBody
+                            RegistryRequestDto registryRequestDto, HttpServletResponse response) throws DocumentException, IOException {
+
+        RegistryPeriodDto dto = registryMapper.requestDtoToPeriodDto(registryRequestDto);
+        registryPdfService.createRegistryForPeriod(dto, response);
+    }
+
+    @PatchMapping("/{id}")
+    public ActResponseDto updateAct(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        return actService.actUpdate(id, file);
     }
 
     @DeleteMapping("/{id}")

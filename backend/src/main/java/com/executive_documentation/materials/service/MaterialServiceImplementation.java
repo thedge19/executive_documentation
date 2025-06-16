@@ -3,6 +3,7 @@ package com.executive_documentation.materials.service;
 import com.executive_documentation.exception.FileStorageException;
 import com.executive_documentation.exception.NotFoundException;
 import com.executive_documentation.exception.ValidationException;
+import com.executive_documentation.fileStorage.dto.FileStorageResponse;
 import com.executive_documentation.fileStorage.service.FileStorageService;
 import com.executive_documentation.materials.dto.MaterialMapper;
 import com.executive_documentation.materials.dto.MaterialResponseDto;
@@ -79,7 +80,7 @@ public class MaterialServiceImplementation implements MaterialService {
     @Override
     public Material update(long id, MultipartFile file) {
         Material existingMaterial = findMaterialOrThrow(id);
-        existingMaterial.setCertificate( addCertificate(file));
+        existingMaterial.setCertificate(addCertificate(file));
         return existingMaterial;
     }
 
@@ -125,9 +126,10 @@ public class MaterialServiceImplementation implements MaterialService {
     private Certificate createCertificate(MultipartFile file) {
         validateFile(file);
 
-        String storedFileName = fileStorageService.storeFile(file);
+        FileStorageResponse response = fileStorageService.storeFile(file);
         Certificate certificate = new Certificate();
-        certificate.setPath(storedFileName);
+        certificate.setNumberOfPages(response.pageCount());
+        certificate.setPath(response.fileName());
         return certificateRepository.save(certificate);
     }
 
@@ -169,14 +171,15 @@ public class MaterialServiceImplementation implements MaterialService {
             validateFile(file); // Добавили валидацию файла
 
             // Сохранение нового файла
-            String storedFileName = fileStorageService.storeFile(file);
+            FileStorageResponse response = fileStorageService.storeFile(file);
 
             // Создание нового сертификата
-            Certificate certificate = createNewCertificate(storedFileName);
+            Certificate certificate = createNewCertificate(response.fileName());
+            certificate.setNumberOfPages(response.pageCount());
 
             certificateRepository.save(certificate);
 
-            log.info("Updated certificate with file: {}", storedFileName);
+            log.info("Updated certificate with file: {}", response.fileName());
 
             return certificate;
         } else {

@@ -2,7 +2,7 @@
   <main>
     <Navbar/>
     <div class="my-5">
-      <div class="mx-auto w-25 " style="max-width:100%;">
+      <div class="mx-auto w-50" style="max-width:100%;">
         <h2 class="text-center mb-3">Добавить материал</h2>
         <form @submit.prevent="addMaterial">
           <!--name-->
@@ -13,7 +13,6 @@
                      required v-model="material.name">
             </div>
           </div>
-
 
           <!--Email-->
           <div class="row">
@@ -72,8 +71,8 @@
           </div>
 
           <div class="row">
-            <div class="col-md-12 form-group">
-              <input class="btn btn-primary w-100" type="submit" value="Submit">
+            <div class="col-md-12 form-group w-25">
+              <input class="btn btn-primary w-100" type="submit" value="Сохранить">
             </div>
           </div>
         </form>
@@ -82,108 +81,93 @@
   </main>
 </template>
 
-
-<script>
+<script setup>
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import Navbar from '../../components/Navbar.vue';
 
-export default {
-  name: 'AddMaterial',
-  components: {
-    Navbar
-  },
-  data() {
-    return {
-      material: {
-        name: '',
-        units: '',
-        documents: '',
-        author: '',
-        standard: '',
-        numberOfPages: ''
-      },
-      selectedFile: null,
-      uploadProgress: 0,
-      uploadError: null,
-      isUploading: false,
-      fileRequired: true
-    }
-  },
+const router = useRouter();
 
-  methods: {
-    handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) {
-        this.selectedFile = null;
-        return;
-      }
+const material = ref({
+  name: '',
+  units: '',
+  documents: '',
+  author: '',
+  standard: '',
+  numberOfPages: ''
+});
 
-      // Валидация файла
-      if (file.type !== 'application/pdf') {
-        this.uploadError = 'Пожалуйста, загрузите файл в формате PDF';
-        this.selectedFile = null;
-        return;
-      }
+const selectedFile = ref(null);
+const uploadProgress = ref(0);
+const uploadError = ref(null);
+const isUploading = ref(false);
+const fileRequired = ref(true);
 
-      this.selectedFile = file;
-      this.uploadError = null;
-    },
-
-    validateForm() {
-      if (this.fileRequired && !this.selectedFile) {
-        this.uploadError = 'Пожалуйста, загрузите файл сертификата';
-        return false;
-      }
-      return true;
-    },
-
-    async addMaterial() {
-      // Проверка перед отправкой
-      if (!this.validateForm()) {
-        return;
-      }
-
-      try {
-        this.isUploading = true;
-        this.uploadError = null;
-
-        const formData = new FormData();
-
-        // Добавляем данные материала как JSON
-        formData.append('material', new Blob([JSON.stringify(this.material)], {
-          type: 'application/json'
-        }));
-
-        // Добавляем файл, если он есть
-        if (this.selectedFile) {
-          formData.append('file', this.selectedFile);
-        }
-
-        const response = await fetch('http://localhost:8080/materials', {
-          method: 'POST',
-          body: formData,
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent.lengthComputable) {
-              this.uploadProgress = Math.round(
-                  (progressEvent.loaded * 100) / progressEvent.total
-              );
-            }
-          }
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Ошибка при сохранении материала');
-        }
-
-        this.$router.push("/materials");
-      } catch (error) {
-        this.uploadError = error.message || 'Произошла ошибка';
-        console.error('Error:', error);
-      } finally {
-        this.isUploading = false;
-        this.uploadProgress = 0;
-      }
-    }
+const handleFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (!file) {
+    selectedFile.value = null;
+    return;
   }
-}
+
+  // Валидация файла
+  if (file.type !== 'application/pdf') {
+    uploadError.value = 'Пожалуйста, загрузите файл в формате PDF';
+    selectedFile.value = null;
+    return;
+  }
+
+  selectedFile.value = file;
+  uploadError.value = null;
+};
+
+const validateForm = () => {
+  if (fileRequired.value && !selectedFile.value) {
+    uploadError.value = 'Пожалуйста, загрузите файл сертификата';
+    return false;
+  }
+  return true;
+};
+
+const addMaterial = async () => {
+  // Проверка перед отправкой
+  if (!validateForm()) {
+    return;
+  }
+
+  try {
+    isUploading.value = true;
+    uploadError.value = null;
+
+    const formData = new FormData();
+
+    // Добавляем данные материала как JSON
+    formData.append('material', new Blob([JSON.stringify(material.value)], {
+      type: 'application/json'
+    }));
+
+    // Добавляем файл, если он есть
+    if (selectedFile.value) {
+      formData.append('file', selectedFile.value);
+    }
+
+    const response = await fetch('http://localhost:8080/materials', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Ошибка при сохранении материала');
+    }
+
+    router.push("/materials");
+  } catch (error) {
+    uploadError.value = error.message || 'Произошла ошибка';
+    console.error('Error:', error);
+  } finally {
+    isUploading.value = false;
+    uploadProgress.value = 0;
+  }
+};
 </script>

@@ -31,4 +31,6 @@ public interface ActRepository extends JpaRepository<Act, Long> {
     Optional<Long> findExecutiveSchemaIdByActId(@Param("actId") Long actId);
 
     Optional<Act> findByExecutiveSchema(ExecutiveSchema executiveSchema);
+
+    List<Act> findByEndDateBetween(LocalDate start, LocalDate end);
 }

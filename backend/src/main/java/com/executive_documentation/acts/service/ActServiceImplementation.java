@@ -12,6 +12,7 @@ import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.executive_documentation.acts.repository.ExecutiveSchemaRepository;
 import com.executive_documentation.exception.NotFoundException;
 import com.executive_documentation.exception.ValidationException;
+import com.executive_documentation.fileStorage.dto.FileStorageResponse;
 import com.executive_documentation.fileStorage.service.FileStorageService;
 import com.executive_documentation.materials.dto.MaterialQuantityDto;
 import com.executive_documentation.materials.model.Material;
@@ -21,6 +22,7 @@ import com.executive_documentation.projects.service.ProjectService;
 import com.executive_documentation.subobjects.model.SubObject;
 import com.executive_documentation.subobjects.service.SubObjectService;
 import com.executive_documentation.workings.model.Working;
+import com.executive_documentation.workings.repository.WorkingRepository;
 import com.executive_documentation.workings.service.WorkingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +35,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -120,7 +121,11 @@ public class ActServiceImplementation implements ActService {
         createdAct.setSubObject(subObject);
 
         Working working = workingService.findWorkingOrNot(parseLong(formData.get("workId")));
-        String currentWorks = working.getName() + " - " + parseBigDecimal(formData.get("workDone")) + " " + working.getUnits();
+        createdAct.setWorking(working);
+
+        working.setDone(parseBigDecimal(formData.get("workDone")));
+
+        String currentWorks = subObject.getName() + ": " + working.getName() + " - " + parseBigDecimal(formData.get("workDone")) + " " + working.getUnits();
         createdAct.setWorks(currentWorks);
 
         String actSequenceNumber = String.valueOf(actRepository.countBySubObject(subObject) + 1);
@@ -131,19 +136,24 @@ public class ActServiceImplementation implements ActService {
         createdAct.setStartDate(parseDate(formData.get("startDate")));
         createdAct.setEndDate(parseDate(formData.get("endDate")));
 
-        String nextWorking = parseLong(formData.get("nextWorkId")) == null ?
-                "н/п" :
-                subObject.getName() + ": " +
-                        workingService.findWorkingOrNot(parseLong(formData.get("nextWorkId"))).getName();
+        log.info("nextWorkId {}", formData.get("nextWorkId"));
+
+        String nextWorking = "н/п";
+
+        String nextWorkId = formData.get("nextWorkId"); // Сохраняем в переменную один раз
+        log.info("nextWorkId {}", nextWorkId);
+        if (!Objects.equals(nextWorkId, "null")) {
+            nextWorking = subObject.getName() + ": " +
+                    workingService.findWorkingOrNot(parseLong(nextWorkId)).getName();
+        }
+
         createdAct.setNextWorks(nextWorking);
 
         String standard = working.getStandard().getName();
         String inAccordWith = project.getName() + "; " + SETS_OF_RULES + "; " + standard;
         createdAct.setInAccordWith(inAccordWith);
         createdAct.setWorkDone(parseBigDecimal(formData.get("workDone")));
-        log.info("Здесь");
         createdAct.setSubmittedDocuments(addSubmittedDocuments(formData, actNumber));
-        log.info("Материалы: {}", createdAct.getMaterials());
 
         createdAct.setMaterials(getMaterials(formData));
         createdAct.setExecutiveSchema(addExecutiveSchema(actNumber, file));
@@ -155,14 +165,16 @@ public class ActServiceImplementation implements ActService {
         }
 
         log.info("Акт: {}", createdAct);
-
-
     }
 
     @Transactional
     @Override
     public ActResponseDto actUpdate(long id, MultipartFile file) {
         Act act = findActOrThrow(id);
+        String oldSubmittedDocuments = act.getSubmittedDocuments();
+        String newSubmittedDocuments = "Исполнительная схема №" + act.getActNumber() + " от "
+         + dateToString(act.getEndDate()) + " г.; " + oldSubmittedDocuments;
+        act.setSubmittedDocuments(newSubmittedDocuments);
         act.setExecutiveSchema(addExecutiveSchema(act.getActNumber(), file));
         return actMapper.actToActResponseDto(actRepository.save(act));
     }
@@ -172,6 +184,9 @@ public class ActServiceImplementation implements ActService {
     public void delete(Long actId) {
         Act act = actRepository.findById(actId)
                 .orElseThrow(() -> new NotFoundException("Act not found with id: " + actId));
+
+        Working working = act.getWorking();
+        working.setDone(BigDecimal.valueOf(0));
 
         // 1. Обрабатываем связанные EntranceControl (без удаления Material)
         List<EntranceControl> entranceControls = entranceControlRepository.findAllByAct(act);
@@ -252,6 +267,14 @@ public class ActServiceImplementation implements ActService {
             throw new IllegalArgumentException("Invalid date format: " + dateString +
                     ". Expected format: yyyy-MM-dd", e);
         }
+    }
+
+    private static String dateToString(LocalDate date) {
+        if (date == null) {
+            throw new IllegalArgumentException("Дата не может быть null");
+        }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        return date.format(formatter);
     }
 
     private static List<MaterialQuantityDto> parseMaterials(String materialsJson) {
@@ -346,13 +369,24 @@ public class ActServiceImplementation implements ActService {
         return String.join("; ", submittedDocuments);
     }
 
-    public String getMaterials(Map<String, String> formData) {
+    private String getMaterials(Map<String, String> formData) {
         List<Long> materialIds = getMaterialIds(formData);
+        List<BigDecimal> quantities = getMaterialQuantities(formData);
 
-        return materialRepository.findAllById(materialIds).stream()
-                .map(Material::getName)
-                .filter(Objects::nonNull)
-                .collect(Collectors.joining(", "));
+        if (materialIds.isEmpty() || quantities.isEmpty() || materialIds.size() != quantities.size()) {
+            return null;
+        }
+
+        List<String> materialStrings = new ArrayList<>();
+        for (int i = 0; i < materialIds.size(); i++) {
+            Material material = materialRepository.findById(materialIds.get(i)).orElseThrow(); // Предполагается, что у вас есть materialService
+            BigDecimal quantity = quantities.get(i);
+
+            String materialString = material.getName() + " - " + quantity + " " + material.getUnits() + ", " + material.getDocuments();
+            materialStrings.add(materialString);
+        }
+
+        return String.join("; ", materialStrings);
     }
 
     private void addEntranceControl(Act act, Map<String, String> formData) {
@@ -417,14 +451,15 @@ public class ActServiceImplementation implements ActService {
             validateFile(file); // Добавили валидацию файла
 
             // Сохранение нового файла
-            String storedFileName = fileStorageService.storeFile(file);
+            FileStorageResponse response = fileStorageService.storeFile(file);
 
             // Создание новой схемы
-            ExecutiveSchema schema = createNewSchema(actNumber, storedFileName);
+            ExecutiveSchema schema = createNewSchema(actNumber, response.fileName());
+            schema.setNumberOfPages(response.pageCount());
 
             executiveSchemaRepository.save(schema);
 
-            log.info("Updated schema for Act number {} with file: {}", actNumber, storedFileName);
+            log.info("Updated schema for Act number {} with file: {}", actNumber, response.fileName());
 
             return schema;
         } else {

@@ -23,4 +23,7 @@ public class ExecutiveSchema {
 
     @Column(name="schema_path")
     private String schemaPath;
+
+    @Column(name="number_of_pages")
+    private Integer numberOfPages;
 }

@@ -1,5 +1,8 @@
 package com.executive_documentation.fileStorage.service;
 
+import com.executive_documentation.fileStorage.dto.FileStorageResponse;
+import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.RandomAccessFileOrArray;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -43,25 +46,14 @@ public class FileStorageService {
         }
     }
 
-    public String storeFile(MultipartFile file) {
+    public FileStorageResponse storeFile(MultipartFile file) {
         String fileName = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
 
-        log.info("Attempting to store file: {}", file.getOriginalFilename());
-        log.info("Storage location: {}", this.fileStorageLocation);
         try {
-            log.info("Directory exists: {}", Files.exists(this.fileStorageLocation));
-            log.info("Directory writable: {}", Files.isWritable(this.fileStorageLocation));
-        } catch (Exception e) {
-            log.error("Directory check failed", e);
-        }
-
-        try {
-            // Проверка на ../ в имени файла
             if (fileName.contains("..")) {
                 throw new RuntimeException("Invalid file path: " + fileName);
             }
 
-            // Создаем поддиректорию pdf если нужно
             Path pdfDir = this.fileStorageLocation.resolve("pdf");
             if (!Files.exists(pdfDir)) {
                 Files.createDirectories(pdfDir);
@@ -69,14 +61,22 @@ public class FileStorageService {
 
             String newFileName = UUID.randomUUID() + "_" + fileName;
             Path targetLocation = pdfDir.resolve(newFileName);
+            int pageCount = 0;
 
-            // Сохраняем файл с проверкой
             try (InputStream inputStream = file.getInputStream()) {
-                Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
+                // Сохраняем во временный файл
+                Path tempFile = Files.createTempFile("pdf_", ".tmp");
+                Files.copy(inputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
+
+                // Подсчет страниц
+                pageCount = countPdfPages(tempFile);
+
+                // Переносим в постоянное хранилище
+                Files.move(tempFile, targetLocation, StandardCopyOption.REPLACE_EXISTING);
             }
 
-            log.info("File saved to: {}", targetLocation);
-            return newFileName;
+            return new FileStorageResponse(newFileName, pageCount);
+
         } catch (IOException ex) {
             throw new RuntimeException("Failed to store file: " + fileName, ex);
         }
@@ -97,11 +97,6 @@ public class FileStorageService {
 
     public String getStorageBaseUrl(String fileName) {
         return fileName != null ? storageBaseUrl + "/pdf/pdf/" + fileName : null;
-    }
-
-    // Генерация уникального имени файла
-    private String generateUniqueFileName(String originalFilename) {
-        return UUID.randomUUID() + "_" + StringUtils.cleanPath(originalFilename);
     }
 
     public void deleteFile(String fileName) {
@@ -133,6 +128,44 @@ public class FileStorageService {
             log.info("Файл {} успешно удален", fileName);
         } catch (IOException ex) {
             throw new RuntimeException("Не удалось удалить файл: " + fileName, ex);
+        }
+    }
+
+    private int countPdfPages(Path pdfFile) throws IOException {
+        RandomAccessFileOrArray raf = null;
+        PdfReader reader = null;
+
+        try {
+            raf = new RandomAccessFileOrArray(pdfFile.toString());
+            reader = new PdfReader(raf, null);
+            int pages = reader.getNumberOfPages();
+
+            // Проверка на чётность
+            if (pages % 2 != 0) {
+                throw new IllegalStateException(
+                        "PDF должен содержать чётное количество страниц. Найдено: " + pages
+                );
+            }
+
+            return pages / 2; // Возвращаем количество листов (каждый лист = 2 страницы)
+
+        } catch (Exception e) {
+            if (e instanceof IllegalStateException) {
+                throw e; // Пробрасываем нашу проверку на чётность выше
+            }
+            log.warn("Failed to count PDF pages, assuming 1", e);
+            return 1;
+        } finally {
+            try {
+                if (reader != null) {
+                    reader.close();
+                }
+                if (raf != null) {
+                    raf.close();
+                }
+            } catch (IOException e) {
+                log.warn("Error closing PDF resources", e);
+            }
         }
     }
 }
