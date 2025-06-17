@@ -35,6 +35,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -87,6 +88,15 @@ public class ActServiceImplementation implements ActService {
                     }
                     return dto;
                 }).toList();
+    }
+
+    @Override
+    public List<ActResponseDto> filterBySubObject() {
+        return actRepository.findAllByOrderByActNumberAsc()
+                .stream()
+                .map(actMapper::actToActResponseDto)
+                .collect(Collectors
+                        .toList());
     }
 
     @Override

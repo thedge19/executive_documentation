@@ -48,6 +48,12 @@ public class ActController {
         return actService.getAll();
     }
 
+    @GetMapping("/filterBySubObject")
+    public List<ActResponseDto> filterBySubObject() {
+        return actService.filterBySubObject();
+    }
+
+
     @GetMapping("/schema/{id}")
     public ExecutiveSchema getSchema(@PathVariable Long id) {
         return actService.getExecutiveSchema(id);

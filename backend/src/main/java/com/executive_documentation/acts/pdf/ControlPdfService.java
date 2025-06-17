@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -135,7 +136,7 @@ public class ControlPdfService {
             copy.addDocument(controlReader);
 
             // Добавляем сертификат через HTTP
-            URL certificateUrl = new URL(fileStorageService.getStorageBaseUrl(control.getMaterial().getCertificate().getPath()));
+            URL certificateUrl = new URI(fileStorageService.getStorageBaseUrl(control.getMaterial().getCertificate().getPath())).toURL();
 //            URL certificateUrl = new URL(fileStorageService.getFilePublicUrl(control.getMaterial().getCertificate().getPath()));
             certificateReader = new PdfReader(certificateUrl);
             copy.addDocument(certificateReader);
