@@ -17,17 +17,14 @@
               <tr style="color: red;">
                 <th class="text-center" scope="col" style="color: black; width: 50%">Наименование исполнительной...</th>
                 <th class="text-center" scope="col" style="color: black; width: 15%">Дата подписания акта...</th>
-                <th class="text-center" scope="col" style="color: black; width: 12%">Действие</th>
               </tr>
               </thead>
               <tbody>
               <tr v-for="act in acts" :key="act.id">
-                <td class="text-center" style="color: black; width: 6%">Акт освидетельствования скрытых работ № {{ act.actNumber }} {{ act.works }}</td>
-                <td class="text-center" style="color: black; width: 50%">{{ act.endDate }}</td>
-                <td style="width: 12%">
-                  <a class="btn btn-primary" href="#">Edit</a>
-                  <button class="btn btn-danger mx-2">Delete</button>
+                <td class="text-center" style="color: black; width: 6%">Акт освидетельствования скрытых работ №
+                  {{ act.actNumber }} {{ act.works }}
                 </td>
+                <td class="text-center" style="color: black; width: 50%">{{ act.endDate }}</td>
               </tr>
               </tbody>
             </table>
@@ -39,7 +36,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import {ref, onMounted} from 'vue'
 import Navbar from '../../components/Navbar.vue'
 
 const acts = ref([])
@@ -82,7 +79,6 @@ onMounted(getActs)
 <style scoped>
 html,
 body,
-
 table {
   table-layout: fixed;
 }

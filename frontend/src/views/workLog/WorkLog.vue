@@ -22,7 +22,6 @@
                 </th>
                 <th class="text-center" scope="col" style="color: black; width: 15%">Должность, фамилия, инициалы...
                 </th>
-                <th class="text-center" scope="col" style="color: black; width: 12%">Действие</th>
               </tr>
               </thead>
               <tbody>
@@ -32,10 +31,6 @@
                 <td class="text-center" style="color: black; width: 50%">{{ workLog.name }}</td>
                 <td class="text-center" style="color: black; width: 15%">
                   Руководитель работ Трифонов А.Е.
-                </td>
-                <td style="width: 12%">
-                  <a class="btn btn-primary" href="#">Edit</a>
-                  <button class="btn btn-danger mx-2">Delete</button>
                 </td>
               </tr>
               </tbody>
@@ -69,7 +64,7 @@ export default {
 
   methods: {
     getLogs() {
-      fetch('http://localhost:8080/worklog',{
+      fetch('http://localhost:8080/worklog', {
         mode: 'cors',
         headers: {
           'Content-Type': 'application/json',

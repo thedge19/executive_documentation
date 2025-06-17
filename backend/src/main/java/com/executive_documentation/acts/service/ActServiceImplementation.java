@@ -22,7 +22,6 @@ import com.executive_documentation.projects.service.ProjectService;
 import com.executive_documentation.subobjects.model.SubObject;
 import com.executive_documentation.subobjects.service.SubObjectService;
 import com.executive_documentation.workings.model.Working;
-import com.executive_documentation.workings.repository.WorkingRepository;
 import com.executive_documentation.workings.service.WorkingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +34,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -64,7 +64,7 @@ public class ActServiceImplementation implements ActService {
     @Override
     public ActResponseDto get(Long id) {
 
-        Act act = actRepository.findById(id).get();
+        Act act = actRepository.findById(id).orElseThrow();
 
         ActResponseDto dto = actMapper.actToActResponseDto(act);
         if (act.getExecutiveSchema() != null) {
@@ -90,8 +90,17 @@ public class ActServiceImplementation implements ActService {
     }
 
     @Override
+    public List<ActResponseDto> filterBySubObject() {
+        return actRepository.findAllByOrderByActNumberAsc()
+                .stream()
+                .map(actMapper::actToActResponseDto)
+                .collect(Collectors
+                        .toList());
+    }
+
+    @Override
     public ExecutiveSchema getExecutiveSchema(long id) {
-        return executiveSchemaRepository.findById(id).get();
+        return executiveSchemaRepository.findById(id).orElseThrow();
     }
 
     @Override

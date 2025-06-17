@@ -22,6 +22,8 @@ public interface ActService {
 
     List<ActResponseDto> getAll();
 
+    List<ActResponseDto> filterBySubObject();
+
 //    List<ActResponseDto> findAllByEndDateBetween(LocalDate startDate, LocalDate endDate);
 
     List<EntranceControlResponseDto> getAllEntranceControl();
@@ -48,7 +50,6 @@ public interface ActService {
 
 //    LocalDate jsDateToLocalDate(String date);
 
-//    List<ActResponseDto> filterBySubObject();
 
 //    List<ActResponseDto> getAllWithNullInRegistries();
 
