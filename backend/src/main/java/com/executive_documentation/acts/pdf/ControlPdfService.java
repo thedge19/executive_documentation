@@ -43,7 +43,7 @@ public class ControlPdfService {
     }
 
     @PostConstruct
-    public void initFonts() throws IOException, DocumentException {
+    public void initFonts() {
         try {
             // Загрузка шрифта из ресурсов
             InputStream fontStream = getClass().getResourceAsStream(FONT_PATH);
