@@ -1,74 +1,83 @@
 <template>
-  <main>
-    <Navbar/>
-    <div class="my-5">
-      <div class="mx-auto w-25 " style="max-width:100%;">
-        <h2 class="text-center mb-3">Добавить работы</h2>
-        <form @submit.prevent="addWork">
-          <!--name-->
-          <div class="input-group mb-3 mt-3">
-            <label class="input-group-text" for="inputGroupSelect01">
-              {{ subObject.name }}
-            </label>
-          </div>
+  <main class="bg-light min-vh-100">
+    <Navbar />
 
-          <div class="row">
-            <div class="col-md-12 form-group mb-3">
-              <label for="name" class="form-label">Наименование</label>
-              <input id="name" type="text" name="name" class="form-control" placeholder="наименование"
+    <div class="container py-5">
+      <div class="card shadow-sm border-0 mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-white py-4">
+          <h2 class="h4 mb-0 text-center text-primary">Добавить работы</h2>
+        </div>
+
+        <div class="card-body">
+          <form @submit.prevent="addWork">
+            <!-- Подобъект -->
+            <div class="input-group mb-4">
+              <span class="input-group-text bg-light fw-semibold">
+                <i class="bi bi-building me-2"></i>Подобъект
+              </span>
+              <input type="text" class="form-control" :value="subObject.name" readonly>
+            </div>
+
+            <!-- Наименование -->
+            <div class="mb-4">
+              <label for="name" class="form-label fw-semibold">
+                <i class="bi bi-card-text me-2"></i>Наименование
+              </label>
+              <input id="name" type="text" class="form-control"
+                     placeholder="Введите наименование работы"
                      required v-model="work.name">
             </div>
-          </div>
 
-
-          <!--Units-->
-          <div class="row">
-            <div class="col-md-12 form-group mb-3">
-              <label for="units" class="form-label">Ед. изм.</label>
-              <input id="units" type="text" name="units" class="form-control" placeholder="ед. изм."
+            <!-- Единицы измерения -->
+            <div class="mb-4">
+              <label for="units" class="form-label fw-semibold">
+                <i class="bi bi-rulers me-2"></i>Ед. изм.
+              </label>
+              <input id="units" type="text" class="form-control"
+                     placeholder="Введите единицы измерения"
                      required v-model="work.units">
             </div>
-          </div>
 
-          <!--Quantity-->
-          <div class="row">
-            <div class="col-md-12 form-group mb-3">
-              <label for="pNo" class="form-label">Количество</label>
-              <input id="quantity" type="number" step="0.001" name="quantity" class="form-control"
-                     placeholder="Количество" required v-model="work.quantity">
+            <!-- Количество -->
+            <div class="mb-4">
+              <label for="quantity" class="form-label fw-semibold">
+                <i class="bi bi-123 me-2"></i>Количество
+              </label>
+              <input id="quantity" type="number" step="0.001" class="form-control"
+                     placeholder="Введите количество"
+                     required v-model="work.quantity">
             </div>
-          </div>
 
-          <!--Standard-->
-          <div class="input-group mb-3 mt-3">
-            <label class="input-group-text" for="inputGroupSelect01">СП:</label>
-            <select class="form-select" id="inputGroupSelect01"
-                    v-model="work.standardId" required>
-              <option value="" selected disabled>Выберите стандарт...</option>
-              <option style="width: min-content"
-                      v-for="standard in standards" :value="standard.id">{{ standard.name }}
-              </option>
-            </select>
-          </div>
-
-          <div v-if="error" class="alert alert-danger">{{ error }}</div>
-
-          <div class="row">
-            <div class="col-md-12 form-group">
-              <input class="btn btn-primary w-25" type="submit" value="Submit">
+            <!-- Стандарт -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-file-earmark-text me-2"></i>Стандарт
+              </label>
+              <select class="form-select" v-model="work.standardId" required>
+                <option value="" selected disabled>Выберите стандарт...</option>
+                <option v-for="standard in standards" :value="standard.id">
+                  {{ standard.name }}
+                </option>
+              </select>
             </div>
-          </div>
-<!--          <div class="row">-->
-<!--            <button @click.prevent="getSomething" class="btn btn-outline-success w-50" type="submit" value="Submit">-->
-<!--              Жми-->
-<!--            </button>-->
-<!--          </div>-->
-        </form>
+
+            <!-- Ошибка -->
+            <div v-if="error" class="alert alert-danger mb-4">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+            </div>
+
+            <!-- Кнопка отправки -->
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary py-2">
+                <i class="bi bi-check-circle me-2"></i>Добавить работу
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </main>
 </template>
-
 
 <script>
 import Navbar from '../../components/Navbar.vue';
@@ -78,14 +87,12 @@ export default {
   components: {
     Navbar
   },
-
   data() {
     return {
       projectId: 1,
       error: '',
       subObject: "",
       standards: [],
-
       work: {
         name: '',
         units: '',
@@ -96,61 +103,93 @@ export default {
       }
     }
   },
-
   mounted() {
     this.getSubObject(this.$route.params.id);
     this.getStandards();
   },
-
   methods: {
-
-    getSomething() {
-      console.log(this.work)
-    },
-
     addWork() {
-      // Проверка выбранного стандарта
       if (!this.work.standardId) {
         this.error = 'Пожалуйста, выберите стандарт';
         return;
       }
 
-      this.error = ''; // Очищаем сообщение об ошибке, если оно было
+      this.error = '';
       fetch('http://localhost:8080/workings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-
-
         body: JSON.stringify(this.work)
       })
-          .then(data => {
-            console.log(data)
+          .then(() => {
             this.$router.push(`/works/${this.$route.params.id}`);
           })
+          .catch(error => {
+            console.error('Ошибка:', error);
+            this.error = 'Произошла ошибка при добавлении работы';
+          });
     },
-
     getSubObject() {
-      fetch(`http://localhost:8080/subobjects/subObject/${this.$route.params.id}`,
-      )
+      fetch(`http://localhost:8080/subobjects/subObject/${this.$route.params.id}`)
           .then(res => res.json())
           .then(data => {
-            this.subObject = data
+            this.subObject = data;
           })
+          .catch(console.error);
     },
-
     getStandards() {
-      fetch(`http://localhost:8080/standards`,
-      )
+      fetch(`http://localhost:8080/standards`)
           .then(res => res.json())
           .then(data => {
-            this.standards = data
+            this.standards = data;
           })
-    },
-  },
+          .catch(console.error);
+    }
+  }
+}
+</script>
 
+<style scoped>
+.card {
+  border-radius: 12px;
+  overflow: hidden;
 }
 
+.form-control, .form-select {
+  border-radius: 8px;
+  padding: 10px 15px;
+}
 
-</script>
+.form-label {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.input-group-text {
+  border-radius: 8px 0 0 8px;
+}
+
+.btn {
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.alert {
+  border-radius: 8px;
+}
+
+@media (max-width: 576px) {
+  .card {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .container {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+</style>

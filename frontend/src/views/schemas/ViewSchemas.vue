@@ -4,8 +4,8 @@
 
     <div class="container py-4">
       <div class="card shadow-lg border-0">
-        <div class="card-header bg-primary text-white py-3 mt-5">
-          <h2 class="h4 mb-0 fw-semibold text-center">Исполнительные схемы</h2>
+        <div class="card-header text-white py-3 mt-5">
+          <h1 class="mb-0 fw-semibold text-primary text-center">Исполнительные схемы</h1>
         </div>
         <div class="card-body p-0">
           <div class="table-responsive" style="max-height: 70vh;">

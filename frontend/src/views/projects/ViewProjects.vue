@@ -4,8 +4,8 @@
 
     <div class="container py-5">
       <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-          <h2 class="h4 mb-0 fw-semibold text-primary">Материалы</h2>
+        <div class="card-header bg-white py-3 align-items-center">
+          <h1 class="mb-0 fw-semibold text-primary text-center">Объекты</h1>
           <a href="/addProject" class="btn btn-primary rounded-pill px-4">
             <i class="bi bi-plus-lg me-2"></i>Добавить объект
           </a>
@@ -24,7 +24,11 @@
               <tbody>
               <tr v-for="project in projects" :key="project.id" class="border-top">
                 <td class="ps-4 fw-semibold text-muted">{{ project.id }}</td>
-                <td class="fw-medium">{{ project.name }}</td>
+                <td class="fw-medium">
+                  <a :href="`/subObjects/${project.id}`" class="text-decoration-none text-primary">
+                    {{ project.name }}
+                  </a>
+                </td>
                 <td class="text-end pe-4">
                   <a :href="`/editProject/${project.id}`" class="btn btn-sm btn-outline-primary rounded-pill px-3 me-2">
                     <i class="bi bi-pencil-square me-1"></i>Изменить

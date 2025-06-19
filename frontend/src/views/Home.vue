@@ -5,7 +5,7 @@
     <div class="container-fluid px-4 py-4">
       <div class="card shadow-sm border-0">
         <div class="card-body p-0">
-          <h1 class="h3 text-center text-primary my-4 mt-5">АОСР</h1>
+          <h1 class="text-center text-primary my-4 mt-5">АОСР</h1>
 
           <!-- Кнопки (оставлены как есть) -->
           <div class="d-flex justify-content-start px-4">

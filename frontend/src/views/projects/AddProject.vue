@@ -1,64 +1,125 @@
 <template>
-    <main>
-        <Navbar/>
-        <div class="my-5">
-            <div class="mx-auto w-25 " style="max-width:100%;">
-                <h2 class="text-center mb-3">Добавить объект</h2>
-                <form @submit.prevent="addProject">
-                    <!--name-->
-                    <div class="row">
-                        <div class="col-md-12 form-group mb-3">
-                            <label for="name" class="form-label">Наименование</label>
-                            <input id="name" type="text" name="name" class="form-control" placeholder="наименование"
-                                   required v-model="project.name">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12 form-group">
-                            <input class="btn btn-primary w-100" type="submit" value="Submit">
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </main>
-</template>
+  <main class="bg-light min-vh-100">
+    <Navbar />
 
+    <div class="container py-5">
+      <div class="card shadow-sm border-0 mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-white py-4">
+          <h2 class="h4 mb-0 text-center text-primary">Добавить объект</h2>
+        </div>
+
+        <div class="card-body">
+          <form @submit.prevent="addProject">
+            <!-- Наименование -->
+            <div class="mb-4">
+              <label for="name" class="form-label fw-semibold">
+                <i class="bi bi-building me-2"></i>Наименование объекта
+              </label>
+              <input id="name" type="text" class="form-control"
+                     placeholder="Введите наименование объекта"
+                     required v-model="project.name">
+            </div>
+
+            <!-- Ошибка -->
+            <div v-if="error" class="alert alert-danger mb-4">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+            </div>
+
+            <!-- Кнопка отправки -->
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary py-2">
+                <i class="bi bi-check-circle me-2"></i>Добавить объект
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+</template>
 
 <script>
 import Navbar from '../../components/Navbar.vue';
 
 export default {
-    name: 'AddProject',
-    components: {
-        Navbar
-    },
+  name: 'AddProject',
+  components: {
+    Navbar
+  },
+  data() {
+    return {
+      project: {
+        name: '',
+      },
+      error: null
+    }
+  },
+  methods: {
+    addProject() {
+      this.error = null;
 
-    data() {
-        return {
-            project: {
-                name: '',
+      fetch('http://localhost:8080/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(this.project)
+      })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Ошибка при добавлении объекта');
             }
-        }
-    },
+            return response.json();
+          })
+          .then(data => {
+            console.log(data);
+            this.$router.push("/projects");
+          })
+          .catch(error => {
+            console.error('Ошибка:', error);
+            this.error = error.message;
+          });
+    }
+  }
+}
+</script>
 
-    methods: {
-        addProject() {
-            fetch('http://localhost:8080/projects', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(this.project)
-            })
-                .then(data => {
-                    console.log(data)
-                    this.$router.push("/projects");
-                })
-        }
-    },
-
+<style scoped>
+.card {
+  border-radius: 12px;
+  overflow: hidden;
 }
 
+.form-control {
+  border-radius: 8px;
+  padding: 10px 15px;
+}
 
-</script>
+.form-label {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.btn {
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.alert {
+  border-radius: 8px;
+}
+
+@media (max-width: 576px) {
+  .card {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .container {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+</style>

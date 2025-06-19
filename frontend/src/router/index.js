@@ -72,7 +72,7 @@ const router = createRouter({
       component: () => import('../views/standards/UpdateStandard.vue')
     },
     {
-      path: '/subObjects',
+      path: '/subObjects/:id',
       name: 'viewSubObjects',
       component: ViewSubObjects
     },

@@ -4,8 +4,8 @@
 
     <div class="container-fluid px-4 py-4">
       <div class="card shadow-sm border-0">
-        <div class="card-header text-primary py-3 mt-5">
-          <h1 class="h3 mb-0 text-center">Входной контроль</h1>
+        <div class="card-header text-primary py-3 mt-3">
+          <h1 class="mb-0 text-center">Входной контроль</h1>
         </div>
 
         <div class="card-body p-0">

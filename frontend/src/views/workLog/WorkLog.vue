@@ -19,14 +19,14 @@
           <!-- Таблица -->
           <div class="card shadow-sm border-0">
             <div class="card-body p-0">
-              <div class="table-responsive" style="max-height: 70vh;">
+              <div class="table-responsive" style="max-height: 75vh;">
                 <table class="table table-hover mb-0">
                   <thead class="sticky-top" style="background-color: #002d72;">
                   <tr>
-                    <th class="text-center text-black fw-normal" style="width: 6%">№</th>
-                    <th class="text-center text-black fw-normal" style="width: 7%">Дата</th>
-                    <th class="text-center text-black fw-normal" style="width: 50%">Наименование работ</th>
-                    <th class="text-center text-black fw-normal" style="width: 15%">Ответственный</th>
+                    <th class="text-center text-white fw-normal" style="width: 6%; background-color: #000000;">№</th>
+                    <th class="text-center text-white fw-normal" style="width: 7%; background-color: #000000;">Дата</th>
+                    <th class="text-center text-white fw-normal" style="width: 50%; background-color: #000000;">Наименование работ</th>
+                    <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">Ответственный</th>
                   </tr>
                   </thead>
                   <tbody>

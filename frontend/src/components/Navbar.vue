@@ -21,9 +21,6 @@
             <router-link class="nav-link" active-class="active" to="/standards">СП</router-link>
           </li>
           <li class="nav-item">
-            <router-link class="nav-link" active-class="active" to="/subObjects">Подобъекты</router-link>
-          </li>
-          <li class="nav-item">
             <router-link class="nav-link" active-class="active" to="/controls">Входняк</router-link>
           </li>
           <li class="nav-item">

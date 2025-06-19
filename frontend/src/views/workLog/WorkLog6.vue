@@ -19,13 +19,13 @@
           <!-- Таблица -->
           <div class="card shadow-sm border-0">
             <div class="card-body p-0">
-              <div class="table-responsive" style="max-height: 70vh;">
+              <div class="table-responsive" style="max-height: 75vh;">
                 <table class="table table-hover mb-0">
                   <thead class="sticky-top" style="background-color: #002d72;">
                   <tr>
-                    <th class="text-center text-black fw-normal" style="width: 5%">№ п/п</th>
-                    <th class="text-center text-black fw-normal" style="width: 60%">Наименование исполнительной документации</th>
-                    <th class="text-center text-black fw-normal" style="width: 15%">Дата подписания акта</th>
+                    <th class="text-center text-white fw-normal" style="width: 5%; background-color: #000000;">№ п/п</th>
+                    <th class="text-center text-white fw-normal" style="width: 60%; background-color: #000000;">Наименование исполнительной документации</th>
+                    <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">Дата подписания акта</th>
                   </tr>
                   </thead>
                   <tbody>

@@ -2,12 +2,12 @@
   <main class="bg-light min-vh-100">
     <Navbar />
 
-    <div class="container-fluid px-5 py-4">
+    <div class="container px-5 py-4">
       <div class="card shadow-sm border-0">
         <div class="card-header bg-white py-3">
-          <h1 class="mb-0 mt-5 fw-semibold text-primary text-center">Подобъекты</h1>
+          <h1 class="mb-0 mt-3 fw-semibold text-primary text-center">Подобъекты</h1>
 
-          <div class="d-flex justify-content-between align-items-center mt-5">
+          <div class="d-flex justify-content-between align-items-center mt-2">
             <a href="/addSubObject" class="btn btn-primary rounded-pill px-4">
               <i class="bi bi-plus-lg me-2"></i>Добавить подобъект
             </a>
@@ -29,15 +29,15 @@
         </div>
 
         <div class="card-body p-0">
-          <div class="table-responsive" style="max-height: 76vh;">
+          <div class="table-responsive" style="max-height: 78vh;">
             <table class="table table-hover align-middle mb-0">
               <thead class="sticky-top">
               <tr>
-                <th class="text-white ps-4" style="background-color: #000000; width: 10%">ID</th>
+                <th class="text-white ps-4" style="background-color: #000000; width: 7%">ID</th>
                 <th class="text-white text-center" style="background-color: #000000; width: 40%">Наименование</th>
-                <th class="text-white text-center" style="background-color: #000000; width: 15%">Обозначение</th>
+                <th class="text-white text-center" style="background-color: #000000; width: 12%">Обозначение</th>
                 <th class="text-white text-center" style="background-color: #000000; width: 20%">Объект</th>
-                <th class="text-white text-center" style="background-color: #000000; width: 15%">Действие</th>
+                <th class="text-white text-center" style="background-color: #000000; width: 16%">Действие</th>
               </tr>
               </thead>
               <tbody>
@@ -53,10 +53,10 @@
                 <td class="text-center">{{ subObject.project.name }}</td>
                 <td class="text-center pe-4">
                   <div class="d-flex justify-content-center">
-                    <a :href="`/editSubObject/${subObject.id}`" class="btn btn-sm btn-outline-primary rounded-pill px-3 me-2">
+                    <a :href="`/editSubObject/${subObject.id}`" class="btn btn-sm btn-outline-primary rounded-pill px-2 me-2 my-2">
                       <i class="bi bi-pencil-square me-1"></i>Изменить
                     </a>
-                    <button @click="deleteSubObject(subObject.id)" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                    <button @click="deleteSubObject(subObject.id)" class="btn btn-sm btn-outline-danger rounded-pill px-2 my-2">
                       <i class="bi bi-trash3 me-1"></i>Удалить
                     </button>
                   </div>
@@ -82,7 +82,7 @@ export default {
   data() {
     return {
       subObjects: [],
-      projectId: 4
+      projectId: this.$route.params.id,
     }
   },
   beforeMount() {
