@@ -59,9 +59,19 @@ public class ActController {
         return actService.getExecutiveSchema(id);
     }
 
-    @GetMapping("/schema")
-    public List<ExecutiveSchema> getAllSchema() {
-        return actService.getExecutiveSchemas();
+    @GetMapping("/schemaAsc")
+    public List<ExecutiveSchema> getAllSchemaAsc() {
+        return actService.getExecutiveSchemasAsc();
+    }
+
+    @GetMapping("/schemaDesc")
+    public List<ExecutiveSchema> getAllSchemaDesc() {
+        return actService.getExecutiveSchemasDesc();
+    }
+
+    @GetMapping("/schema/byName")
+    public List<ExecutiveSchema> getAllSchemaFilteredByName() {
+        return actService.getExecutiveSchemasFilteredByName();
     }
 
     @GetMapping("/entrance")

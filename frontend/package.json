@@ -10,6 +10,7 @@
   "dependencies": {
     "@popperjs/core": "^2.11.8",
     "bootstrap": "^5.2.3",
+    "bootstrap-icons": "^1.13.1",
     "cors": "^2.8.5",
     "v-calendar": "^3.1.2",
     "vue": "^3.2.47",

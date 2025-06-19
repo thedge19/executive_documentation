@@ -1,230 +1,228 @@
-<script setup>
-import Navbar from "@/components/Navbar.vue";
-</script>
 <template>
-  <main>
-    <Navbar/>
-    <div class="mx-auto w-50" style="max-width:100%;">
-      <div class="px-1 py-4">
-        <form @submit.prevent="checkForm">
-          <h6 class="card-title mb-3">Объект</h6>
-          <div v-if="errors.length">
-            <b class="text-danger">Исправьте следующие ошибки:</b>
-            <ul>
-              <li class="text-danger" v-for="error in errors">{{ error }}</li>
-            </ul>
-          </div>
-          <div class="d-flex">
-            <label class="radio mr-1">
-              <input type="radio" @change="onChangeProject()" name="add" :value="1"
-                     v-model="projectId"
-                     checked>
-              <span> <i class="fa fa-user"></i> Грушовая </span>
-            </label>
-            <label class="radio">
-              <input type="radio" @change="onChangeProject()" name="add" :value="2"
-                     v-model="projectId">
-              <span> <i class="fa fa-plus-circle"></i> Шесхарис </span>
-            </label>
-          </div>
-          <h6 class="information mt-4">Выбор подобъекта</h6>
-          <div class="input-group mb-3">
-            <label class="input-group-text" for="inputGroupSelect01">Options</label>
-            <select class="form-select" @change="onChangeSubObject()" id="inputGroupSelect01"
-                    v-model="subObjectId">
-              <option selected>Choose...</option>
-              <option style="width: min-content"
-                      v-for="subObject in subObjects" :value="subObject.id">{{ subObject.name }}
-              </option>
-            </select>
-          </div>
+  <main class="bg-light min-vh-100">
+    <Navbar />
 
-          <h6 class="information mt-4">Выбор работ</h6>
-          <div class="input-group mb-3">
-            <div class="d-flex justify-content-between">
-              <select class="form-select" style="width: 50%" id="inputGroupSelect02"
-                      v-model="workId" @change="onChangeWork()">
-                <option selected>Choose...</option>
+    <div class="container py-5">
+      <div class="card shadow-sm border-0 mx-auto" style="max-width: 800px;">
+        <div class="card-header bg-white py-4">
+          <h2 class="h4 mb-0 text-center text-primary">Добавить акт выполненных работ</h2>
+        </div>
+
+        <div class="card-body">
+          <form @submit.prevent="checkForm">
+            <!-- Ошибки -->
+            <div v-if="errors.length" class="alert alert-danger mb-4">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <strong>Исправьте следующие ошибки:</strong>
+              <ul class="mb-0 mt-2">
+                <li v-for="error in errors">{{ error }}</li>
+              </ul>
+            </div>
+
+            <!-- Выбор объекта -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold d-block mb-3">
+                <i class="bi bi-building me-2"></i>Объект
+              </label>
+              <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="project"
+                       id="project1" autocomplete="off"
+                       :value="4" v-model="projectId" @change="onChangeProject()">
+                <label class="btn btn-outline-primary" for="project1">
+                  <i class="bi bi-tree me-2"></i>Грушовая
+                </label>
+
+                <input type="radio" class="btn-check" name="project"
+                       id="project2" autocomplete="off"
+                       :value="5" v-model="projectId" @change="onChangeProject()">
+                <label class="btn btn-outline-primary" for="project2">
+                  <i class="bi bi-building me-2"></i>Шесхарис
+                </label>
+              </div>
+            </div>
+
+            <!-- Выбор подобъекта -->
+            <div class="mb-4">
+              <label for="subObjectSelect" class="form-label fw-semibold">
+                <i class="bi bi-diagram-3 me-2"></i>Подобъект
+              </label>
+              <div class="input-group">
+                <span class="input-group-text bg-light">
+                  <i class="bi bi-list-ul"></i>
+                </span>
+                <select class="form-select" id="subObjectSelect"
+                        @change="onChangeSubObject()" v-model="subObjectId">
+                  <option selected disabled value="">Выберите подобъект...</option>
+                  <option v-for="subObject in subObjects" :value="subObject.id">
+                    {{ subObject.name }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Выбор работ -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-hammer me-2"></i>Работы
+              </label>
+              <div class="d-flex gap-3 align-items-center">
+                <select class="form-select" id="workSelect"
+                        v-model="workId" @change="onChangeWork()">
+                  <option selected disabled value="">Выберите работу...</option>
+                  <option v-for="work in works" :value="work.id">
+                    {{ work.name }}
+                  </option>
+                </select>
+
+                <div v-if="workId" class="d-flex gap-2 align-items-center">
+                  <span class="badge bg-light text-dark">{{ currentWork.units }}</span>
+                  <span class="badge bg-light text-dark">{{ currentWork.finalQuantity }}</span>
+                </div>
+              </div>
+
+              <div class="mt-3">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-123 me-2"></i>Выполненный объём
+                </label>
+                <input class="form-control" type="number" step="0.001"
+                       v-model="workDone" placeholder="Введите количество">
+              </div>
+            </div>
+
+            <!-- Даты -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-calendar-range me-2"></i>Даты работ
+              </label>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Начало работ</label>
+                  <VDatePicker class="form-control"
+                               :attributes="attributes"
+                               v-model="startDate"
+                               mode="date"/>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Окончание работ</label>
+                  <VDatePicker class="form-control"
+                               :attributes="attributes"
+                               v-model="endDate"
+                               :model-value="setFirstEndDate"
+                               mode="date"/>
+                </div>
+              </div>
+            </div>
+
+            <!-- Материалы -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-box-seam me-2"></i>Материалы
+              </label>
+              <div class="mb-3">
+                <label class="form-label">Количество применённых материалов</label>
+                <div class="btn-group w-100" role="group">
+                  <input type="radio" class="btn-check" id="mat0" value="0" v-model="materialQuantity">
+                  <label class="btn btn-outline-secondary" for="mat0">0</label>
+
+                  <input type="radio" class="btn-check" id="mat1" value="1" v-model="materialQuantity">
+                  <label class="btn btn-outline-secondary" for="mat1">1</label>
+
+                  <input type="radio" class="btn-check" id="mat2" value="2" v-model="materialQuantity">
+                  <label class="btn btn-outline-secondary" for="mat2">2</label>
+
+                  <input type="radio" class="btn-check" id="mat3" value="3" v-model="materialQuantity">
+                  <label class="btn btn-outline-secondary" for="mat3">3</label>
+
+                  <input type="radio" class="btn-check" id="mat4" value="4" v-model="materialQuantity">
+                  <label class="btn btn-outline-secondary" for="mat4">4</label>
+
+                  <input type="radio" class="btn-check" id="mat5" value="5" v-model="materialQuantity">
+                  <label class="btn btn-outline-secondary" for="mat5">5</label>
+                </div>
+              </div>
+
+              <div v-if="materialQuantity > 0" class="mb-3">
+                <div class="alert alert-info">
+                  <i class="bi bi-info-circle me-2"></i>
+                  Дата входного контроля: {{ setControlDate.toLocaleDateString() }}
+                </div>
+              </div>
+
+              <!-- Динамические поля для материалов -->
+              <div v-for="n in parseInt(materialQuantity)" :key="n" class="mb-3">
+                <div class="d-flex gap-3 align-items-center">
+                  <select class="form-select" v-model="materialInputs[n-1].id"
+                          @change="onChangeMaterial(n-1)">
+                    <option selected disabled value="">Выберите материал...</option>
+                    <option v-for="material in materials" :value="material.id">
+                      {{ material.name }}
+                    </option>
+                  </select>
+                  <span class="badge bg-light text-dark">{{ materialInputs[n-1].units }}</span>
+                  <input class="form-control" type="number" step="0.001"
+                         v-model="materialInputs[n-1].quantity" placeholder="Количество">
+                </div>
+              </div>
+            </div>
+
+            <!-- Исполнительная схема -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-file-earmark-pdf me-2"></i>Исполнительная схема
+              </label>
+              <div class="btn-group w-100 mb-3" role="group">
+                <input type="radio" class="btn-check" id="schemaNo" value="Нет" v-model="executiveSchema">
+                <label class="btn btn-outline-secondary" for="schemaNo">Нет</label>
+
+                <input type="radio" class="btn-check" id="schemaYes" value="Есть" v-model="executiveSchema">
+                <label class="btn btn-outline-secondary" for="schemaYes">Есть</label>
+              </div>
+
+              <div v-if="executiveSchema === 'Есть'">
+                <label class="form-label">Загрузить PDF</label>
+                <input type="file" class="form-control" accept=".pdf"
+                       @change="handleFileUpload" ref="fileInput">
+              </div>
+            </div>
+
+            <!-- Следующие работы -->
+            <div class="mb-4">
+              <label for="nextWorkSelect" class="form-label fw-semibold">
+                <i class="bi bi-arrow-right-circle me-2"></i>Следующие работы
+              </label>
+              <select class="form-select" id="nextWorkSelect" v-model="nextWorkId">
+                <option selected disabled value="">Выберите следующую работу...</option>
                 <option v-for="work in works" :value="work.id">
                   {{ work.name }}
                 </option>
-
-              </select>
-              <!--                            <div v-if="this.workId">-->
-              <label class="pt-3" style="width: 3%">{{ currentWork.units }}</label>
-              <label class="pt-3" style="width: 3%">{{ currentWork.finalQuantity }}</label>
-              <!--                            </div>-->
-              <input style="width: 35%" class="form-control" type="number" step="0.001"
-                     v-model="workDone">
-            </div>
-          </div>
-          <div>
-            <div class="space-y-2 d-flex justify-content-start align-items-center">
-              <div>
-                <label class="input-group-text">Дата начала работ</label>
-                <VDatePicker :attributes="attributes" v-model="startDate" mode="date"/>
-              </div>
-              <div class="m-lg-2">
-                <label class="input-group-text">Дата окончания работ</label>
-                <VDatePicker :attributes="attributes" v-model="endDate" :model-value="setFirstEndDate" mode="date"/>
-              </div>
-            </div>
-            <div>
-              <div>Количество применённых материалов: {{ materialQuantity }}</div>
-              <div>Дата входного контроля: {{ setControlDate.toDateString() }}</div>
-              <div>
-                <input type="radio" id="zero" class="m-lg-3" value="0" v-model="materialQuantity"/>
-                <label for="zero">0</label>
-
-                <input type="radio" id="one" class="m-lg-3" value="1" v-model="materialQuantity"/>
-                <label for="one">1</label>
-
-                <input type="radio" id="two" class="m-lg-3" value="2" v-model="materialQuantity"/>
-                <label for="two">2</label>
-
-                <input type="radio" id="three" class="m-lg-3" value="3" v-model="materialQuantity"/>
-                <label for="three">3</label>
-
-                <input type="radio" id="four" class="m-lg-3" value="4" v-model="materialQuantity"/>
-                <label for="four">4</label>
-
-                <input type="radio" id="five" class="m-lg-3" value="5" v-model="materialQuantity"/>
-                <label for="five">5</label>
-              </div>
-            </div>
-
-            <div v-if="materialQuantity > 0" class="d-flex justify-content-between">
-              <select class="form-select" style="width: 50%" id="inputGroupSelect02"
-                      v-model="firstMaterialId" @change="onChangeFirstMaterial()">
-                <option selected>Choose...</option>
-                <option v-for="material in materials" :value="material.id">{{
-                    material.name
-                  }}
-                </option>
-
-              </select>
-              <div>
-                <label class="pt-3" style="width: 3%">{{ firstMaterial.units }}</label>
-              </div>
-              <input style="width: 35%" class="form-control" type="number" step="0.001"
-                     v-model="firstMaterial.quantity">
-            </div>
-
-            <div v-if="materialQuantity > 1" class="d-flex justify-content-between">
-              <select class="form-select" style="width: 50%" id="inputGroupSelect02"
-                      v-model="secondMaterialId" @change="onChangeSecondMaterial()">
-                <option selected>Choose...</option>
-                <option v-for="material in materials" :value="material.id">{{
-                    material.name
-                  }}
-                </option>
-
-              </select>
-              <div>
-                <label class="pt-3" style="width: 3%">{{ secondMaterial.units }}</label>
-              </div>
-              <input style="width: 35%" class="form-control" type="number" step="0.01"
-                     v-model="secondMaterial.quantity">
-            </div>
-
-            <div v-if="materialQuantity > 2" class="d-flex justify-content-between">
-              <select class="form-select" style="width: 50%" id="inputGroupSelect02"
-                      v-model="thirdMaterialId" @change="onChangeThirdMaterial()">
-                <option selected>Choose...</option>
-                <option v-for="material in materials" :value="material.id">{{
-                    material.name
-                  }}
-                </option>
-              </select>
-              <div>
-                <label class="pt-3" style="width: 3%">{{ thirdMaterial.units }}</label>
-              </div>
-              <input style="width: 35%" class="form-control" type="number" step="0.01"
-                     v-model="thirdMaterial.quantity">
-            </div>
-
-            <div v-if="materialQuantity > 3" class="d-flex justify-content-between">
-              <select class="form-select" style="width: 50%" id="inputGroupSelect02"
-                      v-model="fourthMaterialId" @change="onChangeFourthMaterial()">
-                <option selected>Choose...</option>
-                <option v-for="material in materials" :value="material.id">{{
-                    material.name
-                  }}
-                </option>
-              </select>
-              <div>
-                <label class="pt-3" style="width: 3%">{{ fourthMaterial.units }}</label>
-              </div>
-              <input style="width: 35%" class="form-control" type="number" step="0.01"
-                     v-model="fourthMaterial.quantity">
-            </div>
-
-            <div v-if="materialQuantity > 4" class="d-flex justify-content-between">
-              <select class="form-select" style="width: 50%" id="inputGroupSelect02"
-                      v-model="fifthMaterialId" @change="onChangeFifthMaterial()">
-                <option selected>Choose...</option>
-                <option v-for="material in materials" :value="material.id">{{
-                    material.name
-                  }}
-                </option>
-
-              </select>
-              <div>
-                <label class="pt-3" style="width: 3%">{{ fifthMaterial.units }}</label>
-              </div>
-              <input style="width: 35%" class="form-control" type="number" step="0.001"
-                     v-model="fifthMaterial.quantity">
-            </div>
-
-            <div>
-              <div>Исполнительная схема: {{ executiveSchema }}</div>
-              <div>
-                <input type="radio" id="zero" class="m-lg-3" value="Нет" v-model="executiveSchema"/>
-                <label for="zero">Нет</label>
-
-                <input type="radio" id="one" class="m-lg-3" value="Есть" v-model="executiveSchema"/>
-                <label for="one">Есть</label>
-              </div>
-              <div v-if="executiveSchema === 'Есть'">
-                <label class="form-label">Загрузить исполнительную схему (PDF)</label>
-                <input
-                    type="file"
-                    class="form-control"
-                    accept=".pdf"
-                    @change="handleFileUpload"
-                    ref="fileInput"
-                >
-              </div>
-            </div>
-          </div>
-          <h6 class="information mt-4">Разрешается производство работ</h6>
-          <div class="input-group mb-3">
-            <div class="d-flex justify-content-between">
-              <select class="form-select" style="width: 50%" id="inputGroupSelect02"
-                      v-model="nextWorkId">
-                <option selected></option>
-                <option v-for="work in works" :value="work.id">{{
-                    work.name
-                  }}
-                </option>
               </select>
             </div>
-          </div>
 
-          <input class="btn btn-primary btn-block confirm-button" type="submit" value="Сохранить">
-        </form>
-        <div class="mt-2">
-          <button class="btn bg-danger-subtle" @click.prevent="getSomething">Жми</button>
+            <!-- Кнопки -->
+            <div class="d-flex gap-3 mt-4">
+              <button @click.prevent="getSomething" class="btn btn-outline-success flex-grow-1 py-2">
+                <i class="bi bi-lightning-charge me-2"></i>Проверить
+              </button>
+
+              <button type="submit" class="btn btn-primary flex-grow-1 py-2">
+                <i class="bi bi-check-circle me-2"></i>Сохранить акт
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   </main>
 </template>
+
 <script>
+import Navbar from "@/components/Navbar.vue";
 
 export default {
   name: "AddAct",
-
+  components: {
+    Navbar
+  },
   data() {
     return {
       subObjects: [],
@@ -238,7 +236,7 @@ export default {
       },
 
       projectId: 4,
-      subObjectId: 9,
+      subObjectId: null,
       workId: null,
       nextWorkId: null,
       workDone: "",
@@ -249,36 +247,12 @@ export default {
       file: null,
       fileInput: null,
 
-      firstMaterial: {
+      // Массив для хранения данных о материалах
+      materialInputs: Array(5).fill().map(() => ({
+        id: null,
         units: "-",
         quantity: null
-      },
-
-      secondMaterial: {
-        units: "-",
-        quantity: null
-      },
-
-      thirdMaterial: {
-        units: "-",
-        quantity: null
-      },
-
-      fourthMaterial: {
-        units: "-",
-        quantity: null
-      },
-
-      fifthMaterial: {
-        units: "-",
-        quantity: null
-      },
-
-      firstMaterialId: null,
-      secondMaterialId: null,
-      thirdMaterialId: null,
-      fourthMaterialId: null,
-      fifthMaterialId: null,
+      })),
 
       attributes: {
         highlight: true,
@@ -286,17 +260,13 @@ export default {
       }
     }
   },
-
   mounted() {
     this.getSubObjects()
     this.getWorks()
     this.getMaterials()
   },
-
   methods: {
-
-    checkForm: function (e) {
-
+    checkForm(e) {
       this.errors = [];
 
       if (this.materialQuantity !== 0 && this.setControlDate > this.startDate) {
@@ -311,14 +281,9 @@ export default {
         this.errors.push("Укажите работы.")
       }
 
-      // Добавленная проверка на загрузку файла
       if (this.executiveSchema === 'Есть' && !this.file) {
         this.errors.push('Загрузите исполнительную схему (PDF файл).');
       }
-
-      // if (this.materialQuantity !== this.addMaterials().length) {
-      //   this.errors.push("Добавьте материалы")
-      // }
 
       if (this.errors.length === 0) {
         this.addAct();
@@ -326,192 +291,81 @@ export default {
 
       e.preventDefault();
     },
-
-
     getSomething() {
       console.log(this.setControlDate);
       console.log(this.startDate);
       console.log(this.endDate);
     },
-
     onChangeProject() {
       this.getSubObjects()
     },
-
     onChangeSubObject() {
       this.getWorks()
     },
-
     onChangeWork() {
       this.getWork()
     },
-
-    onChangeFirstMaterial() {
-      this.getFirstMaterial()
-      console.log(this.firstMaterial)
+    onChangeMaterial(index) {
+      const materialId = this.materialInputs[index].id;
+      if (materialId) {
+        fetch(`http://localhost:8080/materials/${materialId}`)
+            .then(res => res.json())
+            .then(data => {
+              this.materialInputs[index].units = data.units;
+            });
+      }
     },
-
-    onChangeSecondMaterial() {
-      this.getSecondMaterial()
-      console.log(this.secondMaterial)
-    },
-
-    onChangeThirdMaterial() {
-      this.getThirdMaterial()
-      console.log(this.thirdMaterial)
-    },
-
-    onChangeFourthMaterial() {
-      this.getFourthMaterial()
-      console.log(this.fourthMaterial)
-    },
-
-    onChangeFifthMaterial() {
-      this.getFifthMaterial()
-      console.log(this.fifthMaterial)
-    },
-
-
     getSubObjects() {
-      fetch(`http://localhost:8080/subobjects/${this.projectId}`,
-      )
+      fetch(`http://localhost:8080/subobjects/${this.projectId}`)
           .then(res => res.json())
           .then(data => {
             this.subObjects = data
           })
     },
     getWorks() {
-      fetch(`http://localhost:8080/workings/undone/${this.subObjectId}`,
-      )
-          .then(res => res.json())
-          .then(data => {
-            this.works = data
-            console.log(data)
-          })
+      if (this.subObjectId) {
+        fetch(`http://localhost:8080/workings/undone/${this.subObjectId}`)
+            .then(res => res.json())
+            .then(data => {
+              this.works = data
+            })
+      }
     },
-
     getWork() {
-      fetch(`http://localhost:8080/workings/working/${this.workId}`,
-      )
-          .then(res => res.json())
-          .then(data => {
-            this.currentWork = data
-            console.log(data)
-          })
+      if (this.workId) {
+        fetch(`http://localhost:8080/workings/working/${this.workId}`)
+            .then(res => res.json())
+            .then(data => {
+              this.currentWork = data
+            })
+      }
     },
-
     getMaterials() {
-      fetch(`http://localhost:8080/materials/notPageable`,
-      )
+      fetch(`http://localhost:8080/materials/notPageable`)
           .then(res => res.json())
           .then(data => {
             this.materials = data
-            console.log(data)
           })
     },
-
-    getFirstMaterial() {
-      fetch(`http://localhost:8080/materials/${this.firstMaterialId}`,
-      )
-          .then(res => res.json())
-          .then(data => {
-            this.firstMaterial = data;
-            console.log(data);
-          })
-    },
-
-    getSecondMaterial() {
-      fetch(`http://localhost:8080/materials/${this.secondMaterialId}`,
-      )
-          .then(res => res.json())
-          .then(data => {
-            this.secondMaterial = data;
-            console.log(data);
-          })
-    },
-
-    getThirdMaterial() {
-      fetch(`http://localhost:8080/materials/${this.thirdMaterialId}`,
-      )
-          .then(res => res.json())
-          .then(data => {
-            this.thirdMaterial = data;
-            console.log(data);
-          })
-    },
-
-    getFourthMaterial() {
-      fetch(`http://localhost:8080/materials/${this.fourthMaterialId}`,
-      )
-          .then(res => res.json())
-          .then(data => {
-            this.fourthMaterial = data;
-            console.log(data);
-          })
-    },
-
-    getFifthMaterial() {
-      fetch(`http://localhost:8080/materials/${this.fifthMaterialId}`,
-      )
-          .then(res => res.json())
-          .then(data => {
-            this.fifthMaterial = data;
-            console.log(data);
-          })
-    },
-
     addMaterials() {
-      const materials = [];
-
-      if (this.firstMaterialId && this.firstMaterial.quantity) {
-        materials.push({
-          materialId: this.firstMaterialId,
-          quantity: this.firstMaterial.quantity
-        });
-      }
-
-      if (this.secondMaterialId && this.secondMaterial.quantity) {
-        materials.push({
-          materialId: this.secondMaterialId,
-          quantity: this.secondMaterial.quantity
-        });
-      }
-
-      if (this.thirdMaterialId && this.thirdMaterial.quantity) {
-        materials.push({
-          materialId: this.thirdMaterialId,
-          quantity: this.thirdMaterial.quantity
-        });
-      }
-
-      if (this.fourthMaterialId && this.fourthMaterial.quantity) {
-        materials.push({
-          materialId: this.fourthMaterialId,
-          quantity: this.fourthMaterial.quantity
-        });
-      }
-
-      if (this.fifthMaterialId && this.fifthMaterial.quantity) {
-        materials.push({
-          materialId: this.fifthMaterialId,
-          quantity: this.fifthMaterial.quantity
-        });
-      }
-
-      return materials;
+      return this.materialInputs
+          .slice(0, this.materialQuantity)
+          .filter(m => m.id && m.quantity)
+          .map(m => ({
+            materialId: m.id,
+            quantity: m.quantity
+          }));
     },
-
     async addAct() {
       try {
         const materials = this.addMaterials();
-
         const formatDate = (date) => {
           const year = date.getFullYear();
           const month = String(date.getMonth() + 1).padStart(2, '0');
           const day = String(date.getDate()).padStart(2, '0');
           return `${year}-${month}-${day}`;
         };
-        // Создаем FormData вместо JSON
+
         const formData = new FormData();
         formData.append('projectId', this.projectId);
         formData.append('subObjectId', this.subObjectId);
@@ -520,36 +374,28 @@ export default {
         formData.append('workDone', parseFloat(this.workDone));
         formData.append('startDate', formatDate(this.startDate));
         formData.append('endDate', formatDate(this.endDate));
-
         formData.append('executiveSchema', this.executiveSchema);
-
-        // Добавляем материалы как JSON строку
         formData.append('materials', JSON.stringify(materials));
 
         if (this.materialQuantity > 0) {
           formData.append('controlDate', formatDate(this.setControlDate));
         }
 
-        // Добавляем файл, если есть
         if (this.executiveSchema === 'Есть' && this.file) {
           formData.append('file', this.file);
         }
 
         await fetch('http://localhost:8080/acts', {
           method: 'POST',
-          // Не устанавливайте Content-Type вручную - браузер сделает это автоматически
-          // с правильным boundary для FormData
           body: formData
         });
 
-        console.log('Акт успешно сохранен:');
         this.$router.push("/");
       } catch (error) {
         console.error('Ошибка:', error);
         this.errors.push('Не удалось сохранить акт');
       }
     },
-
     handleFileUpload(event) {
       this.file = event.target.files[0];
       if (this.file && this.file.type !== 'application/pdf') {
@@ -559,7 +405,6 @@ export default {
       }
     },
   },
-
   computed: {
     setControlDate() {
       let controlDate = new Date(this.startDate.getFullYear() + "." + (this.startDate.getMonth() + 1) + "." + 1);
@@ -570,65 +415,66 @@ export default {
       }
       return controlDate;
     },
-
     setFirstEndDate() {
       return this.startDate
     }
   }
 }
 </script>
+
 <style scoped>
-body {
-  background-color: #FFEBEE
+.card {
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-label.radio {
-  cursor: pointer;
-  width: 100%
+.form-control, .form-select {
+  border-radius: 8px;
+  padding: 10px 15px;
 }
 
-label.radio input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  visibility: hidden;
-  pointer-events: none
+.form-label {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
 }
 
-label.radio span {
-  padding: 7px 14px;
-  border: 2px solid #eee;
-  display: inline-block;
-  color: #039be5;
-  border-radius: 10px;
+.btn {
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.alert {
+  border-radius: 8px;
+}
+
+.input-group-text {
+  border-radius: 8px 0 0 8px;
+}
+
+.badge {
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: normal;
+}
+
+.v-date-picker {
   width: 100%;
-  height: 48px;
-  line-height: 27px
 }
 
-label.radio input:checked + span {
-  border-color: #039BE5;
-  background-color: #81D4FA;
-  color: #fff;
-  border-radius: 9px;
-  height: 48px;
-  line-height: 27px
-}
+@media (max-width: 768px) {
+  .d-flex {
+    flex-direction: column;
+    gap: 12px;
+  }
 
-.form-control {
-  margin-top: 10px;
-  height: 48px;
-  border: 2px solid #eee;
-  border-radius: 10px
-}
+  .btn-group {
+    flex-wrap: wrap;
+  }
 
-.form-control:focus {
-  box-shadow: none;
-  border: 2px solid #039BE5
-}
-
-.confirm-button {
-  height: 50px;
-  border-radius: 10px
+  .btn-group .btn {
+    flex: 1 0 45%;
+    margin-bottom: 8px;
+  }
 }
 </style>

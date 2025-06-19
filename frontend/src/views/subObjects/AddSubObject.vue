@@ -1,62 +1,79 @@
 <template>
-  <main>
-    <Navbar/>
-    <div class="my-5">
-      <div class="mx-auto w-25 " style="max-width:100%;">
-        <h2 class="text-center mb-3">Добавить подобъект</h2>
-        <form @submit.prevent="addSubObject">
-          <!--name-->
-          <div class="row">
-            <div class="col-md-12 form-group mb-3">
-              <label for="name" class="form-label">Наименование</label>
-              <input id="name" type="text" name="name" class="form-control" placeholder="наименование"
+  <main class="bg-light min-vh-100">
+    <Navbar />
+
+    <div class="container py-5">
+      <div class="card shadow-sm border-0 mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-white py-4">
+          <h2 class="h4 mb-0 text-center text-primary">Добавить подобъект</h2>
+        </div>
+
+        <div class="card-body">
+          <form @submit.prevent="addSubObject">
+            <!-- Наименование -->
+            <div class="mb-4">
+              <label for="name" class="form-label fw-semibold">
+                <i class="bi bi-building me-2"></i>Наименование
+              </label>
+              <input id="name" type="text" class="form-control"
+                     placeholder="Введите наименование подобъекта"
                      required v-model="subObject.name">
             </div>
-          </div>
 
-
-          <!--Email-->
-          <div class="row">
-            <div class="col-md-12 form-group mb-3">
-              <label for="units" class="form-label">Аббревиатура</label>
-              <input id="units" type="text" name="units" class="form-control" placeholder="Аббревиатура"
+            <!-- Аббревиатура -->
+            <div class="mb-4">
+              <label for="title" class="form-label fw-semibold">
+                <i class="bi bi-textarea-t me-2"></i>Аббревиатура
+              </label>
+              <input id="title" type="text" class="form-control"
+                     placeholder="Введите аббревиатуру"
                      required v-model="subObject.title">
             </div>
-          </div>
 
-          <!--Phone Number-->
-          <div class="row">
-            <div class="d-flex justify-content-start mt-3">
-              <label class="radio mr-1">
-                <input type="radio" name="projectId" :value="1"
-                       v-model="subObject.projectId"
-                       checked>
-                <span> <i class="fa fa-user"></i> Грушовая </span>
+            <!-- Выбор проекта -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold d-block mb-3">
+                <i class="bi bi-diagram-2 me-2"></i>Проект
               </label>
-              <label class="radio m-lg-auto">
-                <input type="radio" name="projectId" :value="2"
-                       v-model="subObject.projectId">
-                <span> <i class="fa fa-plus-circle"></i> Шесхарис </span>
-              </label>
-            </div>
-          </div>
+              <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="projectId"
+                       id="project1" autocomplete="off"
+                       :value="1" v-model="subObject.projectId">
+                <label class="btn btn-outline-primary" for="project1">
+                  <i class="bi bi-tree me-2"></i>Грушовая
+                </label>
 
-          <div class="row">
-            <div class="col-md-12 form-group">
-              <input class="btn btn-primary w-100" type="submit" value="Submit">
+                <input type="radio" class="btn-check" name="projectId"
+                       id="project2" autocomplete="off"
+                       :value="2" v-model="subObject.projectId">
+                <label class="btn btn-outline-primary" for="project2">
+                  <i class="bi bi-building me-2"></i>Шесхарис
+                </label>
+              </div>
             </div>
-          </div>
-          <div class="row mt-3">
-            <div class="col-md-12 form-group">
-              <button @click.prevent="getSomething" class="btn btn-outline-success w-50" type="submit" value="Submit">Жми</button>
+
+            <!-- Ошибка -->
+            <div v-if="error" class="alert alert-danger mb-4">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
             </div>
-          </div>
-        </form>
+
+            <!-- Кнопки -->
+            <div class="d-flex gap-3">
+              <button @click.prevent="getSomething"
+                      class="btn btn-outline-success flex-grow-1 py-2">
+                <i class="bi bi-lightning-charge me-2"></i>Проверить
+              </button>
+
+              <button type="submit" class="btn btn-primary flex-grow-1 py-2">
+                <i class="bi bi-check-circle me-2"></i>Добавить
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </main>
 </template>
-
 
 <script>
 import Navbar from '../../components/Navbar.vue';
@@ -66,24 +83,24 @@ export default {
   components: {
     Navbar
   },
-
   data() {
     return {
       subObject: {
         name: '',
         title: '',
-        projectId: 4,
-      }
+        projectId: 1, // Установлено значение по умолчанию 1
+      },
+      error: null
     }
   },
-
   methods: {
-
     getSomething() {
-      console.log(this.subObject.projectId);
+      console.log('Выбран проект ID:', this.subObject.projectId);
     },
 
     addSubObject() {
+      this.error = null;
+
       fetch('http://localhost:8080/subobjects', {
         method: 'POST',
         headers: {
@@ -91,13 +108,74 @@ export default {
         },
         body: JSON.stringify(this.subObject)
       })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Ошибка при добавлении подобъекта');
+            }
+            return response.json();
+          })
           .then(data => {
-            console.log(data)
+            console.log(data);
             this.$router.push("/subObjects");
           })
+          .catch(error => {
+            console.error('Ошибка:', error);
+            this.error = error.message;
+          });
     }
   }
 }
-
-
 </script>
+
+<style scoped>
+.card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.form-control {
+  border-radius: 8px;
+  padding: 10px 15px;
+}
+
+.form-label {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.btn {
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.alert {
+  border-radius: 8px;
+}
+
+.btn-group {
+  gap: 8px;
+}
+
+.btn-group .btn {
+  flex: 1;
+}
+
+@media (max-width: 576px) {
+  .card {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .container {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .d-flex {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+</style>

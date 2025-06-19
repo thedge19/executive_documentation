@@ -1,98 +1,121 @@
 <template>
-  <main>
+  <main class="bg-light min-vh-100">
     <Navbar/>
 
-    <!-- Table-->
-    <div class="container">
-      <div class="row">
-        <div class="col-md-24">
-          <h1 class="text-center mt-5">Работы</h1>
-          <!--Add button -->
-          <div class="d-flex justify-content-between h3">
-            <div class="my-3">
-              <a :href="`/addWork/${subObjectId}`" class="btn btn-primary">Добавить работу</a>
+    <div class="container py-4">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white py-3 mt-5">
+          <h1 class="h3 mb-0 text-center">Учет выполненных работ</h1>
+        </div>
+
+        <div class="card-body">
+          <!-- Controls -->
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+            <div>
+              <a :href="`/addWork/${subObjectId}`" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Добавить работу
+              </a>
             </div>
-<!--            <div class="my-3">-->
-<!--              <button class="btn btn-primary" @click.prevent="getSomething">Жми</button>-->
-<!--            </div>-->
-            <div class="input-group mb-3 mt-3" style="width: 50%">
-              <label class="input-group-text" for="inputGroupSelect01">Подобъекты</label>
-              <select class="form-select" id="inputGroupSelect01"
-                      v-model="subObjectId" @change="onChangeSubObject()">
-                <option selected>Choose...</option>
-                <option style="width: min-content"
-                        v-for="subObject in subObjects" :value="subObject.id">{{ subObject.name }}
-                </option>
-              </select>
+
+            <div class="flex-grow-1 mx-md-3" style="max-width: 500px;">
+              <div class="input-group">
+                <label class="input-group-text bg-white"><i class="bi bi-building"></i></label>
+                <select class="form-select" v-model="subObjectId" @change="onChangeSubObject()">
+                  <option value="" disabled selected>Выберите подобъект...</option>
+                  <option v-for="subObject in subObjects" :value="subObject.id">
+                    {{ subObject.name }}
+                  </option>
+                </select>
+              </div>
             </div>
           </div>
-          <table class="table table-striped" style="width:100%">
-            <thead>
-            <tr>
-              <th scope="col">Id</th>
-              <th scope="col">Наименование</th>
-              <th scope="col">Ед. изм.</th>
-              <th scope="col">Количество</th>
-              <th scope="col">Выполнено</th>
-              <th scope="col">Осталось</th>
-              <!--              <th scope="col">Подобъект</th>-->
-              <th scope="col" style="width:15%">Действие</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr v-if="works.content && works.content.length > 0" v-for="work in works.content" :key="work.id">
-              <th scope="row">{{ work.id }}</th>
-              <td>{{ work.name }}</td>
-              <td>{{ work.units }}</td>
-              <td>{{ work.quantity }}</td>
-              <td>{{ work.done }}</td>
-              <td>{{ work.finalQuantity }}</td>
-              <!--              <td>{{ work.subObject.title }}</td>-->
-              <td>
-                <a class="btn btn-primary" :href="`/editWork/${work.id}`">Edit</a>
-                <button class="btn btn-danger mx-2" @click="deleteWork(work.id)">Delete</button>
-              </td>
-            </tr>
-            <tr v-else>
-              <td colspan="7" class="text-center">Нет данных для отображения</td>
-            </tr>
-            </tbody>
-          </table>
-          <!-- Пагинация -->
-          <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center">
-              <li class="page-item" :class="{ disabled: works.first }">
-                <button class="page-link" @click="changePage(0)">First</button>
-              </li>
-              <li class="page-item" :class="{ disabled: works.first }">
-                <button class="page-link" @click="changePage(works.number - 1)">Previous</button>
-              </li>
 
-              <li class="page-item" v-for="page in pageNumbers" :key="page"
-                  :class="{ active: works.number === page }">
-                <button class="page-link" @click="changePage(page)">{{ page + 1 }}</button>
-              </li>
+          <!-- Table -->
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-dark">
+              <tr>
+                <th scope="col" class="text-nowrap">ID</th>
+                <th scope="col" class="text-nowrap">Наименование</th>
+                <th scope="col" class="text-nowrap">Ед. изм.</th>
+                <th scope="col" class="text-nowrap">Количество</th>
+                <th scope="col" class="text-nowrap">Выполнено</th>
+                <th scope="col" class="text-nowrap">Осталось</th>
+                <th scope="col" class="text-nowrap text-end" style="width:15%">Действие</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr v-if="works.content && works.content.length > 0" v-for="work in works.content" :key="work.id">
+                <th scope="row" class="fw-semibold">{{ work.id }}</th>
+                <td>{{ work.name }}</td>
+                <td class="text-center">{{ work.units }}</td>
+                <td class="text-center">{{ work.quantity }}</td>
+                <td class="text-center">{{ work.done }}</td>
+                <td class="text-center">{{ work.finalQuantity }}</td>
+                <td class="text-end">
+                  <div class="d-flex justify-content-end gap-2">
+                    <a class="btn btn-sm btn-outline-primary" :href="`/editWork/${work.id}`">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger" @click="deleteWork(work.id)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr v-else>
+                <td colspan="7" class="text-center py-4 text-muted">
+                  <i class="bi bi-exclamation-circle fs-4 d-block mb-2"></i>
+                  Нет данных для отображения
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
 
-              <li class="page-item" :class="{ disabled: works.last }">
-                <button class="page-link" @click="changePage(works.number + 1)">Next</button>
-              </li>
-              <li class="page-item" :class="{ disabled: works.last }">
-                <button class="page-link" @click="changePage(works.totalPages - 1)">Last</button>
-              </li>
-            </ul>
-          </nav>
-          <div class="text-center" v-if="works.totalElements > 0">
-            <small class="text-muted">
+          <!-- Pagination -->
+          <div class="d-flex flex-column align-items-center mt-4">
+            <nav aria-label="Page navigation">
+              <ul class="pagination pagination-sm">
+                <li class="page-item" :class="{ disabled: works.first }">
+                  <button class="page-link" @click="changePage(0)">
+                    <i class="bi bi-chevron-double-left"></i>
+                  </button>
+                </li>
+                <li class="page-item" :class="{ disabled: works.first }">
+                  <button class="page-link" @click="changePage(works.number - 1)">
+                    <i class="bi bi-chevron-left"></i>
+                  </button>
+                </li>
+
+                <li class="page-item" v-for="page in pageNumbers" :key="page"
+                    :class="{ active: works.number === page }">
+                  <button class="page-link" @click="changePage(page)">{{ page + 1 }}</button>
+                </li>
+
+                <li class="page-item" :class="{ disabled: works.last }">
+                  <button class="page-link" @click="changePage(works.number + 1)">
+                    <i class="bi bi-chevron-right"></i>
+                  </button>
+                </li>
+                <li class="page-item" :class="{ disabled: works.last }">
+                  <button class="page-link" @click="changePage(works.totalPages - 1)">
+                    <i class="bi bi-chevron-double-right"></i>
+                  </button>
+                </li>
+              </ul>
+            </nav>
+
+            <div v-if="works.totalElements > 0" class="text-muted small mt-2">
               Показано {{ works.numberOfElements }} из {{ works.totalElements }} работ
               (Страница {{ works.number + 1 }} из {{ works.totalPages }})
-            </small>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </main>
 </template>
-
 
 <script>
 import Navbar from '../../components/Navbar.vue'
@@ -108,7 +131,7 @@ export default {
       works: {
         content: [],
         number: 0,
-        size: 10,
+        size: 15,  // Изменили здесь
         totalElements: 0,
         totalPages: 0,
         first: true,
@@ -116,15 +139,14 @@ export default {
       },
       subObjects: [],
       subObjectId: this.$route.params.id,
-      pageSize: 10
+      pageSize: 15  // И здесь изменили с 10 на 15
     }
   },
-
   computed: {
     pageNumbers() {
       const current = this.works.number;
       const total = this.works.totalPages;
-      const range = 2; // Количество отображаемых страниц вокруг текущей
+      const range = 2;
 
       let start = Math.max(0, current - range);
       let end = Math.min(total - 1, current + range);
@@ -144,48 +166,31 @@ export default {
       return pages;
     }
   },
-
   mounted() {
     this.getWorks()
     this.getSubObjects()
   },
-
   methods: {
     getWorks() {
       this.isLoading = true;
-
       fetch(`http://localhost:8080/workings/${this.subObjectId}?page=${this.works.number}&size=${this.pageSize}`)
           .then(res => res.json())
           .then(data => {
             this.works = data;
-            console.log("Works data loaded:", {
-              size: this.works.size,
-              contentLength: this.works.content.length
-            });
           })
-          .catch(error => {
-            console.error("Fetch error:", error);
-          })
+          .catch(console.error)
           .finally(() => {
             this.isLoading = false;
           });
     },
-
     deleteWork(id) {
       if (confirm('Вы действительно хотите удалить эту работу?')) {
         fetch(`http://localhost:8080/workings/${id}`, {
           method: 'DELETE'
         })
             .then(response => {
-              if (!response.ok) {
-                throw new Error('Ошибка при удалении');
-              }
-              return response;
-            })
-            .then(data => {
-              console.log(data);
+              if (!response.ok) throw new Error('Ошибка при удалении');
               this.getWorks();
-              // Можно добавить уведомление об успешном удалении
               alert('Работа успешно удалена');
             })
             .catch(error => {
@@ -194,40 +199,51 @@ export default {
             });
       }
     },
-
     getSubObjects() {
-      fetch(`http://localhost:8080/subobjects`,
-      )
+      fetch(`http://localhost:8080/subobjects`)
           .then(res => res.json())
-          .then(data => {
-            this.subObjects = data
-          })
+          .then(data => this.subObjects = data)
     },
-
     onChangeSubObject() {
-      console.log(this.subObjectId)
-      this.getWorks()
+      this.works.number = 0; // Сброс пагинации при смене подобъекта
+      this.getWorks();
     },
-
     changePage(pageNumber) {
       if (pageNumber >= 0 && pageNumber < this.works.totalPages) {
         this.works.number = pageNumber;
         this.getWorks();
       }
-    },
-
-    getSomething() {
-      console.log("Full works object:", this.works);
-      console.log("Works size:", this.works.size);
-      console.log("Works content:", this.works.content);
     }
   }
 }
-
 </script>
+
 <style scoped>
-.pagination {
-  margin-top: 20px;
+.card {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.table {
+  font-size: 0.9rem;
+  margin-bottom: 0;
+}
+
+.table th {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.btn {
+  transition: all 0.2s;
+}
+
+.btn-outline-primary:hover, .btn-outline-danger:hover {
+  color: white;
 }
 
 .page-item.active .page-link {
@@ -236,6 +252,31 @@ export default {
 }
 
 .page-link {
-  cursor: pointer;
+  min-width: 36px;
+  text-align: center;
+}
+
+.input-group-text {
+  border-right: none;
+}
+
+.form-select {
+  border-left: none;
+}
+
+.input-group:focus-within {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  border-radius: 0.375rem;
+}
+
+@media (max-width: 768px) {
+  .table-responsive {
+    font-size: 0.8rem;
+  }
+
+  .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+  }
 }
 </style>

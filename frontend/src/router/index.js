@@ -72,7 +72,7 @@ const router = createRouter({
       component: () => import('../views/standards/UpdateStandard.vue')
     },
     {
-      path: '/subObjects',
+      path: '/subObjects/:id',
       name: 'viewSubObjects',
       component: ViewSubObjects
     },
@@ -110,11 +110,6 @@ const router = createRouter({
       path: '/editControl/:id',
       name: 'editControl',
       component: () => import('../views/controls/UpdateControl.vue')
-    },
-    {
-      path: '/excel',
-      name: 'viewExcel',
-      component: () => import('../views/excel/SelectPeriod.vue')
     },
     {
       path: '/workLog3',

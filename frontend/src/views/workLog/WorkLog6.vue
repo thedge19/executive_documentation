@@ -1,33 +1,44 @@
 <template>
-  <main>
+  <main style="background-color: #f8f9fa; min-height: 100vh;">
     <Navbar/>
-    <div class="container">
-      <div class="row">
-        <div style="position: absolute; top: 0; bottom: 0; left: 0; right: 0;">
-          <h1 class="text-center">Работы</h1>
-          <!--Add button -->
-          <div class="d-flex justify-content-start">
-            <button @click="fillInTheLog" class="btn btn-outline-primary mx-3">Сформировать 6 раздел</button>
-            <button @click="generatePdf" class="btn btn-outline-secondary mx-3">Выгрузить в pdf</button>
+    <div class="container py-4">
+      <div class="row justify-content-center">
+        <div class="col-12 mt-5">
+          <h1 class="text-center mb-4 text-primary">Общий журнал работ. Раздел 6</h1>
+
+          <!-- Кнопки действий -->
+          <div class="d-flex justify-content-start mb-4">
+            <button @click="fillInTheLog" class="btn btn-primary mx-2 shadow-sm rounded-pill">
+              <i class="bi bi-file-earmark-plus me-2"></i>Сформировать 6 раздел
+            </button>
+            <button @click="generatePdf" class="btn btn-success mx-2 shadow-sm rounded-pill">
+              <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить в PDF
+            </button>
           </div>
-          <div class="table-responsive table-scroll" data-mdb-perfect-scrollbar="true"
-               style="position: relative">
-            <table class="table table-striped mb-0">
-              <thead style="background-color: #002d72;">
-              <tr style="color: red;">
-                <th class="text-center" scope="col" style="color: black; width: 50%">Наименование исполнительной...</th>
-                <th class="text-center" scope="col" style="color: black; width: 15%">Дата подписания акта...</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr v-for="act in acts" :key="act.id">
-                <td class="text-center" style="color: black; width: 6%">Акт освидетельствования скрытых работ №
-                  {{ act.actNumber }} {{ act.works }}
-                </td>
-                <td class="text-center" style="color: black; width: 50%">{{ act.endDate }}</td>
-              </tr>
-              </tbody>
-            </table>
+
+          <!-- Таблица -->
+          <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+              <div class="table-responsive" style="max-height: 75vh;">
+                <table class="table table-hover mb-0">
+                  <thead class="sticky-top" style="background-color: #002d72;">
+                  <tr>
+                    <th class="text-center text-white fw-normal" style="width: 5%; background-color: #000000;">№ п/п</th>
+                    <th class="text-center text-white fw-normal" style="width: 60%; background-color: #000000;">Наименование исполнительной документации</th>
+                    <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">Дата подписания акта</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr v-for="(act, index) in acts" :key="act.id"
+                      :class="{'table-light': index % 2 === 0}">
+                    <td class="text-center align-middle">{{ index + 1 }}</td>
+                    <td class="align-middle">Акт освидетельствования скрытых работ № {{ act.actNumber }} {{ act.works }}</td>
+                    <td class="text-center align-middle">{{ act.endDate }}</td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -36,7 +47,7 @@
 </template>
 
 <script setup>
-import {ref, onMounted} from 'vue'
+import { ref, onMounted } from 'vue'
 import Navbar from '../../components/Navbar.vue'
 
 const acts = ref([])
@@ -72,42 +83,103 @@ const generatePdf = () => {
   window.open('http://localhost:8080/worklog/6/pdf', '_blank')
 }
 
+// Форматирование даты
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString('ru-RU')
+}
+
 // Загружаем акты при монтировании компонента
 onMounted(getActs)
 </script>
 
 <style scoped>
-html,
-body,
-table {
-  table-layout: fixed;
+/* Основные стили */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-table td,
-table th {
-  text-overflow: ellipsis;
-  overflow: hidden;
-  word-wrap: break-word;
+/* Стили для таблицы */
+.table {
+  font-size: 0.95rem;
 }
 
-thead th {
-  color: #fff;
+.table th {
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 45, 114, 0.05);
+}
+
+/* Стили для карточки */
 .card {
-  border-radius: .5rem;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.table-scroll {
-  border-radius: .5rem;
+/* Стили для кнопок */
+.btn {
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 500;
 }
 
-.table-scroll table thead th {
-  font-size: 1.25rem;
+.btn-primary {
+  background-color: #002d72;
+  border-color: #002d72;
 }
 
-thead {
-  top: 0;
-  position: sticky;
+.btn-primary:hover {
+  background-color: #001f4d;
+  border-color: #001f4d;
+}
+
+.btn-success {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.btn-success:hover {
+  background-color: #218838;
+  border-color: #1e7e34;
+}
+
+/* Скролл таблицы */
+.table-responsive {
+  scrollbar-width: thin;
+  scrollbar-color: #002d72 #f1f1f1;
+}
+
+.table-responsive::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background-color: #002d72;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+}
+
+/* Анимация загрузки */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.table tbody tr {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+/* Иконки для кнопок */
+.bi {
+  font-size: 1rem;
 }
 </style>
