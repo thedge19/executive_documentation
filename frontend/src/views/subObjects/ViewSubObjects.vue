@@ -1,57 +1,75 @@
 <template>
-  <main>
-    <Navbar/>
+  <main class="bg-light min-vh-100">
+    <Navbar />
 
-    <!-- Table-->
-    <div class="container">
-      <div class="row">
-        <div class="col-md-12">
-          <h1 class="text-center">Подобъекты</h1>
-          <!--Add button -->
-          <a href="/addSubObject" class="btn btn-primary">Добавить подобъект</a>
-          <div class="d-flex justify-content-start mt-3">
-            <label class="radio mr-1">
-              <input type="radio" @change="onChangeProject()" name="add" :value="4"
-                     v-model="projectId"
-                     checked>
-              <span> <i class="fa fa-user"></i> Грушовая </span>
-            </label>
-            <label class="radio m-lg-auto">
-              <input type="radio" @change="onChangeProject()" name="add" :value="5"
-                     v-model="projectId">
-              <span> <i class="fa fa-plus-circle"></i> Шесхарис </span>
-            </label>
+    <div class="container-fluid px-5 py-4">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+          <h1 class="mb-0 mt-5 fw-semibold text-primary text-center">Подобъекты</h1>
+
+          <div class="d-flex justify-content-between align-items-center mt-5">
+            <a href="/addSubObject" class="btn btn-primary rounded-pill px-4">
+              <i class="bi bi-plus-lg me-2"></i>Добавить подобъект
+            </a>
+
+            <div class="btn-group" role="group">
+              <input type="radio" class="btn-check" id="project4" @change="onChangeProject()"
+                     name="project" v-model="projectId" :value="4" autocomplete="off" checked>
+              <label class="btn btn-outline-secondary" for="project4">
+                <i class="bi bi-tree me-1"></i>Грушовая
+              </label>
+
+              <input type="radio" class="btn-check" id="project5" @change="onChangeProject()"
+                     name="project" v-model="projectId" :value="5" autocomplete="off">
+              <label class="btn btn-outline-secondary" for="project5">
+                <i class="bi bi-building me-1"></i>Шесхарис
+              </label>
+            </div>
           </div>
-          <table class="table table-striped">
-            <thead>
-            <tr>
-              <th scope="col">Id</th>
-              <th scope="col">Наименование</th>
-              <th scope="col">Обозначение</th>
-              <th scope="col">Объект</th>
-              <th scope="col" style="width:15%">Действие</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr v-for="subObject in subObjects" :key="subObject.id">
-              <th scope="row">{{ subObject.id }}</th>
-              <td><a :href="`/works/${subObject.id}`"> {{ subObject.name }}</a></td>
-              <td>{{ subObject.title }}</td>
-              <td>{{ subObject.project.name }}</td>
-              <td>
-                <a class="btn btn-primary" :href="`/editSubObject/${subObject.id}`">Edit</a>
-                <button class="btn btn-danger mx-2" @click="deleteSubObject(subObject.id)">Delete</button>
-              </td>
-            </tr>
-            </tbody>
-          </table>
+        </div>
+
+        <div class="card-body p-0">
+          <div class="table-responsive" style="max-height: 76vh;">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="sticky-top">
+              <tr>
+                <th class="text-white ps-4" style="background-color: #000000; width: 10%">ID</th>
+                <th class="text-white text-center" style="background-color: #000000; width: 40%">Наименование</th>
+                <th class="text-white text-center" style="background-color: #000000; width: 15%">Обозначение</th>
+                <th class="text-white text-center" style="background-color: #000000; width: 20%">Объект</th>
+                <th class="text-white text-center" style="background-color: #000000; width: 15%">Действие</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr v-for="(subObject, index) in subObjects" :key="subObject.id"
+                  :class="{'table-light': index % 2 === 0}" class="border-top">
+                <td class="ps-4 fw-semibold text-muted">{{ subObject.id }}</td>
+                <td>
+                  <a :href="`/works/${subObject.id}`" class="text-decoration-none text-primary">
+                    {{ subObject.name }}
+                  </a>
+                </td>
+                <td class="text-center">{{ subObject.title }}</td>
+                <td class="text-center">{{ subObject.project.name }}</td>
+                <td class="text-center pe-4">
+                  <div class="d-flex justify-content-center">
+                    <a :href="`/editSubObject/${subObject.id}`" class="btn btn-sm btn-outline-primary rounded-pill px-3 me-2">
+                      <i class="bi bi-pencil-square me-1"></i>Изменить
+                    </a>
+                    <button @click="deleteSubObject(subObject.id)" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                      <i class="bi bi-trash3 me-1"></i>Удалить
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
-
   </main>
 </template>
-
 
 <script>
 import Navbar from '../../components/Navbar.vue'
@@ -67,19 +85,15 @@ export default {
       projectId: 4
     }
   },
-
   beforeMount() {
     this.getSubObjects()
   },
-
   methods: {
-
     onChangeProject() {
       this.getSubObjects()
     },
-
     getSubObjects() {
-      fetch(`http://localhost:8080/subobjects/${this.projectId}`,{
+      fetch(`http://localhost:8080/subobjects/${this.projectId}`, {
         mode: 'cors',
         headers: {
           'Content-Type': 'application/json',
@@ -88,34 +102,104 @@ export default {
           .then(res => res.json())
           .then(data => {
             this.subObjects = data
-            console.log(data)
           })
+          .catch(console.error)
     },
-
     deleteSubObject(id) {
-      if (confirm('Вы действительно хотите удалить подобъект?')) {
+      if(confirm('Вы действительно хотите удалить подобъект?')) {
         fetch(`http://localhost:8080/subobjects/${id}`, {
           method: 'DELETE'
         })
-            .then(response => {
-              if (!response.ok) {
-                throw new Error('Ошибка при удалении');
-              }
-              return response;
-            })
-            .then(data => {
-              console.log(data);
-              this.getWorks();
-              // Можно добавить уведомление об успешном удалении
-              alert('Подобъект успешно удалён');
-            })
-            .catch(error => {
-              console.error('Ошибка:', error);
-              alert('Не удалось удалить подобъект');
-            });
+            .then(() => this.getSubObjects())
+            .catch(console.error)
       }
-    },
+    }
+  }
+}
+</script>
+
+<style scoped>
+.card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table {
+  font-size: 0.95rem;
+}
+
+.table th {
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+  vertical-align: middle;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.table-light {
+  background-color: #f8f9fa;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.btn-group .btn {
+  border-radius: 20px;
+  margin: 0 2px;
+}
+
+.btn-check:checked + .btn-outline-secondary {
+  background-color: #0d6efd;
+  color: white;
+  border-color: #0d6efd;
+}
+
+.table-responsive::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background-color: #000000;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+}
+
+@media (max-width: 768px) {
+  .btn-group {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .btn-group .btn {
+    margin: 2px;
+    flex-grow: 1;
+  }
+
+  .table td, .table th {
+    padding: 0.5rem;
+  }
+
+  .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
   }
 }
 
-</script>
+/* Анимация загрузки */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.table tbody tr {
+  animation: fadeIn 0.3s ease forwards;
+}
+</style>

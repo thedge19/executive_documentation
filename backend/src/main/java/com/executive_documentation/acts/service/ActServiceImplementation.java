@@ -104,8 +104,30 @@ public class ActServiceImplementation implements ActService {
     }
 
     @Override
-    public List<ExecutiveSchema> getExecutiveSchemas() {
-        return executiveSchemaRepository.findAll();
+    public List<ExecutiveSchema> getExecutiveSchemasAsc() {
+
+        return executiveSchemaRepository.findAllByOrderBySchemasActNumberAsc()
+                .stream()
+                .peek(schema -> {
+                    String path = fileStorageService.getFilePublicUrl(schema.getSchemaPath());
+                    schema.setSchemaPath(path);
+                }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ExecutiveSchema> getExecutiveSchemasDesc() {
+
+        return executiveSchemaRepository.findAllByOrderBySchemasActNumberDesc()
+                .stream()
+                .peek(schema -> {
+                    String path = fileStorageService.getFilePublicUrl(schema.getSchemaPath());
+                    schema.setSchemaPath(path);
+                }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ExecutiveSchema> getExecutiveSchemasFilteredByName() {
+        return executiveSchemaRepository.findAllByOrderBySchemasActNumberAsc();
     }
 
     @Override

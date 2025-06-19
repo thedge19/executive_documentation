@@ -112,11 +112,6 @@ const router = createRouter({
       component: () => import('../views/controls/UpdateControl.vue')
     },
     {
-      path: '/excel',
-      name: 'viewExcel',
-      component: () => import('../views/excel/SelectPeriod.vue')
-    },
-    {
       path: '/workLog3',
       name: 'viewWorkLog3',
       component: () => import('../views/workLog/WorkLog.vue')

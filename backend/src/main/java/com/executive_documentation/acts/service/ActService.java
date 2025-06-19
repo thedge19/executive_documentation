@@ -16,7 +16,11 @@ public interface ActService {
 
     ExecutiveSchema getExecutiveSchema(long id);
 
-    List<ExecutiveSchema> getExecutiveSchemas();
+    List<ExecutiveSchema> getExecutiveSchemasAsc();
+
+    List<ExecutiveSchema> getExecutiveSchemasDesc();
+
+    List<ExecutiveSchema> getExecutiveSchemasFilteredByName();
 
 //    ActUpdateResponseDto getUpdatedAct(long id);
 

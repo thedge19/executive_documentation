@@ -1,93 +1,89 @@
 <template>
-  <main>
+  <main class="bg-light min-vh-100">
     <Navbar/>
-    <div class="container">
-      <div class="row">
-        <div style="position: absolute; top: 0; bottom: 0; left: 0; right: 0;">
-          <h1 class="text-center">Работы</h1>
-          <!--Add button -->
-          <div class="d-flex justify-content-start">
+
+    <div class="container-fluid px-4 py-4">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+          <h1 class="h3 text-center text-primary my-4 mt-5">АОСР</h1>
+
+          <!-- Кнопки (оставлены как есть) -->
+          <div class="d-flex justify-content-start px-4">
             <div>
-              <a href="/addAct" class="btn btn-outline-primary">Добавить акт</a>
+              <a href="/addAct" class="btn btn-primary rounded-pill px-4">
+                <i class="bi bi-plus-lg me-2"></i>Добавить акт
+              </a>
             </div>
             <div class="mx-4">
-              <button @click.prevent="showRegistryDates" class="btn btn-outline-dark">Реестр</button>
-            </div>
-          </div>
-          <div v-if="showDates">
-            <div class="space-y-2 d-flex justify-content-start align-items-center">
-              <div>
-                <label class="input-group-text">Дата начала периода</label>
-                <VDatePicker :attributes="attributes" v-model="startDate" mode="date"/>
-              </div>
-              <div class="m-lg-2">
-                <label class="input-group-text">Дата окончания периода</label>
-                <VDatePicker :attributes="attributes" v-model="endDate" :model-value="setFirstEndDate" mode="date"/>
-              </div>
-            </div>
-            <div class="d-flex justify-content-start mt-2">
-              <button @click.prevent="addDates" class="btn btn-outline-dark btn-block confirm-button m-lg-2">
-                Сформировать реестр
+              <button v-if="showDates" @click.prevent="showRegistryDates"
+                      class="btn btn-outline-dark rounded-pill px-4">
+                <i class="bi bi-border-width me-2"></i>Реестр
               </button>
             </div>
           </div>
-          <div class="table-responsive table-scroll" data-mdb-perfect-scrollbar="true"
-               style="position: relative">
-            <table class="table table-striped mb-0">
-              <thead style="background-color: #002d72;">
-              <tr style="color: red;">
-                <th href="#" @click.prevent="filterBySubObject" class="text-center" scope="col"
-                    style="color: black; width: 7%">##
-                </th>
-                <th class="text-center" scope="col" style="color: black; width: 5%">Дата</th>
-                <th class="text-center" scope="col" style="color: black; width: 15%">Объект</th>
-                <th class="text-center" scope="col" style="color: black; width: 20%">Выполненные
-                  работы
-                </th>
-                <th class="text-center" scope="col" style="color: black; width: 7%">Начало</th>
-                <th class="text-center" scope="col" style="color: black; width: 25%">Материалы</th>
-                <th class="text-center" scope="col" style="color: black; width: 20%">Предъявлены
-                  документы
-                </th>
-                <th class="text-center" scope="col" style="color: black; width: 25%">Выполнено в
-                  соответствии с
-                </th>
-                <th class="text-center" scope="col" style="color: black; width: 20%">Разрешается
-                  выполнение
-                </th>
-                <th class="text-center" scope="col" style="color: black; width: 12%">Действие</th>
+
+          <!-- Форма выбора дат -->
+          <div v-if="!showDates" class="px-4 py-3">
+            <div class="d-flex flex-wrap align-items-center gap-3">
+              <div>
+                <label class="input-group-text"><i class="bi bi-calendar-month me-2"></i>Дата начала периода</label>
+                <VDatePicker :attributes="attributes" v-model="startDate" mode="date"/>
+              </div>
+              <div>
+                <label class="input-group-text"><i class="bi bi-calendar-month me-2"></i>Дата окончания периода</label>
+                <VDatePicker :attributes="attributes" v-model="endDate" :model-value="setFirstEndDate" mode="date"/>
+              </div>
+            </div>
+            <div class="d-flex mt-3">
+              <button @click.prevent="addDates" class="btn btn-outline-success rounded-pill px-4 me-2">
+                <i class="bi bi-file-earmark-pdf me-2 text-danger"></i>Сформировать реестр
+              </button>
+              <button @click.prevent="showRegistryDates" class="btn btn-outline-danger rounded-pill px-4">
+                <i class="bi bi-x"></i>Отмена
+              </button>
+            </div>
+          </div>
+
+          <!-- Таблица с черной шапкой -->
+          <div class="table-responsive mt-3" style="max-height: 78vh;">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="sticky-top">
+              <tr>
+                <th class="text-white text-center" style="width: 7%; background-color: #000000">№</th>
+                <th class="text-white text-center" style="width: 5%; background-color: #000000">Дата</th>
+                <th class="text-white text-center" style="width: 15%; background-color: #000000">Объект</th>
+                <th class="text-white text-center" style="width: 20%; background-color: #000000">Выполненные работы</th>
+                <th class="text-white text-center" style="width: 7%; background-color: #000000">Начало</th>
+                <th class="text-white text-center" style="width: 25%; background-color: #000000">Материалы</th>
+                <th class="text-white text-center" style="width: 20%; background-color: #000000">Предъявлены документы</th>
+                <th class="text-white text-center" style="width: 25%; background-color: #000000">Выполнено в соответствии с</th>
+                <th class="text-white text-center" style="width: 20%; background-color: #000000">Разрешается выполнение</th>
+                <th class="text-white text-center" style="width: 12%; background-color: #000000">Действие</th>
               </tr>
               </thead>
               <tbody>
-              <tr v-for="act in acts" :style="act.inRegistry === null ? `font-weight: bold` : ``">
-                <td>{{ act.actNumber }}</td>
-                <td :style="[act.executiveSchemaId != null ? `color:blue` : `color: red`]">{{ act.endDate }}</td>
-                <td style="width: 15%">{{ act.projectName }}</td>
-                <td style="width: 20%">
+              <tr v-for="act in acts" :key="act.id">
+                <td class="text-center">{{ act.actNumber }}</td>
+                <td class="text-center" :style="[act.executiveSchemaId != null ? `color:blue` : `color:red`]">
+                  {{ act.endDate }}
+                </td>
+                <td>{{ act.projectName }}</td>
+                <td>
                   <a href="#" @click.prevent="generatePdf(act.id)" class="text-decoration-none">
                     {{ act.works }}
+                    <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>
                   </a>
-                  <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>
                 </td>
-                <td style="width: 6%">{{ act.startDate }}</td>
-                <td style="width: 25%" class="text-center">
-                  {{ act.materials }}
-                  <!--                  <span v-if="!act.executiveSchemaUrl">{{ act.actNumber }}</span>-->
-                  <!--                  <a v-else-->
-                  <!--                     :href="act.executiveSchemaUrl"-->
-                  <!--                     target="_blank"-->
-                  <!--                     class="text-decoration-none"-->
-                  <!--                     :title="act.actNumber">-->
-                  <!--                    {{ act.actNumber || 'Скачать схему' }}-->
-                  <!--                    <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>-->
-                  <!--                  </a>-->
-                </td>
-                <td style="width: 20%">{{ act.submittedDocuments }}</td>
-                <td style="width: 25%">{{ act.inAccordWith }}</td>
-                <td style="width: 20%">{{ act.nextWorks }}</td>
-                <td style="width: 12%">
-                  <a class="btn btn-primary" :href="`/editAct/${act.id}`">Edit</a>
-                  <button class="btn btn-danger mx-2" @click="deleteAct(act.id)">Delete</button>
+                <td>{{ act.startDate }}</td>
+                <td class="text-center">{{ act.materials }}</td>
+                <td>{{ act.submittedDocuments }}</td>
+                <td>{{ act.inAccordWith }}</td>
+                <td>{{ act.nextWorks }}</td>
+                <td class="text-center">
+                  <div class="d-flex justify-content-center">
+                    <a class="btn btn-primary btn-sm" :href="`/editAct/${act.id}`">Edit</a>
+                    <button class="btn btn-danger btn-sm mx-1" @click="deleteAct(act.id)">Delete</button>
+                  </div>
                 </td>
               </tr>
               </tbody>
@@ -99,7 +95,6 @@
   </main>
 </template>
 
-
 <script>
 import Navbar from '../components/Navbar.vue';
 
@@ -108,28 +103,22 @@ export default {
   components: {
     Navbar
   },
-
   data() {
     return {
       acts: [],
       path: 'http://localhost:8080/acts',
-
       startDate: new Date(),
       endDate: "",
-
-      showDates: false,
-
+      showDates: true,
       attributes: {
         highlight: true,
         dates: this.setFirstEndDate,
       }
     }
   },
-
   mounted() {
     this.getActs()
   },
-
   methods: {
     getActs() {
       fetch(this.path, {
@@ -141,34 +130,25 @@ export default {
           .then(res => res.json())
           .then(data => {
             this.acts = data
-            console.log(data)
           })
+          .catch(console.error)
     },
-
     deleteAct(id) {
-      fetch(`http://localhost:8080/acts/${id}`, {
-        method: 'DELETE'
-      })
-          .then(data => {
-            console.log(data)
-            this.getActs()
-          })
+      if (confirm('Вы уверены, что хотите удалить этот акт?')) {
+        fetch(`http://localhost:8080/acts/${id}`, {
+          method: 'DELETE'
+        })
+            .then(() => this.getActs())
+            .catch(console.error)
+      }
     },
-
     filterBySubObject() {
       this.path = `http://localhost:8080/acts/filterBySubObject`
       this.getActs()
     },
-
-    getPaths() {
-      fetch(`http://localhost:8080/toPdf`, {})
-    },
-
     generatePdf(actId) {
-      // Открываем PDF в новой вкладке
       window.open(`http://localhost:8080/acts/${actId}/pdf`, '_blank');
     },
-
     async addDates() {
       try {
         const formatDate = (date) => {
@@ -189,83 +169,73 @@ export default {
           })
         });
 
-        if (!response.ok) {
-          throw new Error('Ошибка сервера');
-        }
+        if (!response.ok) throw new Error('Ошибка сервера');
 
-        // Получаем PDF как Blob
         const blob = await response.blob();
-
-        // Создаем ссылку для скачивания
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-
-        // Пытаемся получить имя файла из заголовков
-        const contentDisposition = response.headers.get('Content-Disposition');
-        let filename = 'реестр.pdf';
-
-        if (contentDisposition) {
-          const filenameMatch = contentDisposition.match(/filename\*?=([^;]+)/i);
-          if (filenameMatch && filenameMatch[1]) {
-            filename = decodeURIComponent(filenameMatch[1].replace(/UTF-8''/i, ''));
-          }
-        }
-
-        a.download = filename;
+        a.download = 'реестр.pdf';
         document.body.appendChild(a);
         a.click();
-
-        // Очистка
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
 
       } catch (error) {
         console.error('Ошибка:', error);
-        this.errors.push('Не удалось сформировать реестр');
+        alert('Не удалось сформировать реестр');
       }
     },
-
     setFirstEndDate() {
       return this.startDate
     },
-
     showRegistryDates() {
       this.showDates = !this.showDates;
     }
-  },
-
+  }
 }
 </script>
+
 <style scoped>
-html,
-body,
-table {
-  table-layout: fixed;
+.card {
+  border-radius: 10px;
 }
 
-
-table td,
-table th {
-  text-overflow: ellipsis;
-  overflow: hidden;
-  word-wrap: break-word;
+.table {
+  font-size: 0.9rem;
 }
 
-thead th {
-  color: #fff;
+.table th {
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-.table-scroll {
-  border-radius: .5rem;
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.03);
 }
 
-.table-scroll table thead th {
-  font-size: 1.25rem;
+.table-responsive::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-thead {
-  top: 0;
-  position: sticky;
+.table-responsive::-webkit-scrollbar-thumb {
+  background-color: #000000;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  .table-responsive {
+    font-size: 0.8rem;
+  }
 }
 </style>
