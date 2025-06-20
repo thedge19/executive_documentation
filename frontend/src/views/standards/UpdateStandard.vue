@@ -87,7 +87,8 @@ const getStandard = async () => {
     }
 
     if (!response.ok) {
-      throw new Error('Ошибка загрузки стандарта')
+      error.value = 'Ошибка загрузки стандарта';
+      return;
     }
 
     standard.value = await response.json()
@@ -115,15 +116,16 @@ const updateStandard = async () => {
 
     if (response.status === 401) {
       handleUnauthorized()
-      return
+      return;
     }
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || 'Ошибка при обновлении стандарта')
+      error.value = errorData.message || 'Ошибка при обновлении стандарта';
+      return;
     }
 
-    router.push('/standards')
+    await router.push('/standards')
   } catch (err) {
     console.error('Ошибка:', err)
     error.value = err.message

@@ -230,7 +230,8 @@ const addMaterial = async () => {
 
     const token = localStorage.getItem('token')
     if (!token) {
-      throw new Error('Токен отсутствует')
+      error.value = 'Токен отсутствует';
+      return;
     }
 
     material.value.documents = formattedDocuments.value;
@@ -254,7 +255,8 @@ const addMaterial = async () => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Ошибка при сохранении материала');
+      error.value = errorData.message
+      return;
     }
 
     router.push("/materials");

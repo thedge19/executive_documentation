@@ -458,10 +458,6 @@ export default {
   font-weight: normal;
 }
 
-.v-date-picker {
-  width: 100%;
-}
-
 @media (max-width: 768px) {
   .d-flex {
     flex-direction: column;

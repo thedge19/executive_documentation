@@ -183,7 +183,9 @@ export default {
         }
 
         if (!response.ok) {
-          throw new Error('Ошибка загрузки материалов');
+          error.value = 'Ошибка загрузки материалов';
+          isLoading.value = false;
+          return;
         }
 
         materials.value = await response.json();
@@ -220,7 +222,9 @@ export default {
         }
 
         if (!response.ok) {
-          throw new Error('Ошибка удаления материала');
+          error.value = 'Ошибка удаления материалов';
+          isLoading.value = false;
+          return;
         }
 
         await getMaterials();

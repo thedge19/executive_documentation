@@ -58,7 +58,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import {onMounted, ref} from 'vue'
 import Navbar from '../../components/Navbar.vue'
 
 const workLogs = ref([])
@@ -96,7 +96,8 @@ const getLogs = async () => {
     }
 
     if (!response.ok) {
-      throw new Error('Ошибка загрузки журнала работ')
+      error.value = 'Ошибка загрузки журнала работ';
+      return;
     }
 
     workLogs.value = await response.json()
@@ -132,13 +133,15 @@ const fillInTheLog = async () => {
     // 3. Улучшенная обработка 401 ошибки
     if (response.status === 401 || response.status === 403) {
       handleUnauthorized();
-      throw new Error('Сессия истекла. Требуется повторная авторизация');
+      error.value = 'Сессия истекла. Требуется повторная авторизация';
+      return;
     }
 
     // 4. Проверяем успешность запроса
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Ошибка формирования журнала');
+      error.value = errorData.message || 'Ошибка формирования журнала';
+      return;
     }
 
     // 5. Обновляем данные
@@ -181,14 +184,15 @@ const generatePdf = async () => {
       return;
     }
 
-    if (!response.ok) throw new Error('Ошибка сервера');
+    if (!response.ok) {
+      error.value = 'Ошибка сервера';
+      return;
+    }
 
     // Получаем PDF как blob
     const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-
     // Отображаем PDF в новом окне
-    pdfWindow.location.href = url;
+    pdfWindow.location.href = URL.createObjectURL(blob);
 
   } catch (err) {
     console.error('Ошибка при генерации PDF:', err);

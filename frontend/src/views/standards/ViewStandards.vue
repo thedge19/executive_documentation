@@ -88,7 +88,8 @@ const getStandards = async () => {
     }
 
     if (!response.ok) {
-      throw new Error('Ошибка загрузки СП')
+      error.value = 'Ошибка загрузки СП';
+      return;
     }
 
     standards.value = await response.json()
@@ -118,7 +119,8 @@ const deleteStandard = async (id) => {
     }
 
     if (!response.ok) {
-      throw new Error('Ошибка удаления СП')
+      error.value = 'Ошибка удаления СП';
+      return;
     }
 
     await getStandards()

@@ -63,11 +63,6 @@ const getAuthHeaders = () => {
   }
 }
 
-const handleUnauthorized = () => {
-  localStorage.removeItem('token')
-  window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname)
-}
-
 // Получение актов
 const getActs = async () => {
   try {
@@ -115,7 +110,7 @@ body {
 
 .table th {
   font-weight: 500;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }
 
 .table-hover tbody tr:hover {

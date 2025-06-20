@@ -138,7 +138,8 @@ const getActs = async () => {
     }
 
     if (!response.ok) {
-      throw new Error('Ошибка загрузки актов')
+      error.value = 'Ошибка загрузки актов';
+      return;
     }
 
     acts.value = await response.json()
@@ -165,7 +166,8 @@ const deleteAct = async (id) => {
     }
 
     if (!response.ok) {
-      throw new Error('Ошибка удаления акта')
+      error.value = 'Ошибка удаления акта';
+      return;
     }
 
     await getActs()
@@ -202,7 +204,10 @@ const addDates = async () => {
       return
     }
 
-    if (!response.ok) throw new Error('Ошибка сервера')
+    if (!response.ok) {
+      error.value = 'Ошибка сервера';
+      return;
+    }
 
     const blob = await response.blob()
     const url = window.URL.createObjectURL(blob)

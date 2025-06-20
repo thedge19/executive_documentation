@@ -78,7 +78,8 @@ export default {
 
         const token = localStorage.getItem('token');
         if (!token) {
-          throw new Error('Требуется авторизация');
+          error.value = 'Требуется авторизация';
+          return
         }
 
         const response = await fetch(`http://localhost:8080/projects/${route.params.id}`, {
@@ -89,13 +90,14 @@ export default {
         });
 
         if (response.status === 401) {
-          router.push('/login?redirect=' + encodeURIComponent(route.fullPath));
+          await router.push('/login?redirect=' + encodeURIComponent(route.fullPath));
           return;
         }
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || `Ошибка ${response.status}`);
+          error.value = errorData.message || `Ошибка ${response.status}`;
+          return
         }
 
         project.value = await response.json();
@@ -114,7 +116,8 @@ export default {
 
         const token = localStorage.getItem('token');
         if (!token) {
-          throw new Error('Требуется авторизация');
+          error.value = 'Требуется авторизация';
+          return
         }
 
         const response = await fetch(`http://localhost:8080/projects/${route.params.id}`, {
@@ -127,17 +130,18 @@ export default {
         });
 
         if (response.status === 401) {
-          router.push('/login?redirect=' + encodeURIComponent(route.fullPath));
+          await router.push('/login?redirect=' + encodeURIComponent(route.fullPath));
           return;
         }
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || `Ошибка ${response.status}`);
+          error.value = errorData.message || `Ошибка ${response.status}`;
+          return;
         }
 
         await response.json();
-        router.push('/projects');
+        await router.push('/projects');
       } catch (err) {
         error.value = err.message;
         console.error('Ошибка при обновлении проекта:', err);

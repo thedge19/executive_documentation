@@ -85,15 +85,16 @@ const addStandard = async () => {
 
     if (response.status === 401) {
       handleUnauthorized()
-      return
+      return;
     }
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || 'Ошибка при добавлении стандарта')
+      error.value = errorData.message || 'Ошибка при добавлении стандарта';
+      return;
     }
 
-    router.push("/standards")
+    await router.push("/standards")
   } catch (err) {
     console.error('Ошибка:', err)
     error.value = err.message

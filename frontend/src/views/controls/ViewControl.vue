@@ -91,7 +91,9 @@ const getControls = async () => {
     }
 
     if (!response.ok) {
-      throw new Error('Ошибка загрузки данных входного контроля')
+      error.value = 'Ошибка загрузки данных входного контроля';
+      isLoading.value = false;
+      return;
     }
 
     controls.value = await response.json()
