@@ -91,6 +91,7 @@ const path = ref('http://localhost:8080/acts/schemaAsc')
 const showDeleteModal = ref(false)
 const schemaToDelete = ref(null)
 const sortDirection = ref('asc') // 'asc' или 'desc'
+const error = ref('null')
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token')
@@ -121,7 +122,8 @@ const getSchemas = async () => {
     }
 
     if (!response.ok) {
-      throw new Error('Ошибка загрузки схем')
+      error.value = 'Ошибка загрузки схем';
+      return;
     }
 
     schemas.value = await response.json()

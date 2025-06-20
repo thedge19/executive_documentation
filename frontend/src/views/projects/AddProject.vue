@@ -65,7 +65,8 @@ export default {
       try {
         const token = localStorage.getItem('token')
         if (!token) {
-          throw new Error('Требуется авторизация')
+          this.error.value = 'Требуется авторизация';
+          return;
         }
 
         const response = await fetch('http://localhost:8080/projects', {
@@ -79,7 +80,8 @@ export default {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.message || 'Ошибка при добавлении объекта')
+          this.error.value = errorData.message || 'Ошибка при добавлении объекта';
+          return;
         }
 
         // Успешное создание

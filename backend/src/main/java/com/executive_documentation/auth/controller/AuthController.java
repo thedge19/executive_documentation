@@ -66,7 +66,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest request) {
+    public ResponseEntity<Void> logout() {
         // Можно добавить логику инвалидации токена, если нужно
         SecurityContextHolder.clearContext();
         return ResponseEntity.ok().build();
