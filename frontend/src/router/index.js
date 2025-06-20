@@ -153,40 +153,20 @@ const router = createRouter({
 })
 
 // Глобальный навигационный хук
-router.beforeEach(async (to, from, next) => {
-  // Маршруты, не требующие авторизации
+router.beforeEach((to, from, next) => {
+  console.log('Navigation:', to.path, 'Token exists:', !!localStorage.getItem('token'))
+
   if (!to.meta.requiresAuth) {
     next()
     return
   }
 
-  // Проверяем наличие токена
   const token = localStorage.getItem('token')
 
-  // Если токена нет - перенаправляем на логин
-  if (!token) {
-    next('/login')
-    return
-  }
-
-  try {
-    // Проверяем валидность токена на сервере
-    const response = await fetch('http://localhost:8080/api/auth/me', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    if (response.ok) {
-      next() // Токен валиден, разрешаем переход
-    } else {
-      // Токен невалиден, очищаем и перенаправляем
-      localStorage.removeItem('token')
-      next('/login')
-    }
-  } catch (error) {
-    console.error('Ошибка проверки авторизации:', error)
-    localStorage.removeItem('token')
+  if (token) {
+    next()
+  } else {
+    console.log('Redirecting to login') // Добавьте эту строку
     next('/login')
   }
 })

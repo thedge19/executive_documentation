@@ -20,8 +20,10 @@ public class JwtTokenProvider {
     private long jwtExpirationDate;
 
     public String generateToken(Authentication authentication) {
-        String username = authentication.getName();
+        return generateToken(authentication.getName());
+    }
 
+    public String generateToken(String username) {  // Изменили параметр на String
         Date currentDate = new Date();
         Date expireDate = new Date(currentDate.getTime() + jwtExpirationDate);
 

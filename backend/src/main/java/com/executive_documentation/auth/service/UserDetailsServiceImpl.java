@@ -1,26 +1,30 @@
 package com.executive_documentation.auth.service;
 
-import org.springframework.security.core.userdetails.User;
+import com.executive_documentation.auth.model.AppUser;
+import com.executive_documentation.auth.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-
+@RequiredArgsConstructor
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // Здесь должна быть логика загрузки пользователя из базы данных
-        // Для примера используем хардкод
+        AppUser appUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
-        if ("admin".equals(username)) {
-            return new User("admin", "$2a$10$slYQmyNdGzTn7ZLBXBChFOC9f6kFjAqPhccnP6DxlWXx2lPk1C3G6",
-                    new ArrayList<>());
-        } else {
-            throw new UsernameNotFoundException("User not found with username: " + username);
-        }
+        return org.springframework.security.core.userdetails.User
+                .withUsername(appUser.getUsername())
+                .password(appUser.getPassword())
+                .authorities(new SimpleGrantedAuthority(appUser.getRole().name()))
+                .build();
     }
 }

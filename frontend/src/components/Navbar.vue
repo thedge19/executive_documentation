@@ -37,7 +37,7 @@
         <!-- Блок пользователя -->
         <div v-if="isAuthenticated" class="d-flex align-items-center ms-3">
           <span class="text-white me-3 user-greeting">
-            {{ userGreeting }}
+            {{ currentUser }}
           </span>
           <button @click="logout" class="btn btn-outline-light logout-btn">
             <i class="bi bi-box-arrow-right me-1"></i> Выход
@@ -54,11 +54,6 @@ export default {
     return {
       currentUser: null,
       isAuthenticated: false
-    }
-  },
-  computed: {
-    userGreeting() {
-      return this.currentUser ? `Вы вошли как ${this.currentUser}` : ''
     }
   },
   async created() {
@@ -90,18 +85,18 @@ export default {
     },
     async logout() {
       try {
-        // Опционально: вызов endpoint для logout на сервере
-        // await fetch('http://localhost:8080/api/auth/logout', {
-        //   method: 'POST',
-        //   headers: {
-        //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-        //   }
-        // })
-
-        this.clearAuth()
-        this.$router.push('/login')
+        // Вызываем endpoint для logout на сервере
+        await fetch('http://localhost:8080/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        })
       } catch (error) {
         console.error('Ошибка при выходе:', error)
+      } finally {
+        this.clearAuth()
+        this.$router.push('/login')
       }
     },
     clearAuth() {

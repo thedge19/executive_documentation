@@ -47,22 +47,28 @@ export default {
             username: this.username,
             password: this.password
           })
-        });
+        })
 
         if (!response.ok) {
-          // Используем текст ошибки от сервера, если он есть
-          const errorData = await response.json().catch(() => ({}));
-          this.error = errorData.message || 'Login failed';
-          return; // Прекращаем выполнение функции
+          const errorData = await response.json().catch(() => ({}))
+          this.error = errorData.message || 'Login failed'
+          return
         }
 
-        const data = await response.json();
-        localStorage.setItem('token', data.accessToken);
-        this.$router.push('/');
+        const data = await response.json()
+        console.log('Login response:', data) // Добавьте эту строку для отладки
 
+        // Проверьте имя поля с токеном (может быть 'accessToken' вместо 'token')
+        const token = data.token || data.accessToken
+        if (!token) {
+          throw new Error('Token not found in response')
+        }
+
+        localStorage.setItem('token', token)
+        this.$router.push('/')
       } catch (err) {
-        this.error = err.message || 'Invalid username or password';
-        console.error('Login error:', err);
+        this.error = err.message || 'Invalid username or password'
+        console.error('Login error:', err)
       }
     }
   }
@@ -72,11 +78,10 @@ export default {
 <style scoped>
 .login-container {
   max-width: 400px;
-  margin: 0 auto;
   padding: 20px;
   border: 1px solid #ccc;
   border-radius: 5px;
-  margin-top: 50px;
+  margin: 50px auto 0;
 }
 
 .form-group {

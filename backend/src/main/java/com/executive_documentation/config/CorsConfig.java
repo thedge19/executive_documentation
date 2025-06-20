@@ -15,7 +15,12 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:5173") // Vue.js адрес
+                        .allowedOrigins(
+                                "http://localhost",
+                                "http://localhost:80",
+                                "http://frontend",
+                                "http://localhost:5173"
+                        ) // Vue.js адрес
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true)
