@@ -59,7 +59,9 @@ const getProjects = async () => {
       mode: 'cors',
       headers: {
         'Content-Type': 'application/json',
-      }
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      credentials: 'include'
     })
     projects.value = await response.json()
   } catch (error) {

@@ -31,6 +31,9 @@
                 <i class="bi bi-check-circle me-2"></i>Добавить объект
               </button>
             </div>
+            <div v-if="error" class="error-message">
+              {{ error }}
+            </div>
           </form>
         </div>
       </div>
@@ -55,30 +58,43 @@ export default {
     }
   },
   methods: {
-    addProject() {
-      this.error = null;
+    async addProject() {
+      this.error = null
+      this.isLoading = true
 
-      fetch('http://localhost:8080/projects', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(this.project)
-      })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error('Ошибка при добавлении объекта');
-            }
-            return response.json();
-          })
-          .then(data => {
-            console.log(data);
-            this.$router.push("/projects");
-          })
-          .catch(error => {
-            console.error('Ошибка:', error);
-            this.error = error.message;
-          });
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) {
+          throw new Error('Требуется авторизация')
+        }
+
+        const response = await fetch('http://localhost:8080/projects', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(this.project)
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.message || 'Ошибка при добавлении объекта')
+        }
+
+        // Успешное создание
+        this.$router.push('/projects')
+      } catch (error) {
+        console.error('Ошибка:', error)
+        this.error = error.message
+
+        // Если 401 - перенаправляем на логин
+        if (error.message.includes('401') || error.message.includes('авторизация')) {
+          this.$router.push('/login?redirect=' + encodeURIComponent(this.$route.fullPath))
+        }
+      } finally {
+        this.isLoading = false
+      }
     }
   }
 }

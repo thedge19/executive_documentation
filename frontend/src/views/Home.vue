@@ -125,7 +125,9 @@ export default {
         mode: 'cors',
         headers: {
           'Content-Type': 'application/json',
-        }
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        credentials: 'include'
       })
           .then(res => res.json())
           .then(data => {
@@ -141,10 +143,6 @@ export default {
             .then(() => this.getActs())
             .catch(console.error)
       }
-    },
-    filterBySubObject() {
-      this.path = `http://localhost:8080/acts/filterBySubObject`
-      this.getActs()
     },
     generatePdf(actId) {
       window.open(`http://localhost:8080/acts/${actId}/pdf`, '_blank');
