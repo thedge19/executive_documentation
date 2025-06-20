@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -79,6 +80,7 @@ public class MaterialController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<Material> createMaterial(
             @RequestPart("material") Material material,
             @RequestPart(value = "file", required = false) MultipartFile file) {
@@ -88,12 +90,14 @@ public class MaterialController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public Material update(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
         log.info("Здесь");
         return materialService.update(id, file);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void delete(@PathVariable Long id) {
         log.info("Delete Material: {}", id);
         materialService.delete(id);
@@ -101,6 +105,7 @@ public class MaterialController {
     }
 
     @DeleteMapping("/certificate/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void deleteCertificate(@PathVariable Long id) {
         log.info("Delete Material: {}", id);
         materialService.deleteCertificate(id);

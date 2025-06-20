@@ -2,8 +2,10 @@ package com.executive_documentation.auth.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -21,6 +23,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthEntryPoint authEntryPoint;
@@ -44,20 +47,26 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
+                        // Публичные эндпоинты
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/register/user",
                                 "/api/auth/register/admin"
                         ).permitAll()
 
-                        // Admin-only endpoints
+                        // Эндпоинты материалов
+                        .requestMatchers(HttpMethod.GET, "/materials/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/materials/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/materials/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/materials/**").hasAuthority("ROLE_ADMIN")
+
+                        // Админские эндпоинты
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
 
-                        // User and admin endpoints
+                        // Пользовательские эндпоинты
                         .requestMatchers("/api/user/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
 
-                        // All other endpoints require authentication
+                        // Все остальные запросы требуют аутентификации
                         .anyRequest().authenticated()
                 );
 
@@ -70,17 +79,17 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost",          // Базовый localhost
-                "http://localhost:80",       // Стандартный HTTP порт
-                "http://localhost:5173",     // Vite по умолчанию
-                "http://127.0.0.1",          // Альтернативный localhost
-                "http://127.0.0.1:5173",     // Vite на IP
-                "http://frontend",           // Докер-контейнер
-                "https://your-production-domain.com" // Продакшен домен
-        )); // Ваш фронтенд URL
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                "http://localhost",
+                "http://localhost:80",
+                "http://localhost:5173",
+                "http://127.0.0.1",
+                "http://127.0.0.1:5173",
+                "http://frontend"
+        ));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -94,7 +103,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    PasswordEncoder passwordEncoder() {
+    public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 }
