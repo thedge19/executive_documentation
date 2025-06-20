@@ -52,20 +52,35 @@ import Navbar from '../../components/Navbar.vue'
 
 const acts = ref([])
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Требуется авторизация')
+  }
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  }
+}
+
+const handleUnauthorized = () => {
+  localStorage.removeItem('token')
+  window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname)
+}
+
 // Получение актов
 const getActs = async () => {
   try {
     const response = await fetch('http://localhost:8080/worklog/6', {
       mode: 'cors',
-      headers: {
-        'Content-Type': 'application/json',
-      }
+      headers: getAuthHeaders()
     })
     acts.value = await response.json()
   } catch (error) {
     console.error('Ошибка при загрузке актов:', error)
   }
 }
+
 
 // Формирование раздела
 const fillInTheLog = async () => {
@@ -81,13 +96,6 @@ const fillInTheLog = async () => {
 // Генерация PDF
 const generatePdf = () => {
   window.open('http://localhost:8080/worklog/6/pdf', '_blank')
-}
-
-// Форматирование даты
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('ru-RU')
 }
 
 // Загружаем акты при монтировании компонента

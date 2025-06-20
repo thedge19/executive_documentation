@@ -82,68 +82,87 @@
   </main>
 </template>
 
-<script>
+<script setup>
+import { ref, onBeforeMount } from 'vue'
 import Navbar from '../../components/Navbar.vue'
 
-export default {
-  name: 'ViewProjects',
-  components: {
-    Navbar
-  },
-  data() {
-    return {
-      schemas: [],
-      path: 'http://localhost:8080/acts/schemaAsc',
-      showDeleteModal: false,
-      schemaToDelete: null,
-      sortDirection: 'asc' // 'asc' или 'desc'
-    }
-  },
-  beforeMount() {
-    this.getSchemas()
-  },
-  methods: {
-    getSchemas() {
-      fetch(this.path, {
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      })
-          .then(res => res.json())
-          .then(data => {
-            this.schemas = data
-          })
-    },
+const schemas = ref([])
+const path = ref('http://localhost:8080/acts/schemaAsc')
+const showDeleteModal = ref(false)
+const schemaToDelete = ref(null)
+const sortDirection = ref('asc') // 'asc' или 'desc'
 
-    sortAsc() {
-      this.path = 'http://localhost:8080/acts/schemaAsc'
-      this.sortDirection = 'asc'
-      this.getSchemas()
-    },
-
-    sortDesc() {
-      this.path = 'http://localhost:8080/acts/schemaDesc'
-      this.sortDirection = 'desc'
-      this.getSchemas()
-    },
-
-    confirmDelete(schema) {
-      this.schemaToDelete = schema.id
-      this.showDeleteModal = true
-    },
-
-    executeDelete() {
-      fetch(`http://localhost:8080/acts/schema/${this.schemaToDelete}`, {
-        method: 'DELETE'
-      })
-          .then(() => {
-            this.getSchemas()
-            this.showDeleteModal = false
-          })
-    }
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Требуется авторизация')
+  }
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
   }
 }
+
+const handleUnauthorized = () => {
+  localStorage.removeItem('token')
+  window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname)
+}
+
+const getSchemas = async () => {
+  try {
+    const response = await fetch(path.value, {
+      mode: 'cors',
+      headers: getAuthHeaders()
+    })
+
+    if (response.status === 401) {
+      handleUnauthorized()
+      return
+    }
+
+    if (!response.ok) {
+      throw new Error('Ошибка загрузки схем')
+    }
+
+    schemas.value = await response.json()
+  } catch (error) {
+    console.error('Ошибка при загрузке схем:', error)
+  }
+}
+
+const sortAsc = () => {
+  path.value = 'http://localhost:8080/acts/schemaAsc'
+  sortDirection.value = 'asc'
+  getSchemas()
+}
+
+const sortDesc = () => {
+  path.value = 'http://localhost:8080/acts/schemaDesc'
+  sortDirection.value = 'desc'
+  getSchemas()
+}
+
+const confirmDelete = (schema) => {
+  schemaToDelete.value = schema.id
+  showDeleteModal.value = true
+}
+
+const executeDelete = async () => {
+  try {
+    await fetch(`http://localhost:8080/acts/schema/${schemaToDelete.value}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    })
+    await getSchemas()
+    showDeleteModal.value = false
+  } catch (error) {
+    console.error('Ошибка при удалении схемы:', error)
+  }
+}
+
+onBeforeMount(() => {
+  getSchemas()
+})
 </script>
 
 <style scoped>

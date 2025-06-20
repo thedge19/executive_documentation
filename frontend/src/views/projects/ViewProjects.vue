@@ -71,12 +71,24 @@ const getProjects = async () => {
 
 const deleteProject = async (id) => {
   try {
-    await fetch(`http://localhost:8080/projects/${id}`, {
-      method: 'DELETE'
-    })
-    await getProjects()
+    const response = await fetch(`http://localhost:8080/projects/${id}`, {
+      method: 'DELETE',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ошибка HTTP: ${response.status}`);
+    }
+
+    await getProjects();
   } catch (error) {
-    console.error('Ошибка при удалении проекта:', error)
+    console.error('Ошибка при удалении проекта:', error);
+    // Можно добавить дополнительную обработку ошибок, например, показ уведомления пользователю
   }
 }
 

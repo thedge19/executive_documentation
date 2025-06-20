@@ -1,4 +1,5 @@
 <template>
+  <!-- Шаблон остается без изменений -->
   <main class="bg-light min-vh-100">
     <Navbar />
 
@@ -13,12 +14,12 @@
 
         <div class="card-body p-0">
           <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 w-100"> <!-- Добавлен w-100 -->
+            <table class="table table-hover align-middle mb-0 w-100">
               <thead class="table-dark">
               <tr>
-                <th class="ps-4" style="width: 15%">ID</th> <!-- Указана примерная ширина -->
-                <th style="width: 55%">Наименование</th> <!-- Указана примерная ширина -->
-                <th class="text-end pe-4" style="width: 30%">Действие</th> <!-- Указана примерная ширина -->
+                <th class="ps-4" style="width: 15%">ID</th>
+                <th style="width: 55%">Наименование</th>
+                <th class="text-end pe-4" style="width: 30%">Действие</th>
               </tr>
               </thead>
               <tbody>
@@ -46,50 +47,94 @@
   </main>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from 'vue'
 import Navbar from '../../components/Navbar.vue'
+import { useRouter } from 'vue-router'
 
-export default {
-  name: 'ViewStandards',
-  components: {
-    Navbar
-  },
-  data() {
-    return {
-      standards: []
-    }
-  },
-  beforeMount() {
-    this.getStandards()
-  },
-  methods: {
-    getStandards() {
-      fetch('http://localhost:8080/standards', {
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      })
-          .then(res => res.json())
-          .then(data => {
-            this.standards = data
-          })
-          .catch(console.error)
-    },
-    deleteStandard(id) {
-      if(confirm('Вы уверены, что хотите удалить этот СП?')) {
-        fetch(`http://localhost:8080/standards/${id}`, {
-          method: 'DELETE'
-        })
-            .then(() => this.getStandards())
-            .catch(console.error)
-      }
-    }
+const router = useRouter()
+const standards = ref([])
+const isLoading = ref(false)
+const error = ref(null)
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Требуется авторизация')
+  }
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
   }
 }
+
+const handleUnauthorized = () => {
+  localStorage.removeItem('token')
+  router.push('/login?redirect=' + encodeURIComponent(router.currentRoute.value.fullPath))
+}
+
+const getStandards = async () => {
+  try {
+    isLoading.value = true
+    error.value = null
+
+    const response = await fetch('http://localhost:8080/standards', {
+      headers: getAuthHeaders()
+    })
+
+    if (response.status === 401) {
+      handleUnauthorized()
+      return
+    }
+
+    if (!response.ok) {
+      throw new Error('Ошибка загрузки СП')
+    }
+
+    standards.value = await response.json()
+  } catch (err) {
+    console.error('Ошибка:', err)
+    error.value = err.message
+    if (err.message.includes('авторизация')) {
+      handleUnauthorized()
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const deleteStandard = async (id) => {
+  if (!confirm('Вы уверены, что хотите удалить этот СП?')) return
+
+  try {
+    const response = await fetch(`http://localhost:8080/standards/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    })
+
+    if (response.status === 401) {
+      handleUnauthorized()
+      return
+    }
+
+    if (!response.ok) {
+      throw new Error('Ошибка удаления СП')
+    }
+
+    await getStandards()
+  } catch (err) {
+    console.error('Ошибка:', err)
+    error.value = err.message
+  }
+}
+
+onMounted(() => {
+  getStandards()
+})
 </script>
 
 <style scoped>
+/* Стили остаются без изменений */
 .card {
   border-radius: 12px;
   overflow: hidden;
@@ -98,7 +143,7 @@ export default {
 .table {
   font-size: 0.95rem;
   margin-bottom: 0;
-  width: 100%; /* Гарантирует растягивание на всю ширину */
+  width: 100%;
 }
 
 .table th {
@@ -106,7 +151,7 @@ export default {
   vertical-align: middle;
   background-color: #000000;
   color: white;
-  white-space: nowrap; /* Запрет переноса текста в шапке */
+  white-space: nowrap;
 }
 
 .table td {
@@ -131,7 +176,6 @@ export default {
   color: white;
 }
 
-/* Анимация загрузки */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -157,7 +201,6 @@ export default {
     gap: 1rem;
   }
 
-  /* Адаптация колонок для мобильных */
   .table th, .table td {
     padding: 0.5rem;
   }

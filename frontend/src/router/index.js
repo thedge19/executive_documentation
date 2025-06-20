@@ -132,12 +132,6 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/editControl/:id',
-      name: 'editControl',
-      component: () => import('../views/controls/UpdateControl.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
       path: '/workLog3',
       name: 'viewWorkLog3',
       component: () => import('../views/workLog/WorkLog.vue'),

@@ -7,7 +7,7 @@
         <div class="card-body p-0">
           <h1 class="text-center text-primary my-4 mt-5">АОСР</h1>
 
-          <!-- Кнопки (оставлены как есть) -->
+          <!-- Action buttons -->
           <div class="d-flex justify-content-start px-4">
             <div>
               <a href="/addAct" class="btn btn-primary rounded-pill px-4">
@@ -22,16 +22,16 @@
             </div>
           </div>
 
-          <!-- Форма выбора дат -->
+          <!-- Date selection form -->
           <div v-if="!showDates" class="px-4 py-3">
             <div class="d-flex flex-wrap align-items-center gap-3">
               <div>
                 <label class="input-group-text"><i class="bi bi-calendar-month me-2"></i>Дата начала периода</label>
-                <VDatePicker :attributes="attributes" v-model="startDate" mode="date"/>
+                <VDatePicker v-model="startDate" mode="date"/>
               </div>
               <div>
                 <label class="input-group-text"><i class="bi bi-calendar-month me-2"></i>Дата окончания периода</label>
-                <VDatePicker :attributes="attributes" v-model="endDate" :model-value="setFirstEndDate" mode="date"/>
+                <VDatePicker v-model="endDate" mode="date"/>
               </div>
             </div>
             <div class="d-flex mt-3">
@@ -44,7 +44,7 @@
             </div>
           </div>
 
-          <!-- Таблица с черной шапкой -->
+          <!-- Table with black header -->
           <div class="table-responsive mt-3" style="max-height: 78vh;">
             <table class="table table-hover align-middle mb-0">
               <thead class="sticky-top">
@@ -95,103 +95,138 @@
   </main>
 </template>
 
-<script>
-import Navbar from '../components/Navbar.vue';
+<script setup>
+import { ref, onMounted } from 'vue'
+import Navbar from '../components/Navbar.vue'
 
-export default {
-  name: 'Home',
-  components: {
-    Navbar
-  },
-  data() {
-    return {
-      acts: [],
-      path: 'http://localhost:8080/acts',
-      startDate: new Date(),
-      endDate: "",
-      showDates: true,
-      attributes: {
-        highlight: true,
-        dates: this.setFirstEndDate,
-      }
-    }
-  },
-  mounted() {
-    this.getActs()
-  },
-  methods: {
-    getActs() {
-      fetch(this.path, {
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        credentials: 'include'
-      })
-          .then(res => res.json())
-          .then(data => {
-            this.acts = data
-          })
-          .catch(console.error)
-    },
-    deleteAct(id) {
-      if (confirm('Вы уверены, что хотите удалить этот акт?')) {
-        fetch(`http://localhost:8080/acts/${id}`, {
-          method: 'DELETE'
-        })
-            .then(() => this.getActs())
-            .catch(console.error)
-      }
-    },
-    generatePdf(actId) {
-      window.open(`http://localhost:8080/acts/${actId}/pdf`, '_blank');
-    },
-    async addDates() {
-      try {
-        const formatDate = (date) => {
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
-          return `${year}-${month}-${day}`;
-        };
+const acts = ref([])
+const path = ref('http://localhost:8080/acts')
+const startDate = ref(new Date())
+const endDate = ref(new Date())
+const showDates = ref(true)
+const isLoading = ref(false)
+const error = ref(null)
 
-        const response = await fetch('http://localhost:8080/acts/registries', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            startDate: formatDate(this.startDate),
-            endDate: formatDate(this.endDate)
-          })
-        });
-
-        if (!response.ok) throw new Error('Ошибка сервера');
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'реестр.pdf';
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-
-      } catch (error) {
-        console.error('Ошибка:', error);
-        alert('Не удалось сформировать реестр');
-      }
-    },
-    setFirstEndDate() {
-      return this.startDate
-    },
-    showRegistryDates() {
-      this.showDates = !this.showDates;
-    }
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Требуется авторизация')
+  }
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
   }
 }
+
+const handleUnauthorized = () => {
+  localStorage.removeItem('token')
+  window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname)
+}
+
+const getActs = async () => {
+  try {
+    isLoading.value = true
+    error.value = null
+
+    const response = await fetch(path.value, {
+      headers: getAuthHeaders()
+    })
+
+    if (response.status === 401) {
+      handleUnauthorized()
+      return
+    }
+
+    if (!response.ok) {
+      throw new Error('Ошибка загрузки актов')
+    }
+
+    acts.value = await response.json()
+  } catch (err) {
+    console.error('Ошибка:', err)
+    error.value = err.message
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const deleteAct = async (id) => {
+  if (!confirm('Вы уверены, что хотите удалить этот акт?')) return
+
+  try {
+    const response = await fetch(`http://localhost:8080/acts/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    })
+
+    if (response.status === 401) {
+      handleUnauthorized()
+      return
+    }
+
+    if (!response.ok) {
+      throw new Error('Ошибка удаления акта')
+    }
+
+    await getActs()
+  } catch (err) {
+    console.error('Ошибка:', err)
+    error.value = err.message
+  }
+}
+
+const generatePdf = (actId) => {
+  window.open(`http://localhost:8080/acts/${actId}/pdf`, '_blank')
+}
+
+const addDates = async () => {
+  try {
+    const formatDate = (date) => {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
+    const response = await fetch('http://localhost:8080/acts/registries', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        startDate: formatDate(startDate.value),
+        endDate: formatDate(endDate.value)
+      })
+    })
+
+    if (response.status === 401) {
+      handleUnauthorized()
+      return
+    }
+
+    if (!response.ok) throw new Error('Ошибка сервера')
+
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'реестр.pdf'
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+
+  } catch (error) {
+    console.error('Ошибка:', error)
+    error.value = 'Не удалось сформировать реестр'
+  }
+}
+
+const showRegistryDates = () => {
+  showDates.value = !showDates.value
+}
+
+onMounted(() => {
+  getActs()
+})
 </script>
 
 <style scoped>
