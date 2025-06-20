@@ -52,6 +52,7 @@ import { ref, onBeforeMount } from 'vue'
 import Navbar from '../../components/Navbar.vue'
 
 const projects = ref([])
+const error = ref('null')
 
 const getProjects = async () => {
   try {
@@ -82,7 +83,8 @@ const deleteProject = async (id) => {
     });
 
     if (!response.ok) {
-      throw new Error(`Ошибка HTTP: ${response.status}`);
+      error.value = `Ошибка HTTP: ${response.status}`;
+      return;
     }
 
     await getProjects();

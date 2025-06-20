@@ -89,7 +89,8 @@ export default {
         const token = data.token || data.accessToken;
 
         if (!token) {
-          throw new Error('Не удалось получить токен авторизации');
+          this.error.value = 'Не удалось получить токен авторизации';
+          return;
         }
 
         localStorage.setItem('token', token);

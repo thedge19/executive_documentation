@@ -6,7 +6,6 @@ import com.executive_documentation.auth.dto.LoginDto;
 import com.executive_documentation.auth.dto.UserInfoDto;
 import com.executive_documentation.auth.model.AppUser;
 import com.executive_documentation.auth.service.AuthService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
