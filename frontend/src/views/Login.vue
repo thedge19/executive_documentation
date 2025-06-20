@@ -50,16 +50,18 @@ export default {
         });
 
         if (!response.ok) {
-          throw new Error('Login failed');
+          // Используем текст ошибки от сервера, если он есть
+          const errorData = await response.json().catch(() => ({}));
+          this.error = errorData.message || 'Login failed';
+          return; // Прекращаем выполнение функции
         }
 
         const data = await response.json();
         localStorage.setItem('token', data.accessToken);
-
-        // Перенаправляем на главную страницу
         this.$router.push('/');
+
       } catch (err) {
-        this.error = 'Invalid username or password';
+        this.error = err.message || 'Invalid username or password';
         console.error('Login error:', err);
       }
     }
