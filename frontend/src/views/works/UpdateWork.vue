@@ -117,7 +117,8 @@ const isLoading = ref(false)
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token')
   if (!token) {
-    throw new Error('Требуется авторизация')
+    error.value = 'Требуется авторизация';
+    return;
   }
   return {
     'Content-Type': 'application/json',
@@ -144,7 +145,8 @@ const getWork = async () => {
         handleUnauthorized()
         return
       }
-      throw new Error('Не удалось загрузить данные работы')
+      error.value = 'Не удалось загрузить данные работы';
+      return;
     }
 
     work.value = await response.json()
@@ -172,7 +174,8 @@ const getStandards = async () => {
         handleUnauthorized()
         return
       }
-      throw new Error('Не удалось загрузить стандарты')
+      error.value = 'Не удалось загрузить стандарты';
+      return;
     }
 
     standards.value = await response.json()
@@ -209,7 +212,8 @@ const updateWork = async () => {
         return
       }
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || 'Ошибка при обновлении работы')
+      error.value = errorData.message || 'Ошибка при обновлении работы';
+      return;
     }
 
     await router.push(`/works/${work.value.subObject.id}`)

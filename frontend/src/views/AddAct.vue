@@ -316,7 +316,8 @@ const onChangeMaterial = async (index) => {
 
       if (!response.ok) {
         if (response.status === 401) handleUnauthorized()
-        throw new Error('Ошибка загрузки материала')
+        error.value = 'Ошибка загрузки материала';
+        return;
       }
 
       const data = await response.json()
@@ -335,7 +336,8 @@ const getSubObjects = async () => {
 
     if (!response.ok) {
       if (response.status === 401) handleUnauthorized()
-      throw new Error('Ошибка загрузки подобъектов')
+      error.value = 'Ошибка загрузки подобъектов';
+      return;
     }
 
     subObjects.value = await response.json()
@@ -353,7 +355,7 @@ const getWorks = async () => {
 
       if (!response.ok) {
         if (response.status === 401) handleUnauthorized()
-        throw new Error('Ошибка загрузки работ')
+        error.value = 'Ошибка загрузки работ';
       }
 
       works.value = await response.json()
@@ -372,7 +374,8 @@ const getWork = async () => {
 
       if (!response.ok) {
         if (response.status === 401) handleUnauthorized()
-        throw new Error('Ошибка загрузки работы')
+        error.value = 'Ошибка загрузки работы';
+        return;
       }
 
       currentWork.value = await response.json()
@@ -488,7 +491,8 @@ const addAct = async () => {
     if (!response.ok) {
       if (response.status === 401) handleUnauthorized()
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || 'Ошибка при сохранении акта')
+      error.value = errorData.message || 'Ошибка при сохранении акта';
+      return;
     }
 
     await router.push("/")

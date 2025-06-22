@@ -33,7 +33,6 @@ import java.util.Map;
 public class ActController {
     private final ActService actService;
     private final ActPdfService actPdfService;
-    private final ControlPdfService controlPdfService;
     private final ControlLogPdfService controlLogPdfService;
     private final RegistryMapper registryMapper;
     private final RegistryPdfService registryPdfService;

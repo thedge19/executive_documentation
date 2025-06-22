@@ -210,7 +210,6 @@ const settings = ref({
 })
 
 const isSaving = ref(false)
-const isSavingUser = ref(false)
 const error = ref(null)
 
 const getAuthHeaders = () => {
@@ -229,19 +228,6 @@ const handleUnauthorized = () => {
   window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname)
 }
 
-// const fetchStats = async () => {
-//   try {
-//     const response = await fetch('http://localhost:8080/admin/stats', {
-//       headers: getAuthHeaders()
-//     })
-//     if (response.ok) {
-//       stats.value = await response.json()
-//     }
-//   } catch (err) {
-//     console.error("Ошибка загрузки статистики:", err)
-//   }
-// }
-
 const fetchUsers = async () => {
   try {
     const response = await fetch('http://localhost:8080/api/auth/users', {
@@ -252,90 +238,6 @@ const fetchUsers = async () => {
     }
   } catch (err) {
     console.error("Ошибка загрузки пользователей:", err)
-  }
-}
-
-// const fetchLogs = async () => {
-//   try {
-//     const response = await fetch('http://localhost:8080/admin/logs', {
-//       headers: getAuthHeaders()
-//     })
-//     if (response.ok) {
-//       adminLogs.value = await response.json()
-//     }
-//   } catch (err) {
-//     console.error("Ошибка загрузки журналов:", err)
-//   }
-// }
-
-// const fetchSettings = async () => {
-//   try {
-//     const response = await fetch('http://localhost:8080/admin/settings', {
-//       headers: getAuthHeaders()
-//     })
-//     if (response.ok) {
-//       settings.value = await response.json()
-//     }
-//   } catch (err) {
-//     console.error("Ошибка загрузки настроек:", err)
-//   }
-// }
-
-// const saveSettings = async () => {
-//   try {
-//     isSaving.value = true
-//     const response = await fetch('http://localhost:8080/admin/settings', {
-//       method: 'POST',
-//       headers: getAuthHeaders(),
-//       body: JSON.stringify(settings.value)
-//     })
-//     if (!response.ok) {
-//       throw new Error('Ошибка сохранения настроек')
-//     }
-//   } catch (err) {
-//     error.value = err.message
-//   } finally {
-//     isSaving.value = false
-//   }
-// }
-
-const editUser = (user) => {
-  editingUser.value = user
-  userForm.value = {
-    email: user.email,
-    password: '',
-    role: user.role
-  }
-  showAddUserModal.value = true
-}
-
-const saveUser = async () => {
-  try {
-    isSavingUser.value = true
-    const url = editingUser.value
-        ? `http://localhost:8080/admin/users/${editingUser.value.id}`
-        : 'http://localhost:8080/admin/users'
-
-    const method = editingUser.value ? 'PUT' : 'POST'
-
-    const response = await fetch(url, {
-      method,
-      headers: getAuthHeaders(),
-      body: JSON.stringify(userForm.value)
-    })
-
-    if (!response.ok) {
-      throw new Error(editingUser.value ? 'Ошибка обновления пользователя' : 'Ошибка создания пользователя')
-    }
-
-    await fetchUsers()
-    showAddUserModal.value = false
-    editingUser.value = null
-    userForm.value = { email: '', password: '', role: 'ROLE_USER' }
-  } catch (err) {
-    error.value = err.message
-  } finally {
-    isSavingUser.value = false
   }
 }
 
@@ -375,7 +277,8 @@ const deleteUser = async (userId) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Ошибка при удалении пользователя');
+      error.value = errorData.message || 'Ошибка при удалении пользователя';
+      return;
     }
 
     // Показываем уведомление об успехе

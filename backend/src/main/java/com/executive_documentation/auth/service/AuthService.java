@@ -1,10 +1,12 @@
 package com.executive_documentation.auth.service;
 
-import com.executive_documentation.auth.dto.*;
+import com.executive_documentation.auth.dto.LoginDto;
+import com.executive_documentation.auth.dto.UserCreateDto;
+import com.executive_documentation.auth.dto.UserMapper;
+import com.executive_documentation.auth.dto.UserResponseDto;
 import com.executive_documentation.auth.model.AppUser;
 import com.executive_documentation.auth.model.UserRole;
 import com.executive_documentation.auth.repository.UserRepository;
-import com.executive_documentation.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

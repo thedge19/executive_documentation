@@ -88,7 +88,7 @@ const getSubObjects = async () => {
     const token = localStorage.getItem('token')
 
     if (!token) {
-      router.push('/login')
+      await router.push('/login')
       return
     }
 
@@ -104,9 +104,10 @@ const getSubObjects = async () => {
     if (!response.ok) {
       if (response.status === 401) {
         localStorage.removeItem('token')
-        router.push('/login')
+        await router.push('/login')
       }
-      throw new Error(`HTTP error! status: ${response.status}`)
+      error.value = `HTTP error! status: ${response.status}`;
+      return;
     }
 
     subObjects.value = await response.json()
@@ -125,7 +126,7 @@ const deleteSubObject = async (id) => {
     const token = localStorage.getItem('token')
 
     if (!token) {
-      router.push('/login')
+      await router.push('/login')
       return
     }
 
@@ -142,9 +143,10 @@ const deleteSubObject = async (id) => {
     if (!response.ok) {
       if (response.status === 401) {
         localStorage.removeItem('token')
-        router.push('/login')
+        await router.push('/login')
       }
-      throw new Error(`HTTP error! status: ${response.status}`)
+      error.value = `HTTP error! status: ${response.status}`;
+      return;
     }
 
     await getSubObjects()

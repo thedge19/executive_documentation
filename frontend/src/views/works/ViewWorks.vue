@@ -128,6 +128,7 @@ import Navbar from '../../components/Navbar.vue'
 
 const router = useRouter()
 const route = useRoute()
+const error = ref("")
 
 const isLoading = ref(false)
 const works = ref({
@@ -169,7 +170,8 @@ const pageNumbers = computed(() => {
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token')
   if (!token) {
-    throw new Error('Требуется авторизация')
+    error.value = 'Требуется авторизация';
+    return;
   }
   return {
     'Authorization': `Bearer ${token}`
@@ -196,7 +198,8 @@ const getWorks = async () => {
         handleUnauthorized()
         return
       }
-      throw new Error('Ошибка загрузки работ')
+      error.value = 'Ошибка загрузки работ';
+      return;
     }
 
     works.value = await response.json()
@@ -226,7 +229,8 @@ const deleteWork = async (id) => {
         handleUnauthorized()
         return
       }
-      throw new Error('Ошибка при удалении')
+      error.value = 'Ошибка при удалении';
+      return;
     }
 
     await getWorks()
@@ -246,9 +250,10 @@ const getSubObjects = async () => {
     if (!response.ok) {
       if (response.status === 401) {
         handleUnauthorized()
-        return
+        return;
       }
-      throw new Error('Ошибка загрузки подобъектов')
+      error.value = 'Ошибка загрузки подобъектов';
+      return;
     }
 
     subObjects.value = await response.json()
