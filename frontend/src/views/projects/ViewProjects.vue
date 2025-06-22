@@ -119,7 +119,8 @@ const deleteProject = async (id) => {
         localStorage.removeItem('token')
         router.push('/login')
       }
-      throw new Error(`Ошибка HTTP: ${response.status}`)
+      error.value = `Ошибка HTTP: ${response.status}`;
+      return;
     }
 
     await getProjects()

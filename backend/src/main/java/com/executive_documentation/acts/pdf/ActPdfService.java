@@ -18,7 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -212,13 +213,17 @@ public class ActPdfService {
     }
 
     private void addRemoteDocumentToMerge(PdfCopy copy, String url) throws IOException {
-        PdfReader reader = new PdfReader(new URL(url));
         try {
-            copy.addDocument(reader);
-        } catch (DocumentException e) {
-            throw new RuntimeException(e);
-        } finally {
-            reader.close();
+            PdfReader reader = new PdfReader(new URI(url).toURL());
+            try {
+                copy.addDocument(reader);
+            } catch (DocumentException e) {
+                throw new RuntimeException(e);
+            } finally {
+                reader.close();
+            }
+        } catch (URISyntaxException e) {
+            throw new IOException("Invalid URL format", e);
         }
     }
 
