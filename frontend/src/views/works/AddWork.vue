@@ -68,8 +68,14 @@
 
             <!-- Кнопка отправки -->
             <div class="d-grid">
-              <button type="submit" class="btn btn-primary py-2">
-                <i class="bi bi-check-circle me-2"></i>Добавить работу
+              <button type="submit" class="btn btn-primary py-2" :disabled="isLoading">
+                <template v-if="isLoading">
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Добавление...
+                </template>
+                <template v-else>
+                  <i class="bi bi-check-circle me-2"></i>Добавить работу
+                </template>
               </button>
             </div>
           </form>
@@ -79,75 +85,138 @@
   </main>
 </template>
 
-<script>
-import Navbar from '../../components/Navbar.vue';
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import Navbar from '../../components/Navbar.vue'
 
-export default {
-  name: 'AddWork',
-  components: {
-    Navbar
-  },
-  data() {
-    return {
-      projectId: 1,
-      error: '',
-      subObject: "",
-      standards: [],
-      work: {
-        name: '',
-        units: '',
-        quantity: '',
-        done: 0,
-        standardId: '',
-        subObjectId: this.$route.params.id
+const router = useRouter()
+const route = useRoute()
+
+const subObject = ref({ name: '' })
+const standards = ref([])
+const work = ref({
+  name: '',
+  units: '',
+  quantity: '',
+  done: 0,
+  standardId: '',
+  subObjectId: route.params.id
+})
+const error = ref('')
+const isLoading = ref(false)
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Требуется авторизация')
+  }
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  }
+}
+
+const handleUnauthorized = () => {
+  localStorage.removeItem('token')
+  router.push('/login?redirect=' + encodeURIComponent(route.fullPath))
+}
+
+const getSubObject = async () => {
+  try {
+    const headers = getAuthHeaders()
+
+    const response = await fetch(`http://localhost:8080/subobjects/subObject/${route.params.id}`, {
+      headers
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
       }
+      error.value = 'Не удалось загрузить данные подобъекта';
+      return;
     }
-  },
-  mounted() {
-    this.getSubObject(this.$route.params.id);
-    this.getStandards();
-  },
-  methods: {
-    addWork() {
-      if (!this.work.standardId) {
-        this.error = 'Пожалуйста, выберите стандарт';
-        return;
-      }
 
-      this.error = '';
-      fetch('http://localhost:8080/workings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(this.work)
-      })
-          .then(() => {
-            this.$router.push(`/works/${this.$route.params.id}`);
-          })
-          .catch(error => {
-            console.error('Ошибка:', error);
-            this.error = 'Произошла ошибка при добавлении работы';
-          });
-    },
-    getSubObject() {
-      fetch(`http://localhost:8080/subobjects/subObject/${this.$route.params.id}`)
-          .then(res => res.json())
-          .then(data => {
-            this.subObject = data;
-          })
-          .catch(console.error);
-    },
-    getStandards() {
-      fetch(`http://localhost:8080/standards`)
-          .then(res => res.json())
-          .then(data => {
-            this.standards = data;
-          })
-          .catch(console.error);
+    subObject.value = await response.json()
+  } catch (err) {
+    console.error('Ошибка:', err)
+    error.value = err.message
+    if (err.message.includes('авторизация')) {
+      handleUnauthorized()
     }
   }
 }
+
+const getStandards = async () => {
+  try {
+    const headers = getAuthHeaders()
+
+    const response = await fetch('http://localhost:8080/standards', {
+      headers
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
+      }
+      error.value = 'Не удалось загрузить стандарты';
+      return;
+    }
+
+    standards.value = await response.json()
+  } catch (err) {
+    console.error('Ошибка:', err)
+    error.value = err.message
+    if (err.message.includes('авторизация')) {
+      handleUnauthorized()
+    }
+  }
+}
+
+const addWork = async () => {
+  try {
+    if (!work.value.standardId) {
+      error.value = 'Пожалуйста, выберите стандарт'
+      return
+    }
+
+    isLoading.value = true
+    error.value = ''
+
+    const headers = getAuthHeaders()
+
+    const response = await fetch('http://localhost:8080/workings', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(work.value)
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        handleUnauthorized()
+        return;
+      }
+      const errorData = await response.json().catch(() => ({}))
+      error.value = errorData.message || 'Ошибка при добавлении работы';
+      return;
+    }
+
+    await router.push(`/works/${route.params.id}`)
+  } catch (err) {
+    console.error('Ошибка:', err)
+    error.value = err.message
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  getSubObject()
+  getStandards()
+})
 </script>
 
 <style scoped>

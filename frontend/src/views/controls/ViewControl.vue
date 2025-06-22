@@ -105,22 +105,43 @@ const getControls = async () => {
   }
 }
 
-const generatePdf = (id) => {
-  const token = localStorage.getItem('token')
-  if (!token) {
-    handleUnauthorized()
-    return
-  }
-  window.open(`http://localhost:8080/acts/${id}/pdf/control?token=${token}`, '_blank')
-}
+const generateLogPdf = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      handleUnauthorized();
+      return;
+    }
 
-const generateLogPdf = () => {
-  const token = localStorage.getItem('token')
-  if (!token) {
-    handleUnauthorized()
-    return
+    // Открываем новое окно заранее, чтобы блокировщики не мешали
+    const pdfWindow = window.open('', '_blank');
+
+    // Делаем запрос с заголовками авторизации
+    const response = await fetch(`http://localhost:8080/acts/pdf/controlLog`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (response.status === 401) {
+      handleUnauthorized();
+      pdfWindow.close();
+      return;
+    }
+
+    if (!response.ok) {
+      error.value = 'Ошибка сервера';
+      return;
+    }
+
+    // Получаем PDF как blob
+    const blob = await response.blob();
+    // Отображаем PDF в новом окне
+    pdfWindow.location.href = URL.createObjectURL(blob);
+
+  } catch (err) {
+    console.error('Ошибка при генерации PDF:', err);
+    error.value = 'Не удалось сформировать PDF';
   }
-  window.open(`http://localhost:8080/acts/pdf/controlLog?token=${token}`, '_blank')
 }
 
 onMounted(() => {

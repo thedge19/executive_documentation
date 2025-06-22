@@ -88,15 +88,6 @@ public class ActController {
         }
     }
 
-    @GetMapping("/{id}/pdf/control")
-    public void generateControlPdf(@PathVariable Long id, HttpServletResponse response) throws IOException {
-        try {
-            controlPdfService.exportControlToPdf(id, response);
-        } catch (DocumentException e) {
-            response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Ошибка генерации PDF");
-        }
-    }
-
     @GetMapping("/pdf/controlLog")
     public void generateControlLogPdf(HttpServletResponse response) throws IOException {
         try {

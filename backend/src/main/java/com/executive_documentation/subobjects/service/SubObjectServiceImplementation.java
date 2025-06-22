@@ -58,7 +58,7 @@ public class SubObjectServiceImplementation implements SubObjectService {
             updatedSubObject.setTitle(subObject.getTitle());
         }
 
-        return subObjectRepository.save(updatedSubObject);
+        return updatedSubObject;
     }
 
     @Transactional

@@ -1,115 +1,215 @@
 <template>
-  <main>
-    <Navbar/>
-    <div class="my-5">
-      <div class="mx-auto w-25 " style="max-width:100%;">
-        <h2 class="text-center mb-3">Update SubObject</h2>
-        <form @submit.prevent="updateSubObject">
-          <!--name-->
-          <div class="row">
-            <div class="col-md-12 form-group mb-3">
-              <label for="name" class="form-label">Name</label>
-              <input id="name" type="text" name="name" class="form-control" placeholder="Name" required
-                     v-model="material.name">
+  <main class="bg-light min-vh-100">
+    <Navbar />
+
+    <div class="container py-5">
+      <div class="card shadow-sm border-0 mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-white py-4">
+          <h2 class="h4 mb-0 text-center text-primary">Редактировать подобъект</h2>
+        </div>
+
+        <div class="card-body">
+          <form @submit.prevent="updateSubObject">
+            <!-- Наименование -->
+            <div class="mb-4">
+              <label for="name" class="form-label fw-semibold">
+                <i class="bi bi-building me-2"></i>Наименование
+              </label>
+              <input id="name" type="text" class="form-control"
+                     placeholder="Введите наименование подобъекта"
+                     required v-model="subObject.name">
             </div>
-          </div>
 
-
-          <!--Email-->
-          <div class="row">
-            <div class="col-md-12 form-group mb-3">
-              <label for="email" class="form-label">Email</label>
-              <input id="email" type="email" name="email" class="form-control" placeholder="email"
-                     required v-model="material.email">
+            <!-- Аббревиатура -->
+            <div class="mb-4">
+              <label for="title" class="form-label fw-semibold">
+                <i class="bi bi-textarea-t me-2"></i>Аббревиатура
+              </label>
+              <input id="title" type="text" class="form-control"
+                     placeholder="Введите аббревиатуру"
+                     required v-model="subObject.title">
             </div>
-          </div>
 
-          <!--Phone Number-->
-          <div class="row">
-            <div class="col-md-12 form-group mb-3">
-              <label for="pNo" class="form-label">Phone Number</label>
-              <input id="pNo" type="text" name="pNo" class="form-control" placeholder="Phone Number"
-                     required v-model="material.pNo">
+            <!-- Ошибка -->
+            <div v-if="error" class="alert alert-danger mb-4">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
             </div>
-          </div>
 
+            <!-- Кнопки -->
+            <div class="d-flex gap-3">
+              <button type="button" @click="router.back()"
+                      class="btn btn-outline-secondary flex-grow-1 py-2">
+                <i class="bi bi-arrow-left me-2"></i>Назад
+              </button>
 
-          <div class="row">
-            <div class="col-md-12 form-group">
-              <input class="btn btn-primary w-100" type="submit" value="Submit">
+              <button type="submit" class="btn btn-primary flex-grow-1 py-2"
+                      :disabled="isLoading">
+                <template v-if="isLoading">
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Сохранение...
+                </template>
+                <template v-else>
+                  <i class="bi bi-check-circle me-2"></i>Сохранить
+                </template>
+              </button>
             </div>
-          </div>
-
-          <div class="row">
-            <button @click.prevent="getSomething" class="btn btn-outline-success w-50" type="submit" value="Submit">
-              Жми
-            </button>
-          </div>
-
-          <div>
-
-          </div>
-        </form>
-
+          </form>
+        </div>
       </div>
     </div>
-
   </main>
 </template>
 
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import Navbar from '../../components/Navbar.vue'
 
-<script>
-import Navbar from '../../components/Navbar.vue';
+const router = useRouter()
+const route = useRoute()
+const subObjectId = route.params.id
 
-export default {
-  name: 'UpdateSubObject',
-  components: {
-    Navbar
-  },
+const subObject = ref({
+  id: '',
+  name: '',
+  title: '',
+  projectId: '',
+})
 
-  data() {
-    return {
-      material: {
-        id: '',
-        name: '',
-        units: '',
-        documents: '',
-        standard: ''
-      }
+const error = ref(null)
+const isLoading = ref(false)
+
+// Загрузка данных подобъекта
+const fetchSubObject = async () => {
+  isLoading.value = true
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      await router.push('/login')
+      return
     }
-  },
 
-  beforeMount() {
-    this.getSubObjects();
-  },
+    const response = await fetch(`http://localhost:8080/subobjects/subObject/${route.params.id}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
 
-  methods: {
-    getSubObjects() {
-      fetch(`http://localhost:8080/subobjects/${this.$route.params.id}`)
-          .then(res => res.json())
-          .then(data => {
-            this.material = data;
-            console.log(this.material);
-          })
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+        await router.push('/login')
+      }
+      error.value = 'Не удалось загрузить данные подобъекта';
+      return;
+    }
 
-    },
-    updateSubObject() {
-      fetch(`http://localhost:8080/subobjects`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(this.material)
-      })
-          .then(data => {
-            console.log(data);
-            this.$router.push('/subObjects');
-          })
-    },
-    getSomething() {
-      console.log(this.$route.params.id)
-    },
+    subObject.value = await response.json()
+  } catch (err) {
+    error.value = err.message
+    console.error('Ошибка загрузки:', err)
+  } finally {
+    isLoading.value = false
   }
 }
 
+// Обновление подобъекта
+const updateSubObject = async () => {
+  error.value = null
+  isLoading.value = true
+
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      error.value = 'Требуется авторизация'
+      await router.push('/login')
+      return
+    }
+
+    const response = await fetch(`http://localhost:8080/subobjects/${subObjectId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(subObject.value)
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      error.value = errorData.message || 'Ошибка при обновлении подобъекта'
+
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+        await router.push('/login')
+      }
+      return
+    }
+
+    await router.push(`/subObjects/${subObject.value.projectId}`)
+  } catch (err) {
+    console.error('Ошибка:', err)
+    error.value = err.message
+  } finally {
+    isLoading.value = false
+  }
+}
+
+
+
+// Загружаем данные при монтировании компонента
+onMounted(fetchSubObject)
 </script>
+
+<style scoped>
+.card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.form-control {
+  border-radius: 8px;
+  padding: 10px 15px;
+}
+
+.form-label {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.btn {
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.alert {
+  border-radius: 8px;
+}
+
+.btn-group {
+  gap: 8px;
+}
+
+.btn-group .btn {
+  flex: 1;
+}
+
+@media (max-width: 576px) {
+  .card {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .container {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .d-flex {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+</style>

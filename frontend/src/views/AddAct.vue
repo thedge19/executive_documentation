@@ -27,14 +27,14 @@
               <div class="btn-group w-100" role="group">
                 <input type="radio" class="btn-check" name="project"
                        id="project1" autocomplete="off"
-                       :value="4" v-model="projectId" @change="onChangeProject()">
+                       :value="4" v-model="projectId" @change="onChangeProject">
                 <label class="btn btn-outline-primary" for="project1">
                   <i class="bi bi-tree me-2"></i>Грушовая
                 </label>
 
                 <input type="radio" class="btn-check" name="project"
                        id="project2" autocomplete="off"
-                       :value="5" v-model="projectId" @change="onChangeProject()">
+                       :value="5" v-model="projectId" @change="onChangeProject">
                 <label class="btn btn-outline-primary" for="project2">
                   <i class="bi bi-building me-2"></i>Шесхарис
                 </label>
@@ -51,7 +51,7 @@
                   <i class="bi bi-list-ul"></i>
                 </span>
                 <select class="form-select" id="subObjectSelect"
-                        @change="onChangeSubObject()" v-model="subObjectId">
+                        @change="onChangeSubObject" v-model="subObjectId">
                   <option selected disabled value="">Выберите подобъект...</option>
                   <option v-for="subObject in subObjects" :value="subObject.id">
                     {{ subObject.name }}
@@ -67,7 +67,7 @@
               </label>
               <div class="d-flex gap-3 align-items-center">
                 <select class="form-select" id="workSelect"
-                        v-model="workId" @change="onChangeWork()">
+                        v-model="workId" @change="onChangeWork">
                   <option selected disabled value="">Выберите работу...</option>
                   <option v-for="work in works" :value="work.id">
                     {{ work.name }}
@@ -200,12 +200,14 @@
 
             <!-- Кнопки -->
             <div class="d-flex gap-3 mt-4">
-              <button @click.prevent="getSomething" class="btn btn-outline-success flex-grow-1 py-2">
-                <i class="bi bi-lightning-charge me-2"></i>Проверить
-              </button>
-
-              <button type="submit" class="btn btn-primary flex-grow-1 py-2">
-                <i class="bi bi-check-circle me-2"></i>Сохранить акт
+              <button type="submit" class="btn btn-primary flex-grow-1 py-2" :disabled="isLoading">
+                <template v-if="isLoading">
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Сохранение...
+                </template>
+                <template v-else>
+                  <i class="bi bi-check-circle me-2"></i>Сохранить акт
+                </template>
               </button>
             </div>
           </form>
@@ -215,211 +217,294 @@
   </main>
 </template>
 
-<script>
-import Navbar from "@/components/Navbar.vue";
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import Navbar from '@/components/Navbar.vue'
 
-export default {
-  name: "AddAct",
-  components: {
-    Navbar
-  },
-  data() {
-    return {
-      subObjects: [],
-      works: [],
-      materials: [],
-      errors: [],
+const router = useRouter()
 
-      currentWork: {
-        units: "т",
-        finalQuantity: 0.1
-      },
+// Состояние компонента
+const subObjects = ref([])
+const works = ref([])
+const materials = ref([])
+const errors = ref([])
+const isLoading = ref(false)
+const error = ref('')
 
-      projectId: 4,
-      subObjectId: null,
-      workId: null,
-      nextWorkId: null,
-      workDone: "",
-      startDate: new Date(),
-      endDate: "",
-      materialQuantity: 0,
-      executiveSchema: "Нет",
-      file: null,
-      fileInput: null,
+const currentWork = ref({
+  units: "т",
+  finalQuantity: 0.1
+})
 
-      // Массив для хранения данных о материалах
-      materialInputs: Array(5).fill().map(() => ({
-        id: null,
-        units: "-",
-        quantity: null
-      })),
+const projectId = ref(4)
+const subObjectId = ref(null)
+const workId = ref(null)
+const nextWorkId = ref(null)
+const workDone = ref("")
+const startDate = ref(new Date())
+const endDate = ref("")
+const materialQuantity = ref(0)
+const executiveSchema = ref("Нет")
+const file = ref(null)
+const fileInput = ref(null)
 
-      attributes: {
-        highlight: true,
-        dates: this.setFirstEndDate,
+const materialInputs = ref(
+    Array(5).fill().map(() => ({
+      id: null,
+      units: "-",
+      quantity: null
+    }))
+)
+
+const attributes = computed(() => ({
+  highlight: true,
+  dates: setFirstEndDate.value,
+}))
+
+// Вычисляемые свойства
+const setControlDate = computed(() => {
+  let controlDate = new Date(
+      startDate.value.getFullYear() + "." +
+      (startDate.value.getMonth() + 1) + "." + 1
+  )
+  if (controlDate.getDay() === 6) {
+    controlDate.setDate(controlDate.getDate() + 2)
+  } else if (controlDate.getDay() === 0) {
+    controlDate.setDate(controlDate.getDate() + 1)
+  }
+  return controlDate
+})
+
+const setFirstEndDate = computed(() => startDate.value)
+
+// Методы для работы с авторизацией
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Требуется авторизация')
+  }
+  return {
+    'Authorization': `Bearer ${token}`
+  }
+}
+
+const handleUnauthorized = () => {
+  localStorage.removeItem('token')
+  router.push('/login')
+}
+
+// Методы для работы с данными
+const onChangeProject = async () => {
+  await getSubObjects()
+}
+
+const onChangeSubObject = async () => {
+  await getWorks()
+}
+
+const onChangeWork = async () => {
+  await getWork()
+}
+
+const onChangeMaterial = async (index) => {
+  const materialId = materialInputs.value[index].id
+  if (materialId) {
+    try {
+      const headers = getAuthHeaders()
+      const response = await fetch(`http://localhost:8080/materials/${materialId}`, { headers })
+
+      if (!response.ok) {
+        if (response.status === 401) handleUnauthorized()
+        throw new Error('Ошибка загрузки материала')
       }
-    }
-  },
-  mounted() {
-    this.getSubObjects()
-    this.getWorks()
-    this.getMaterials()
-  },
-  methods: {
-    checkForm(e) {
-      this.errors = [];
 
-      if (this.materialQuantity !== 0 && this.setControlDate > this.startDate) {
-        this.errors.push('Дата входного контроля не должна быть позднее, чем дата начала работ.');
-      }
-
-      if (this.workDone === '') {
-        this.errors.push('Заполните объём работ.');
-      }
-
-      if (this.workId === null || this.workId === undefined) {
-        this.errors.push("Укажите работы.")
-      }
-
-      if (this.executiveSchema === 'Есть' && !this.file) {
-        this.errors.push('Загрузите исполнительную схему (PDF файл).');
-      }
-
-      if (this.errors.length === 0) {
-        this.addAct();
-      }
-
-      e.preventDefault();
-    },
-    getSomething() {
-      console.log(this.setControlDate);
-      console.log(this.startDate);
-      console.log(this.endDate);
-    },
-    onChangeProject() {
-      this.getSubObjects()
-    },
-    onChangeSubObject() {
-      this.getWorks()
-    },
-    onChangeWork() {
-      this.getWork()
-    },
-    onChangeMaterial(index) {
-      const materialId = this.materialInputs[index].id;
-      if (materialId) {
-        fetch(`http://localhost:8080/materials/${materialId}`)
-            .then(res => res.json())
-            .then(data => {
-              this.materialInputs[index].units = data.units;
-            });
-      }
-    },
-    getSubObjects() {
-      fetch(`http://localhost:8080/subobjects/${this.projectId}`)
-          .then(res => res.json())
-          .then(data => {
-            this.subObjects = data
-          })
-    },
-    getWorks() {
-      if (this.subObjectId) {
-        fetch(`http://localhost:8080/workings/undone/${this.subObjectId}`)
-            .then(res => res.json())
-            .then(data => {
-              this.works = data
-            })
-      }
-    },
-    getWork() {
-      if (this.workId) {
-        fetch(`http://localhost:8080/workings/working/${this.workId}`)
-            .then(res => res.json())
-            .then(data => {
-              this.currentWork = data
-            })
-      }
-    },
-    getMaterials() {
-      fetch(`http://localhost:8080/materials/notPageable`)
-          .then(res => res.json())
-          .then(data => {
-            this.materials = data
-          })
-    },
-    addMaterials() {
-      return this.materialInputs
-          .slice(0, this.materialQuantity)
-          .filter(m => m.id && m.quantity)
-          .map(m => ({
-            materialId: m.id,
-            quantity: m.quantity
-          }));
-    },
-    async addAct() {
-      try {
-        const materials = this.addMaterials();
-        const formatDate = (date) => {
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
-          return `${year}-${month}-${day}`;
-        };
-
-        const formData = new FormData();
-        formData.append('projectId', this.projectId);
-        formData.append('subObjectId', this.subObjectId);
-        formData.append('workId', this.workId);
-        formData.append('nextWorkId', this.nextWorkId);
-        formData.append('workDone', parseFloat(this.workDone));
-        formData.append('startDate', formatDate(this.startDate));
-        formData.append('endDate', formatDate(this.endDate));
-        formData.append('executiveSchema', this.executiveSchema);
-        formData.append('materials', JSON.stringify(materials));
-
-        if (this.materialQuantity > 0) {
-          formData.append('controlDate', formatDate(this.setControlDate));
-        }
-
-        if (this.executiveSchema === 'Есть' && this.file) {
-          formData.append('file', this.file);
-        }
-
-        await fetch('http://localhost:8080/acts', {
-          method: 'POST',
-          body: formData
-        });
-
-        this.$router.push("/");
-      } catch (error) {
-        console.error('Ошибка:', error);
-        this.errors.push('Не удалось сохранить акт');
-      }
-    },
-    handleFileUpload(event) {
-      this.file = event.target.files[0];
-      if (this.file && this.file.type !== 'application/pdf') {
-        alert('Пожалуйста, загрузите файл в формате PDF');
-        this.file = null;
-        this.$refs.fileInput.value = '';
-      }
-    },
-  },
-  computed: {
-    setControlDate() {
-      let controlDate = new Date(this.startDate.getFullYear() + "." + (this.startDate.getMonth() + 1) + "." + 1);
-      if (controlDate.getDay() === 6) {
-        controlDate.setDate(controlDate.getDate() + 2);
-      } else if (controlDate.getDay() === 0) {
-        controlDate.setDate(controlDate.getDate() + 1);
-      }
-      return controlDate;
-    },
-    setFirstEndDate() {
-      return this.startDate
+      const data = await response.json()
+      materialInputs.value[index].units = data.units
+    } catch (err) {
+      console.error('Ошибка:', err)
+      if (err.message.includes('авторизация')) handleUnauthorized()
     }
   }
 }
+
+const getSubObjects = async () => {
+  try {
+    const headers = getAuthHeaders()
+    const response = await fetch(`http://localhost:8080/subobjects/${projectId.value}`, { headers })
+
+    if (!response.ok) {
+      if (response.status === 401) handleUnauthorized()
+      throw new Error('Ошибка загрузки подобъектов')
+    }
+
+    subObjects.value = await response.json()
+  } catch (err) {
+    console.error('Ошибка:', err)
+    if (err.message.includes('авторизация')) handleUnauthorized()
+  }
+}
+
+const getWorks = async () => {
+  if (subObjectId.value) {
+    try {
+      const headers = getAuthHeaders()
+      const response = await fetch(`http://localhost:8080/workings/undone/${subObjectId.value}`, { headers })
+
+      if (!response.ok) {
+        if (response.status === 401) handleUnauthorized()
+        throw new Error('Ошибка загрузки работ')
+      }
+
+      works.value = await response.json()
+    } catch (err) {
+      console.error('Ошибка:', err)
+      if (err.message.includes('авторизация')) handleUnauthorized()
+    }
+  }
+}
+
+const getWork = async () => {
+  if (workId.value) {
+    try {
+      const headers = getAuthHeaders()
+      const response = await fetch(`http://localhost:8080/workings/working/${workId.value}`, { headers })
+
+      if (!response.ok) {
+        if (response.status === 401) handleUnauthorized()
+        throw new Error('Ошибка загрузки работы')
+      }
+
+      currentWork.value = await response.json()
+    } catch (err) {
+      console.error('Ошибка:', err)
+      if (err.message.includes('авторизация')) handleUnauthorized()
+    }
+  }
+}
+
+const getMaterials = async () => {
+  try {
+    const headers = getAuthHeaders()
+    const response = await fetch('http://localhost:8080/materials/notPageable', { headers })
+
+    if (!response.ok) {
+      if (response.status === 401) handleUnauthorized()
+      error.value = 'Ошибка загрузки материалов';
+      return;
+    }
+
+    materials.value = await response.json()
+  } catch (err) {
+    console.error('Ошибка:', err)
+    if (err.message.includes('авторизация')) handleUnauthorized()
+  }
+}
+
+const addMaterials = () => {
+  return materialInputs.value
+      .slice(0, materialQuantity.value)
+      .filter(m => m.id && m.quantity)
+      .map(m => ({
+        materialId: m.id,
+        quantity: m.quantity
+      }))
+}
+
+const handleFileUpload = (event) => {
+  file.value = event.target.files[0]
+  if (file.value && file.value.type !== 'application/pdf') {
+    alert('Пожалуйста, загрузите файл в формате PDF')
+    file.value = null
+    fileInput.value.value = ''
+  }
+}
+
+const checkForm = async (e) => {
+  e.preventDefault()
+  errors.value = []
+
+  if (materialQuantity.value !== 0 && setControlDate.value > startDate.value) {
+    errors.value.push('Дата входного контроля не должна быть позднее, чем дата начала работ.')
+  }
+
+  if (workDone.value === '') {
+    errors.value.push('Заполните объём работ.')
+  }
+
+  if (!workId.value) {
+    errors.value.push("Укажите работы.")
+  }
+
+  if (executiveSchema.value === 'Есть' && !file.value) {
+    errors.value.push('Загрузите исполнительную схему (PDF файл).')
+  }
+
+  if (errors.value.length === 0) {
+    await addAct()
+  }
+}
+
+const addAct = async () => {
+  try {
+    isLoading.value = true
+    const materialsData = addMaterials()
+
+    const formatDate = (date) => {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
+    const formData = new FormData()
+    formData.append('projectId', projectId.value)
+    formData.append('subObjectId', subObjectId.value)
+    formData.append('workId', workId.value)
+    formData.append('nextWorkId', nextWorkId.value)
+    formData.append('workDone', parseFloat(workDone.value))
+    formData.append('startDate', formatDate(startDate.value))
+    formData.append('endDate', formatDate(endDate.value))
+    formData.append('executiveSchema', executiveSchema.value)
+    formData.append('materials', JSON.stringify(materialsData))
+
+    if (materialQuantity.value > 0) {
+      formData.append('controlDate', formatDate(setControlDate.value))
+    }
+
+    if (executiveSchema.value === 'Есть' && file.value) {
+      formData.append('file', file.value)
+    }
+
+    const headers = getAuthHeaders()
+    delete headers['Content-Type'] // Для FormData заголовок Content-Type устанавливается автоматически
+
+    const response = await fetch('http://localhost:8080/acts', {
+      method: 'POST',
+      headers,
+      body: formData
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) handleUnauthorized()
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || 'Ошибка при сохранении акта')
+    }
+
+    await router.push("/")
+  } catch (err) {
+    console.error('Ошибка:', err)
+    errors.value.push(err.message || 'Не удалось сохранить акт')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Инициализация компонента
+onMounted(async () => {
+  await getSubObjects()
+  await getMaterials()
+})
 </script>
 
 <style scoped>

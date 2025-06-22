@@ -177,8 +177,43 @@ const deleteAct = async (id) => {
   }
 }
 
-const generatePdf = (actId) => {
-  window.open(`http://localhost:8080/acts/${actId}/pdf`, '_blank')
+const generatePdf = async (actId) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      handleUnauthorized();
+      return;
+    }
+
+    // Открываем новое окно заранее, чтобы блокировщики не мешали
+    const pdfWindow = window.open('', '_blank');
+
+    // Делаем запрос с заголовками авторизации
+    const response = await fetch(`http://localhost:8080/acts/${actId}/pdf`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (response.status === 401) {
+      handleUnauthorized();
+      pdfWindow.close();
+      return;
+    }
+
+    if (!response.ok) {
+      error.value = 'Ошибка сервера';
+      return;
+    }
+
+    // Получаем PDF как blob
+    const blob = await response.blob();
+    // Отображаем PDF в новом окне
+    pdfWindow.location.href = URL.createObjectURL(blob);
+
+  } catch (err) {
+    console.error('Ошибка при генерации PDF:', err);
+    error.value = 'Не удалось сформировать PDF';
+  }
 }
 
 const addDates = async () => {

@@ -13,13 +13,13 @@
             </a>
 
             <div class="btn-group" role="group">
-              <input type="radio" class="btn-check" id="project4" @change="onChangeProject()"
-                     name="project" v-model="projectId" :value="4" autocomplete="off" checked>
+              <input type="radio" class="btn-check" id="project4" @change="onChangeProject"
+                     name="project" v-model="projectId" :value="4" autocomplete="off">
               <label class="btn btn-outline-secondary" for="project4">
                 <i class="bi bi-tree me-1"></i>Грушовая
               </label>
 
-              <input type="radio" class="btn-check" id="project5" @change="onChangeProject()"
+              <input type="radio" class="btn-check" id="project5" @change="onChangeProject"
                      name="project" v-model="projectId" :value="5" autocomplete="off">
               <label class="btn btn-outline-secondary" for="project5">
                 <i class="bi bi-building me-1"></i>Шесхарис
@@ -50,7 +50,7 @@
                   </a>
                 </td>
                 <td class="text-center">{{ subObject.title }}</td>
-                <td class="text-center">{{ subObject.project.name }}</td>
+                <td class="text-center">{{ subObject.project?.name }}</td>
                 <td class="text-center pe-4">
                   <div class="d-flex justify-content-center">
                     <a :href="`/editSubObject/${subObject.id}`" class="btn btn-sm btn-outline-primary rounded-pill px-2 me-2 my-2">
@@ -71,51 +71,96 @@
   </main>
 </template>
 
-<script>
+<script setup>
+import { ref, onBeforeMount } from 'vue'
+import { useRouter } from 'vue-router'
 import Navbar from '../../components/Navbar.vue'
 
-export default {
-  name: 'ViewSubObjects',
-  components: {
-    Navbar
-  },
-  data() {
-    return {
-      subObjects: [],
-      projectId: this.$route.params.id,
+const router = useRouter()
+const subObjects = ref([])
+const projectId = ref(4) // Значение по умолчанию
+const error = ref(null)
+const isLoading = ref(false)
+
+const getSubObjects = async () => {
+  try {
+    isLoading.value = true
+    const token = localStorage.getItem('token')
+
+    if (!token) {
+      router.push('/login')
+      return
     }
-  },
-  beforeMount() {
-    this.getSubObjects()
-  },
-  methods: {
-    onChangeProject() {
-      this.getSubObjects()
-    },
-    getSubObjects() {
-      fetch(`http://localhost:8080/subobjects/${this.projectId}`, {
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      })
-          .then(res => res.json())
-          .then(data => {
-            this.subObjects = data
-          })
-          .catch(console.error)
-    },
-    deleteSubObject(id) {
-      if(confirm('Вы действительно хотите удалить подобъект?')) {
-        fetch(`http://localhost:8080/subobjects/${id}`, {
-          method: 'DELETE'
-        })
-            .then(() => this.getSubObjects())
-            .catch(console.error)
+
+    const response = await fetch(`http://localhost:8080/subobjects/${projectId.value}`, {
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+        router.push('/login')
       }
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
+
+    subObjects.value = await response.json()
+  } catch (err) {
+    error.value = err.message
+    console.error('Ошибка при загрузке подобъектов:', err)
+  } finally {
+    isLoading.value = false
   }
 }
+
+const deleteSubObject = async (id) => {
+  if (!confirm('Вы действительно хотите удалить подобъект?')) return
+
+  try {
+    const token = localStorage.getItem('token')
+
+    if (!token) {
+      router.push('/login')
+      return
+    }
+
+    const response = await fetch(`http://localhost:8080/subobjects/${id}`, {
+      method: 'DELETE',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+        router.push('/login')
+      }
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    await getSubObjects()
+  } catch (err) {
+    error.value = err.message
+    console.error('Ошибка при удалении подобъекта:', err)
+  }
+}
+
+const onChangeProject = () => {
+  getSubObjects()
+}
+
+onBeforeMount(() => {
+  getSubObjects()
+})
 </script>
 
 <style scoped>

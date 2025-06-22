@@ -8,6 +8,7 @@ import ViewWorks from "@/views/works/ViewWorks.vue";
 import ViewControl from "@/views/controls/ViewControl.vue";
 import ViewSchemas from "@/views/schemas/ViewSchemas.vue";
 import Login from "@/views/Login.vue";
+import Dashboard from "@/views/Dashboard.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -16,6 +17,18 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: Home,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: Dashboard,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/addUser',
+      name: 'addUser',
+      component: () => import('../views/admin/AddUser.vue'),
       meta: { requiresAuth: true }
     },
     {

@@ -23,12 +23,12 @@ public class JwtTokenProvider {
         return generateToken(authentication.getName());
     }
 
-    public String generateToken(String username) {  // Изменили параметр на String
+    public String generateToken(String email) {  // Изменили параметр на String
         Date currentDate = new Date();
         Date expireDate = new Date(currentDate.getTime() + jwtExpirationDate);
 
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(expireDate)
                 .signWith(key())

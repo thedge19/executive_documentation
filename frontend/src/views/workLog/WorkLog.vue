@@ -1,17 +1,18 @@
 <template>
-  <main style="background-color: #f8f9fa; min-height: 100vh;">
+  <main :style="{'background-image': 'url(/09-12-2016_yuzhno-russkoe_2.jpg)', 'min-height': '100vh'}">
+
     <Navbar/>
     <div class="container py-4">
       <div class="row justify-content-center">
         <div class="col-12 mt-5">
-          <h1 class="text-center mb-4 text-primary">Общий журнал работ. Раздел 3</h1>
+          <h1 class="text-center mb-4 text-light">Общий журнал работ. Раздел 3</h1>
 
           <!-- Action buttons -->
           <div class="d-flex justify-content-start mb-4">
-            <button @click="fillInTheLog" class="btn btn-primary mx-2 shadow-sm rounded-pill" :disabled="isLoading">
+            <button @click="fillInTheLog" class="btn btn-success mx-2 shadow-sm rounded-pill" :disabled="isLoading">
               <i class="bi bi-file-earmark-plus me-2"></i>Сформировать ОЖР
             </button>
-            <button @click.prevent="generatePdf" class="btn btn-success mx-2 shadow-sm rounded-pill" :disabled="isLoading">
+            <button @click.prevent="generatePdf" class="btn btn-info mx-2 shadow-sm rounded-pill" :disabled="isLoading">
               <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить в PDF
             </button>
           </div>

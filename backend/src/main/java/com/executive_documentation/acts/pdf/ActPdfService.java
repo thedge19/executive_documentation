@@ -141,22 +141,24 @@ public class ActPdfService {
                 }
             }
 
-            // 4.3. Пытаемся найти и добавить акт входного контроля (если есть)
-            if (entranceControlRepository.findFirstByAct(act) != null) {
-                EntranceControl control = entranceControlRepository.findFirstByAct(act);
-                ByteArrayOutputStream controlPdf = controlPdfService.generateControlPdf(control);
-                addDocumentToMerge(copy, new ByteArrayInputStream(controlPdf.toByteArray()));
+            // 4.3. Пытаемся найти и добавить акты входного контроля (если есть)
+            List<EntranceControl> controls = entranceControlRepository.findAllByAct(act);
+            if (!controls.isEmpty()) {
+                for (EntranceControl control : controls) {
+                    ByteArrayOutputStream controlPdf = controlPdfService.generateControlPdf(control);
+                    addDocumentToMerge(copy, new ByteArrayInputStream(controlPdf.toByteArray()));
 
-                // 4.4. Добавляем сертификат (если есть у контроля)
-                if (control.getMaterial() != null &&
-                        control.getMaterial().getCertificate() != null &&
-                        control.getMaterial().getCertificate().getPath() != null) {
+                    // 4.4. Добавляем сертификат (если есть у контроля)
+                    if (control.getMaterial() != null &&
+                            control.getMaterial().getCertificate() != null &&
+                            control.getMaterial().getCertificate().getPath() != null) {
 
-                    try {
-                        addRemoteDocumentToMerge(copy, fileStorageService.getStorageBaseUrl(
-                                control.getMaterial().getCertificate().getPath()));
-                    } catch (Exception e) {
-                        log.warn("Не удалось добавить сертификат: {}", e.getMessage());
+                        try {
+                            addRemoteDocumentToMerge(copy, fileStorageService.getStorageBaseUrl(
+                                    control.getMaterial().getCertificate().getPath()));
+                        } catch (Exception e) {
+                            log.warn("Не удалось добавить сертификат: {}", e.getMessage());
+                        }
                     }
                 }
             }
@@ -523,7 +525,7 @@ public class ActPdfService {
 
     private void addMaterials(String materials, PdfPTable table) {
 
-        if(materials == null || materials.isEmpty()) {
+        if (materials == null || materials.isEmpty()) {
             materials = "н/п";
         }
 

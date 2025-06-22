@@ -1,11 +1,10 @@
 package com.executive_documentation.auth.controller;
 
 import com.executive_documentation.auth.config.JwtTokenProvider;
-import com.executive_documentation.auth.dto.AuthResponse;
-import com.executive_documentation.auth.dto.LoginDto;
-import com.executive_documentation.auth.dto.UserInfoDto;
+import com.executive_documentation.auth.dto.*;
 import com.executive_documentation.auth.model.AppUser;
 import com.executive_documentation.auth.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,6 +14,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -27,11 +28,29 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthService authService;
 
+    @GetMapping("/users")
+    public ResponseEntity<List<UserResponseDto>> getAllUsers() {
+        return ResponseEntity.ok(authService.getAllUsers());
+    }
+
+    @PostMapping("/users")
+    public ResponseEntity<UserResponseDto> createUser(@Valid @RequestBody UserCreateDto userCreateDto) {
+        UserResponseDto createdUser = authService.createUser(userCreateDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    }
+
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
+        log.info("Deleting user {}", userId);
+        authService.deleteUser(userId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginDto loginDto) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginDto.getUsername(),
+                        loginDto.getEmail(),
                         loginDto.getPassword()
                 )
         );

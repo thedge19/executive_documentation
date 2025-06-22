@@ -38,14 +38,14 @@
               <div class="btn-group w-100" role="group">
                 <input type="radio" class="btn-check" name="projectId"
                        id="project1" autocomplete="off"
-                       :value="1" v-model="subObject.projectId">
+                       :value="4" v-model="subObject.projectId">
                 <label class="btn btn-outline-primary" for="project1">
                   <i class="bi bi-tree me-2"></i>Грушовая
                 </label>
 
                 <input type="radio" class="btn-check" name="projectId"
                        id="project2" autocomplete="off"
-                       :value="2" v-model="subObject.projectId">
+                       :value="5" v-model="subObject.projectId">
                 <label class="btn btn-outline-primary" for="project2">
                   <i class="bi bi-building me-2"></i>Шесхарис
                 </label>
@@ -60,12 +60,20 @@
             <!-- Кнопки -->
             <div class="d-flex gap-3">
               <button @click.prevent="getSomething"
-                      class="btn btn-outline-success flex-grow-1 py-2">
+                      class="btn btn-outline-success flex-grow-1 py-2"
+                      :disabled="isLoading">
                 <i class="bi bi-lightning-charge me-2"></i>Проверить
               </button>
 
-              <button type="submit" class="btn btn-primary flex-grow-1 py-2">
-                <i class="bi bi-check-circle me-2"></i>Добавить
+              <button type="submit" class="btn btn-primary flex-grow-1 py-2"
+                      :disabled="isLoading">
+                <template v-if="isLoading">
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Добавление...
+                </template>
+                <template v-else>
+                  <i class="bi bi-check-circle me-2"></i>Добавить
+                </template>
               </button>
             </div>
           </form>
@@ -75,54 +83,66 @@
   </main>
 </template>
 
-<script>
-import Navbar from '../../components/Navbar.vue';
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import Navbar from '../../components/Navbar.vue'
 
-export default {
-  name: 'AddSubObject',
-  components: {
-    Navbar
-  },
-  data() {
-    return {
-      subObject: {
-        name: '',
-        title: '',
-        projectId: 1, // Установлено значение по умолчанию 1
+const router = useRouter()
+const subObject = ref({
+  name: '',
+  title: '',
+  projectId: 4
+})
+const error = ref(null)
+const isLoading = ref(false)
+
+const getSomething = () => {
+  console.log('Выбран проект ID:', subObject.value)
+}
+
+const addSubObject = async () => {
+  error.value = null
+  isLoading.value = true
+
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      error.value = 'Требуется авторизация'
+      await router.push('/login')
+      return
+    }
+
+    const response = await fetch('http://localhost:8080/subobjects', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
-      error: null
-    }
-  },
-  methods: {
-    getSomething() {
-      console.log('Выбран проект ID:', this.subObject.projectId);
-    },
+      body: JSON.stringify(subObject.value)
+    })
 
-    addSubObject() {
-      this.error = null;
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      error.value = errorData.message || 'Ошибка при добавлении подобъекта'
 
-      fetch('http://localhost:8080/subobjects', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(this.subObject)
-      })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error('Ошибка при добавлении подобъекта');
-            }
-            return response.json();
-          })
-          .then(data => {
-            console.log(data);
-            this.$router.push("/subObjects");
-          })
-          .catch(error => {
-            console.error('Ошибка:', error);
-            this.error = error.message;
-          });
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+        await router.push('/login')
+      }
+      return
     }
+
+    await router.push(`/subObjects/${subObject.value.projectId}`)
+  } catch (err) {
+    console.error('Ошибка:', err)
+    error.value = err.message
+
+    if (err.message.includes('401') || err.message.includes('авторизация')) {
+      await router.push('/login')
+    }
+  } finally {
+    isLoading.value = false
   }
 }
 </script>

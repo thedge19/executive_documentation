@@ -35,9 +35,9 @@
         </ul>
 
         <!-- Блок пользователя -->
-        <div v-if="isAuthenticated" class="d-flex align-items-center ms-3">
-          <span class="text-white me-3 user-greeting">
-            {{ currentUser }}
+        <div class="d-flex align-items-center ms-3">
+          <span class="me-3 user-greeting">
+            <a href="/dashboard" class="text-white ">{{ currentUser }}</a>
           </span>
           <button @click="logout" class="btn btn-outline-light logout-btn">
             <i class="bi bi-box-arrow-right me-1"></i> Выход
@@ -164,6 +164,7 @@ export default {
   .nav-link {
     margin: 0.2rem 0;
   }
+
   .nav-link.active::after {
     left: 0;
     right: 0;

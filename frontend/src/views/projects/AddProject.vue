@@ -27,12 +27,15 @@
 
             <!-- Кнопка отправки -->
             <div class="d-grid">
-              <button type="submit" class="btn btn-primary py-2">
-                <i class="bi bi-check-circle me-2"></i>Добавить объект
+              <button type="submit" class="btn btn-primary py-2" :disabled="isLoading">
+                <template v-if="isLoading">
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Обработка...
+                </template>
+                <template v-else>
+                  <i class="bi bi-check-circle me-2"></i>Добавить объект
+                </template>
               </button>
-            </div>
-            <div v-if="error" class="error-message">
-              {{ error }}
             </div>
           </form>
         </div>
@@ -41,103 +44,61 @@
   </main>
 </template>
 
-<script>
-import Navbar from '../../components/Navbar.vue';
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import Navbar from '../../components/Navbar.vue'
 
-export default {
-  name: 'AddProject',
-  components: {
-    Navbar
-  },
-  data() {
-    return {
-      project: {
-        name: '',
+const router = useRouter()
+const project = ref({
+  name: ''
+})
+const error = ref(null)
+const isLoading = ref(false)
+
+const addProject = async () => {
+  error.value = null
+  isLoading.value = true
+
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      error.value = 'Требуется авторизация'
+      router.push('/login')
+      return
+    }
+
+    const response = await fetch('http://localhost:8080/projects', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
-      error: null
-    }
-  },
-  methods: {
-    async addProject() {
-      this.error = null
-      this.isLoading = true
+      body: JSON.stringify(project.value)
+    })
 
-      try {
-        const token = localStorage.getItem('token')
-        if (!token) {
-          this.error.value = 'Требуется авторизация';
-          return;
-        }
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      error.value = errorData.message || 'Ошибка при добавлении объекта'
 
-        const response = await fetch('http://localhost:8080/projects', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(this.project)
-        })
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
-          this.error.value = errorData.message || 'Ошибка при добавлении объекта';
-          return;
-        }
-
-        // Успешное создание
-        this.$router.push('/projects')
-      } catch (error) {
-        console.error('Ошибка:', error)
-        this.error = error.message
-
-        // Если 401 - перенаправляем на логин
-        if (error.message.includes('401') || error.message.includes('авторизация')) {
-          this.$router.push('/login?redirect=' + encodeURIComponent(this.$route.fullPath))
-        }
-      } finally {
-        this.isLoading = false
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+        router.push('/login')
       }
+      return
     }
+
+    // Успешное создание
+    await router.push('/projects')
+  } catch (err) {
+    console.error('Ошибка:', err)
+    error.value = err.message
+
+    if (err.message.includes('401') || err.message.includes('авторизация')) {
+      router.push('/login')
+    }
+  } finally {
+    isLoading.value = false
   }
 }
 </script>
-
-<style scoped>
-.card {
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.form-control {
-  border-radius: 8px;
-  padding: 10px 15px;
-}
-
-.form-label {
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-}
-
-.btn {
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-
-.alert {
-  border-radius: 8px;
-}
-
-@media (max-width: 576px) {
-  .card {
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-  }
-
-  .container {
-    padding-left: 0;
-    padding-right: 0;
-  }
-}
-</style>

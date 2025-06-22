@@ -1,25 +1,25 @@
 <template>
-  <main class="bg-light min-vh-100 d-flex align-items-center">
+  <main class="min-vh-100 d-flex align-items-center" :style="{'background-image':'url(/09-12-2016_yuzhno-russkoe_2.jpg)'}">
     <div class="container py-5">
-      <div class="card shadow-sm border-0 mx-auto" style="max-width: 500px;">
+      <div class="card shadow-sm border-0 mx-auto" style="max-width: 500px; background-color: rgba(255, 255, 255, 0.9);">
         <div class="card-header bg-white py-4">
           <h2 class="h4 mb-0 text-center text-primary">Вход в систему</h2>
         </div>
 
         <div class="card-body">
           <form @submit.prevent="handleLogin">
-            <!-- Поле для email/username -->
+            <!-- Поле для логина -->
             <div class="mb-4">
-              <label for="username" class="form-label fw-semibold">
-                <i class="bi bi-person me-2"></i>Логин
+              <label for="email" class="form-label fw-semibold">
+                <i class="bi bi-envelope me-2"></i>Email
               </label>
               <input
-                  id="username"
-                  type="text"
+                  id="email"
+                  type="email"
                   class="form-control"
-                  placeholder="Введите ваш логин"
+                  placeholder="Введите ваш email"
                   required
-                  v-model="username"
+                  v-model="email"
               >
             </div>
 
@@ -45,8 +45,14 @@
 
             <!-- Кнопка входа -->
             <div class="d-grid">
-              <button type="submit" class="btn btn-primary py-2">
-                <i class="bi bi-box-arrow-in-right me-2"></i>Войти
+              <button type="submit" class="btn btn-primary py-2" :disabled="loading">
+                <template v-if="loading">
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Вход...
+                </template>
+                <template v-else>
+                  <i class="bi bi-box-arrow-in-right me-2"></i>Войти
+                </template>
               </button>
             </div>
           </form>
@@ -56,61 +62,65 @@
   </main>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      username: '',
-      password: '',
-      error: ''
-    };
-  },
-  methods: {
-    async handleLogin() {
-      try {
-        const response = await fetch('http://localhost:8080/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            username: this.username,
-            password: this.password
-          })
-        });
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          this.error = errorData.message || 'Ошибка входа. Проверьте данные и попробуйте снова.';
-          return;
-        }
+const router = useRouter()
+const email = ref('')
+const password = ref('')
+const error = ref('')
+const loading = ref(false)
 
-        const data = await response.json();
-        const token = data.token || data.accessToken;
+const handleLogin = async () => {
+  try {
+    loading.value = true
+    error.value = ''
 
-        if (!token) {
-          this.error.value = 'Не удалось получить токен авторизации';
-          return;
-        }
+    const response = await fetch('http://localhost:8080/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value
+      })
+    })
 
-        localStorage.setItem('token', token);
-        this.$router.push('/');
-      } catch (err) {
-        this.error = err.message || 'Произошла ошибка при входе в систему';
-        console.error('Login error:', err);
-      }
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      error.value = errorData.message || 'Ошибка входа. Проверьте данные и попробуйте снова.'
+      return
     }
+
+    const data = await response.json()
+    const token = data.token || data.accessToken
+
+    if (!token) {
+      error.value = 'Не удалось получить токен авторизации'
+      return
+    }
+
+    localStorage.setItem('token', token)
+    await router.push('/')
+  } catch (err) {
+    error.value = err.message || 'Произошла ошибка при входе в систему'
+    console.error('Login error:', err)
+  } finally {
+    loading.value = false
   }
-};
+}
 </script>
 
 <style scoped>
 .card {
   border-radius: 0.5rem;
+  backdrop-filter: blur(5px);
 }
 
 .card-header {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .form-control {
@@ -122,7 +132,7 @@ export default {
 
 .form-control:focus {
   border-color: #86b7fe;
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
 }
 
 .btn-primary {
@@ -146,7 +156,13 @@ export default {
   color: #0d6efd !important;
 }
 
-.bg-light {
-  background-color: #f8f9fa !important;
+/* Анимация для плавного появления */
+main {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>
