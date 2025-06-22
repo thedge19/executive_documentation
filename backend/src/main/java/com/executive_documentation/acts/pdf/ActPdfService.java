@@ -18,7 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -141,22 +142,24 @@ public class ActPdfService {
                 }
             }
 
-            // 4.3. Пытаемся найти и добавить акт входного контроля (если есть)
-            if (entranceControlRepository.findFirstByAct(act) != null) {
-                EntranceControl control = entranceControlRepository.findFirstByAct(act);
-                ByteArrayOutputStream controlPdf = controlPdfService.generateControlPdf(control);
-                addDocumentToMerge(copy, new ByteArrayInputStream(controlPdf.toByteArray()));
+            // 4.3. Пытаемся найти и добавить акты входного контроля (если есть)
+            List<EntranceControl> controls = entranceControlRepository.findAllByAct(act);
+            if (!controls.isEmpty()) {
+                for (EntranceControl control : controls) {
+                    ByteArrayOutputStream controlPdf = controlPdfService.generateControlPdf(control);
+                    addDocumentToMerge(copy, new ByteArrayInputStream(controlPdf.toByteArray()));
 
-                // 4.4. Добавляем сертификат (если есть у контроля)
-                if (control.getMaterial() != null &&
-                        control.getMaterial().getCertificate() != null &&
-                        control.getMaterial().getCertificate().getPath() != null) {
+                    // 4.4. Добавляем сертификат (если есть у контроля)
+                    if (control.getMaterial() != null &&
+                            control.getMaterial().getCertificate() != null &&
+                            control.getMaterial().getCertificate().getPath() != null) {
 
-                    try {
-                        addRemoteDocumentToMerge(copy, fileStorageService.getStorageBaseUrl(
-                                control.getMaterial().getCertificate().getPath()));
-                    } catch (Exception e) {
-                        log.warn("Не удалось добавить сертификат: {}", e.getMessage());
+                        try {
+                            addRemoteDocumentToMerge(copy, fileStorageService.getStorageBaseUrl(
+                                    control.getMaterial().getCertificate().getPath()));
+                        } catch (Exception e) {
+                            log.warn("Не удалось добавить сертификат: {}", e.getMessage());
+                        }
                     }
                 }
             }
@@ -210,13 +213,17 @@ public class ActPdfService {
     }
 
     private void addRemoteDocumentToMerge(PdfCopy copy, String url) throws IOException {
-        PdfReader reader = new PdfReader(new URL(url));
         try {
-            copy.addDocument(reader);
-        } catch (DocumentException e) {
-            throw new RuntimeException(e);
-        } finally {
-            reader.close();
+            PdfReader reader = new PdfReader(new URI(url).toURL());
+            try {
+                copy.addDocument(reader);
+            } catch (DocumentException e) {
+                throw new RuntimeException(e);
+            } finally {
+                reader.close();
+            }
+        } catch (URISyntaxException e) {
+            throw new IOException("Invalid URL format", e);
         }
     }
 
@@ -523,7 +530,7 @@ public class ActPdfService {
 
     private void addMaterials(String materials, PdfPTable table) {
 
-        if(materials == null || materials.isEmpty()) {
+        if (materials == null || materials.isEmpty()) {
             materials = "н/п";
         }
 

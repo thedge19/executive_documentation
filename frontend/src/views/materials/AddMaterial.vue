@@ -228,6 +228,12 @@ const addMaterial = async () => {
     error.value = null;
     uploadError.value = null;
 
+    const token = localStorage.getItem('token')
+    if (!token) {
+      error.value = 'Токен отсутствует';
+      return;
+    }
+
     material.value.documents = formattedDocuments.value;
 
     const formData = new FormData();
@@ -241,12 +247,16 @@ const addMaterial = async () => {
 
     const response = await fetch('http://localhost:8080/materials', {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
       body: formData,
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Ошибка при сохранении материала');
+      error.value = errorData.message
+      return;
     }
 
     router.push("/materials");

@@ -5,7 +5,6 @@ import com.executive_documentation.acts.dto.EntranceControlResponseDto;
 import com.executive_documentation.acts.model.ExecutiveSchema;
 import com.executive_documentation.acts.pdf.ActPdfService;
 import com.executive_documentation.acts.pdf.ControlLogPdfService;
-import com.executive_documentation.acts.pdf.ControlPdfService;
 import com.executive_documentation.acts.service.ActService;
 import com.executive_documentation.registries.dto.RegistryMapper;
 import com.executive_documentation.registries.dto.RegistryPeriodDto;
@@ -33,7 +32,6 @@ import java.util.Map;
 public class ActController {
     private final ActService actService;
     private final ActPdfService actPdfService;
-    private final ControlPdfService controlPdfService;
     private final ControlLogPdfService controlLogPdfService;
     private final RegistryMapper registryMapper;
     private final RegistryPdfService registryPdfService;
@@ -83,15 +81,6 @@ public class ActController {
     public void generateActPdf(@PathVariable Long id, HttpServletResponse response) throws IOException {
         try {
             actPdfService.exportCombinedDocuments(id, response);
-        } catch (DocumentException e) {
-            response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Ошибка генерации PDF");
-        }
-    }
-
-    @GetMapping("/{id}/pdf/control")
-    public void generateControlPdf(@PathVariable Long id, HttpServletResponse response) throws IOException {
-        try {
-            controlPdfService.exportControlToPdf(id, response);
         } catch (DocumentException e) {
             response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Ошибка генерации PDF");
         }

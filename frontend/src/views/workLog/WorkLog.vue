@@ -1,22 +1,28 @@
 <template>
-  <main style="background-color: #f8f9fa; min-height: 100vh;">
+  <main :style="{'background-image': 'url(/09-12-2016_yuzhno-russkoe_2.jpg)', 'min-height': '100vh'}">
+
     <Navbar/>
     <div class="container py-4">
       <div class="row justify-content-center">
         <div class="col-12 mt-5">
-          <h1 class="text-center mb-4 text-primary">Общий журнал работ. Раздел 3</h1>
+          <h1 class="text-center mb-4 text-light">Общий журнал работ. Раздел 3</h1>
 
-          <!-- Кнопки действий -->
+          <!-- Action buttons -->
           <div class="d-flex justify-content-start mb-4">
-            <button @click="fillInTheLog" class="btn btn-primary mx-2 shadow-sm rounded-pill">
+            <button @click="fillInTheLog" class="btn btn-success mx-2 shadow-sm rounded-pill" :disabled="isLoading">
               <i class="bi bi-file-earmark-plus me-2"></i>Сформировать ОЖР
             </button>
-            <button @click.prevent="generatePdf" class="btn btn-success mx-2 shadow-sm rounded-pill">
+            <button @click.prevent="generatePdf" class="btn btn-info mx-2 shadow-sm rounded-pill" :disabled="isLoading">
               <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить в PDF
             </button>
           </div>
 
-          <!-- Таблица -->
+          <!-- Error message -->
+          <div v-if="error" class="alert alert-danger mb-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+          </div>
+
+          <!-- Table -->
           <div class="card shadow-sm border-0">
             <div class="card-body p-0">
               <div class="table-responsive" style="max-height: 75vh;">
@@ -25,8 +31,12 @@
                   <tr>
                     <th class="text-center text-white fw-normal" style="width: 6%; background-color: #000000;">№</th>
                     <th class="text-center text-white fw-normal" style="width: 7%; background-color: #000000;">Дата</th>
-                    <th class="text-center text-white fw-normal" style="width: 50%; background-color: #000000;">Наименование работ</th>
-                    <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">Ответственный</th>
+                    <th class="text-center text-white fw-normal" style="width: 50%; background-color: #000000;">
+                      Наименование работ
+                    </th>
+                    <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">
+                      Ответственный
+                    </th>
                   </tr>
                   </thead>
                   <tbody>
@@ -48,57 +58,158 @@
   </main>
 </template>
 
-<script>
-import Navbar from '../../components/Navbar.vue';
+<script setup>
+import {onMounted, ref} from 'vue'
+import Navbar from '../../components/Navbar.vue'
 
-export default {
-  name: 'WorkLog',
-  components: { Navbar },
+const workLogs = ref([])
+const isLoading = ref(false)
+const error = ref(null)
 
-  data() {
-    return {
-      workLogs: []
-    }
-  },
-
-  mounted() {
-    this.getLogs()
-  },
-
-  methods: {
-    getLogs() {
-      fetch('http://localhost:8080/worklog', {
-        mode: 'cors',
-        headers: { 'Content-Type': 'application/json' }
-      })
-          .then(res => res.json())
-          .then(data => {
-            this.workLogs = data
-          })
-          .catch(error => {
-            console.error("Ошибка при загрузке данных:", error)
-          })
-    },
-
-    fillInTheLog() {
-      fetch(`http://localhost:8080/worklog/fill3`)
-          .then(() => {
-            console.log("Запрос отправлен")
-            this.getLogs() // Обновляем данные после формирования
-          })
-    },
-
-    generatePdf() {
-      window.open(`http://localhost:8080/worklog/3/pdf`, '_blank')
-    },
-
-    formatDate(dateString) {
-      if (!dateString) return ''
-      const date = new Date(dateString)
-      return date.toLocaleDateString('ru-RU')
-    }
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Требуется авторизация')
+  }
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
   }
 }
+
+const handleUnauthorized = () => {
+  localStorage.removeItem('token')
+  window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname)
+}
+
+const getLogs = async () => {
+  try {
+    isLoading.value = true
+    error.value = null
+
+    const response = await fetch('http://localhost:8080/worklog', {
+      headers: getAuthHeaders()
+    })
+
+    if (response.status === 401) {
+      handleUnauthorized()
+      return
+    }
+
+    if (!response.ok) {
+      error.value = 'Ошибка загрузки журнала работ';
+      return;
+    }
+
+    workLogs.value = await response.json()
+  } catch (err) {
+    console.error("Ошибка при загрузке данных:", err)
+    error.value = err.message
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const fillInTheLog = async () => {
+  try {
+    isLoading.value = true;
+    error.value = null;
+
+    // 1. Проверяем токен перед запросом
+    const token = localStorage.getItem('token');
+    if (!token) {
+      handleUnauthorized();
+      return;
+    }
+
+    // 2. Добавляем обработку credentials для CORS
+    const response = await fetch('http://localhost:8080/worklog/fill3', {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      credentials: 'include' // Важно для передачи кук и авторизации
+    });
+
+    // 3. Улучшенная обработка 401 ошибки
+    if (response.status === 401 || response.status === 403) {
+      handleUnauthorized();
+      error.value = 'Сессия истекла. Требуется повторная авторизация';
+      return;
+    }
+
+    // 4. Проверяем успешность запроса
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      error.value = errorData.message || 'Ошибка формирования журнала';
+      return;
+    }
+
+    // 5. Обновляем данные
+    await getLogs();
+
+  } catch (err) {
+    console.error("Ошибка:", err);
+    error.value = err.message;
+
+    // Не перенаправляем если это не ошибка авторизации
+    if (!err.message.includes('Сессия истекла')) {
+      error.value = 'Ошибка при формировании журнала: ' + err.message;
+    }
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+const generatePdf = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      handleUnauthorized();
+      return;
+    }
+
+    // Открываем новое окно заранее, чтобы блокировщики не мешали
+    const pdfWindow = window.open('', '_blank');
+
+    // Делаем запрос с заголовками авторизации
+    const response = await fetch(`http://localhost:8080/worklog/3/pdf`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.status === 401) {
+      handleUnauthorized();
+      pdfWindow.close();
+      return;
+    }
+
+    if (!response.ok) {
+      error.value = 'Ошибка сервера';
+      return;
+    }
+
+    // Получаем PDF как blob
+    const blob = await response.blob();
+    // Отображаем PDF в новом окне
+    pdfWindow.location.href = URL.createObjectURL(blob);
+
+  } catch (err) {
+    console.error('Ошибка при генерации PDF:', err);
+    error.value = 'Не удалось сформировать PDF';
+  }
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString('ru-RU')
+}
+
+onMounted(() => {
+  getLogs()
+})
 </script>
 
 <style scoped>
@@ -166,11 +277,20 @@ body {
 
 /* Анимация загрузки */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .table tbody tr {
   animation: fadeIn 0.3s ease forwards;
+}
+
+/* Loading state */
+.btn:disabled {
+  opacity: 0.7;
 }
 </style>

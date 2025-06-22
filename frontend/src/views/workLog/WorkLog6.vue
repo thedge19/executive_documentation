@@ -1,17 +1,20 @@
 <template>
-  <main style="background-color: #f8f9fa; min-height: 100vh;">
+  <main :style="{'background-image': 'url(/09-12-2016_yuzhno-russkoe_2.jpg)', 'min-height': '100vh'}">
     <Navbar/>
     <div class="container py-4">
       <div class="row justify-content-center">
         <div class="col-12 mt-5">
-          <h1 class="text-center mb-4 text-primary">Общий журнал работ. Раздел 6</h1>
+          <h1 class="text-center mb-4 text-light">Общий журнал работ. Раздел 6</h1>
 
           <!-- Кнопки действий -->
           <div class="d-flex justify-content-start mb-4">
-            <button @click="fillInTheLog" class="btn btn-primary mx-2 shadow-sm rounded-pill">
+            <button @click="fillInTheLog" class="btn btn-success mx-2 shadow-sm rounded-pill position-relative overflow-hidden">
+              <span class="position-absolute top-0 start-0 w-100 h-100 border-2 border-white border-opacity-25 rounded-pill"></span>
               <i class="bi bi-file-earmark-plus me-2"></i>Сформировать 6 раздел
             </button>
-            <button @click="generatePdf" class="btn btn-success mx-2 shadow-sm rounded-pill">
+
+            <button @click="generatePdf" class="btn btn-info mx-2 shadow-sm rounded-pill position-relative overflow-hidden">
+              <span class="position-absolute top-0 start-0 w-100 h-100 border-2 border-white border-opacity-25 rounded-pill"></span>
               <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить в PDF
             </button>
           </div>
@@ -51,21 +54,33 @@ import { ref, onMounted } from 'vue'
 import Navbar from '../../components/Navbar.vue'
 
 const acts = ref([])
+const isLoading = ref(false)
+const error = ref(null)
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Требуется авторизация')
+  }
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  }
+}
 
 // Получение актов
 const getActs = async () => {
   try {
     const response = await fetch('http://localhost:8080/worklog/6', {
       mode: 'cors',
-      headers: {
-        'Content-Type': 'application/json',
-      }
+      headers: getAuthHeaders()
     })
     acts.value = await response.json()
   } catch (error) {
     console.error('Ошибка при загрузке актов:', error)
   }
 }
+
 
 // Формирование раздела
 const fillInTheLog = async () => {
@@ -78,16 +93,49 @@ const fillInTheLog = async () => {
   }
 }
 
-// Генерация PDF
-const generatePdf = () => {
-  window.open('http://localhost:8080/worklog/6/pdf', '_blank')
+const handleUnauthorized = () => {
+  localStorage.removeItem('token')
+  window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname)
 }
 
-// Форматирование даты
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('ru-RU')
+// Генерация PDF
+const generatePdf = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      handleUnauthorized();
+      return;
+    }
+
+    // Открываем новое окно заранее, чтобы блокировщики не мешали
+    const pdfWindow = window.open('', '_blank');
+
+    // Делаем запрос с заголовками авторизации
+    const response = await fetch(`http://localhost:8080/worklog/6/pdf`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (response.status === 401) {
+      handleUnauthorized();
+      pdfWindow.close();
+      return;
+    }
+
+    if (!response.ok) {
+      error.value = 'Ошибка сервера';
+      return;
+    }
+
+    // Получаем PDF как blob
+    const blob = await response.blob();
+    // Отображаем PDF в новом окне
+    pdfWindow.location.href = URL.createObjectURL(blob);
+
+  } catch (err) {
+    console.error('Ошибка при генерации PDF:', err);
+    error.value = 'Не удалось сформировать PDF';
+  }
 }
 
 // Загружаем акты при монтировании компонента
@@ -107,7 +155,7 @@ body {
 
 .table th {
   font-weight: 500;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }
 
 .table-hover tbody tr:hover {
@@ -120,32 +168,96 @@ body {
   overflow: hidden;
 }
 
-/* Стили для кнопок */
+/* Стили для кнопок с эффектами */
 .btn {
-  transition: all 0.2s ease;
-  border-radius: 6px;
-  padding: 8px 16px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
+  position: relative;
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem 1.25rem;
   font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
-.btn-primary {
-  background-color: #002d72;
-  border-color: #002d72;
+/* Внутренняя граница */
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50px;
+  pointer-events: none;
 }
 
-.btn-primary:hover {
-  background-color: #001f4d;
-  border-color: #001f4d;
+/* Эффект нажатия */
+.btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
 }
 
+/* Эффект наведения */
+.btn:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Специфичные цвета для кнопок */
 .btn-success {
-  background-color: #28a745;
-  border-color: #28a745;
+  background: linear-gradient(135deg, #28a745 0%, #218838 100%);
 }
 
-.btn-success:hover {
-  background-color: #218838;
-  border-color: #1e7e34;
+.btn-info {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+}
+
+/* Эффект "волны" при клике */
+.btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%);
+  transform-origin: 50% 50%;
+}
+
+.btn:focus:not(:active)::after {
+  animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(20, 20);
+    opacity: 0;
+  }
+}
+
+/* Иконки в кнопках */
+.btn .bi {
+  transition: transform 0.2s ease;
+}
+
+.btn:hover .bi {
+  transform: scale(1.1);
+}
+
+/* Убираем стандартный outline и добавляем кастомный */
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 45, 114, 0.3);
 }
 
 /* Скролл таблицы */

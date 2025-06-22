@@ -9,15 +9,6 @@ import Navbar from "@/components/Navbar.vue";
         <h2 class="text-center mb-3">Редактирование акта № {{ act.actNumber }}</h2>
         <h2 class="text-center mb-3">{{ act.works }}</h2>
         <form @submit.prevent="updateAct">
-
-<!--          <div class="row">-->
-<!--            <div class="col-md-12 form-group mb-3 py-lg-5">-->
-<!--              <label for="name" class="form-label">Работы</label>-->
-<!--              <textarea class="form-control h-auto" id="name" type="text" name="name"-->
-<!--                        required v-model="act.works">-->
-<!--            </textarea>-->
-<!--            </div>-->
-<!--          </div>-->
           <h2 v-if="act.executiveSchemaId != null">Исполнительная схема добавлена.</h2>
           <div v-if="act.executiveSchemaId == null" class="mb-3 ">
             <label for="formFile" class="form-label">Добавьте схему</label>

@@ -203,7 +203,7 @@ public class WorkLogPdfService {
                 .stream()
                 .map(ActMapper::actToActLogResponseDto)
                 .toList();
-
+        log.info("dtos {}", dtos);
         try {
             PdfWriter writer = PdfWriter.getInstance(document, output);
             document.open();

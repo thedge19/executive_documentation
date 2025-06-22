@@ -11,7 +11,7 @@
         <div class="card-body">
           <!-- Кнопка добавления -->
           <div class="d-flex justify-content-start mb-4">
-            <a href="/addMaterial" class="btn btn-primary">
+            <a href="/addMaterial" class="btn btn-primary rounded-pill px-4">
               <i class="bi bi-plus-circle me-2"></i>Добавить материал
             </a>
           </div>
@@ -120,34 +120,145 @@
 </template>
 
 <script>
-import Navbar from '../../components/Navbar.vue'
+import { ref, onMounted, computed } from 'vue';
+import Navbar from '../../components/Navbar.vue';
 
 export default {
   name: 'ViewMaterials',
   components: {
     Navbar
   },
-  data() {
-    return {
-      isLoading: false,
-      materials: {
-        content: [],
-        number: 0,
-        size: 15, // Изменено на 15 элементов
-        totalElements: 0,
-        totalPages: 0,
-        first: true,
-        last: true,
-        numberOfElements: 0
-      },
-      error: null,
-      pageSize: 15 // Изменено на 15 элементов
-    }
-  },
-  computed: {
-    pageNumbers() {
-      const current = this.materials.number;
-      const total = this.materials.totalPages;
+  setup() {
+    const isLoading = ref(false);
+    const error = ref(null);
+    const pageSize = ref(15);
+
+    const materials = ref({
+      content: [],
+      number: 0,
+      size: 15,
+      totalElements: 0,
+      totalPages: 0,
+      first: true,
+      last: true,
+      numberOfElements: 0
+    });
+
+    const getAuthHeaders = () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Требуется авторизация');
+      }
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+    };
+
+    const handleUnauthorized = () => {
+      localStorage.removeItem('token');
+      window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+    };
+
+    const getMaterials = async () => {
+      isLoading.value = true;
+      error.value = null;
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          handleUnauthorized();
+          return;
+        }
+
+        const response = await fetch(
+            `http://localhost:8080/materials?page=${materials.value.number}&size=${pageSize.value}&sort=name`,
+            {
+              headers: getAuthHeaders()
+            }
+        );
+
+        if (response.status === 401) {
+          handleUnauthorized();
+          return;
+        }
+
+        if (!response.ok) {
+          error.value = 'Ошибка загрузки материалов';
+          isLoading.value = false;
+          return;
+        }
+
+        materials.value = await response.json();
+      } catch (err) {
+        console.error('Ошибка:', err);
+        error.value = 'Не удалось загрузить материалы';
+        if (err.message.includes('авторизация')) {
+          handleUnauthorized();
+        }
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    const changePage = (pageNumber) => {
+      if (pageNumber >= 0 && pageNumber < materials.value.totalPages) {
+        materials.value.number = pageNumber;
+        getMaterials();
+      }
+    };
+
+    const deleteMaterial = async (id) => {
+      if (!confirm('Вы уверены, что хотите удалить этот материал?')) return;
+
+      try {
+        const response = await fetch(`http://localhost:8080/materials/${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+
+        if (response.status === 401) {
+          handleUnauthorized();
+          return;
+        }
+
+        if (!response.ok) {
+          error.value = 'Ошибка удаления материалов';
+          isLoading.value = false;
+          return;
+        }
+
+        await getMaterials();
+        alert('Материал успешно удален');
+      } catch (err) {
+        console.error('Ошибка:', err);
+        alert('Не удалось удалить материал');
+      }
+    };
+
+    const deleteCertificate = async (id) => {
+      if (!confirm('Вы уверены, что хотите удалить сертификат?')) return;
+
+      try {
+        const response = await fetch(`http://localhost:8080/materials/certificate/${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+
+        if (response.status === 401) {
+          handleUnauthorized();
+          return;
+        }
+
+        await getMaterials();
+      } catch (err) {
+        console.error('Ошибка:', err);
+        alert('Не удалось удалить сертификат');
+      }
+    };
+
+    const pageNumbers = computed(() => {
+      const current = materials.value.number;
+      const total = materials.value.totalPages;
       const range = 2;
 
       let start = Math.max(0, current - range);
@@ -166,57 +277,22 @@ export default {
         pages.push(i);
       }
       return pages;
-    }
-  },
-  mounted() {
-    this.getMaterials()
-  },
-  methods: {
-    async getMaterials() {
-      this.isLoading = true
-      this.error = null
-      try {
-        const response = await fetch(`http://localhost:8080/materials?page=${this.materials.number}&size=${this.pageSize}&sort=name`)
-        if (!response.ok) throw new Error('Ошибка загрузки материалов')
-        this.materials = await response.json()
-      } catch (err) {
-        console.error('Ошибка:', err)
-        this.error = 'Не удалось загрузить материалы'
-      } finally {
-        this.isLoading = false
-      }
-    },
-    changePage(pageNumber) {
-      if (pageNumber >= 0 && pageNumber < this.materials.totalPages) {
-        this.materials.number = pageNumber
-        this.getMaterials()
-      }
-    },
-    deleteMaterial(id) {
-      if (confirm('Вы уверены, что хотите удалить этот материал?')) {
-        fetch(`http://localhost:8080/materials/${id}`, {
-          method: 'DELETE'
-        })
-            .then(response => {
-              if (!response.ok) throw new Error('Ошибка удаления материала')
-              this.getMaterials()
-              alert('Материал успешно удален')
-            })
-            .catch(err => {
-              console.error('Ошибка:', err)
-              alert('Не удалось удалить материал')
-            })
-      }
-    },
-    deleteCertificate(id) {
-      if (confirm('Вы уверены, что хотите удалить сертификат?')) {
-        fetch(`http://localhost:8080/materials/certificate/${id}`, {
-          method: 'DELETE'
-        })
-            .then(() => this.getMaterials())
-            .catch(console.error)
-      }
-    }
+    });
+
+    onMounted(() => {
+      getMaterials();
+    });
+
+    return {
+      isLoading,
+      materials,
+      error,
+      pageNumbers,
+      getMaterials,
+      changePage,
+      deleteMaterial,
+      deleteCertificate
+    };
   }
 }
 </script>

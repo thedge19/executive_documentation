@@ -1,4 +1,5 @@
 <template>
+  <!-- Шаблон остается без изменений -->
   <main class="bg-light min-vh-100">
     <Navbar/>
 
@@ -11,9 +12,12 @@
         <div class="card-body">
           <!-- Controls -->
           <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
-            <div>
-              <a :href="`/addWork/${subObjectId}`" class="btn btn-primary">
+            <div class="d-flex justify-content-start">
+              <a :href="`/addWork/${subObjectId}`" class="btn btn-primary rounded-pill my-2">
                 <i class="bi bi-plus-circle me-2"></i>Добавить работу
+              </a>
+              <a @click="router.back()" class="btn btn-outline-secondary rounded-pill m-lg-2">
+                <i class="bi bi-arrow-left me-2"></i>Назад
               </a>
             </div>
 
@@ -117,108 +121,170 @@
   </main>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import Navbar from '../../components/Navbar.vue'
 
-export default {
-  name: 'ViewWorks',
-  components: {
-    Navbar
-  },
-  data() {
-    return {
-      isLoading: false,
-      works: {
-        content: [],
-        number: 0,
-        size: 15,  // Изменили здесь
-        totalElements: 0,
-        totalPages: 0,
-        first: true,
-        last: true
-      },
-      subObjects: [],
-      subObjectId: this.$route.params.id,
-      pageSize: 15  // И здесь изменили с 10 на 15
+const router = useRouter()
+const route = useRoute()
+const error = ref("")
+
+const isLoading = ref(false)
+const works = ref({
+  content: [],
+  number: 0,
+  size: 15,
+  totalElements: 0,
+  totalPages: 0,
+  first: true,
+  last: true
+})
+const subObjects = ref([])
+const subObjectId = ref(route.params.id)
+const pageSize = ref(15)
+
+const pageNumbers = computed(() => {
+  const current = works.value.number
+  const total = works.value.totalPages
+  const range = 2
+
+  let start = Math.max(0, current - range)
+  let end = Math.min(total - 1, current + range)
+
+  if (current - range < 0) {
+    end = Math.min(total - 1, end + (range - current))
+  }
+
+  if (current + range >= total) {
+    start = Math.max(0, start - (current + range - total + 1))
+  }
+
+  const pages = []
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+  return pages
+})
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    error.value = 'Требуется авторизация';
+    return;
+  }
+  return {
+    'Authorization': `Bearer ${token}`
+  }
+}
+
+const handleUnauthorized = () => {
+  localStorage.removeItem('token')
+  router.push('/login?redirect=' + encodeURIComponent(route.fullPath))
+}
+
+const getWorks = async () => {
+  isLoading.value = true
+  try {
+    const headers = getAuthHeaders()
+
+    const response = await fetch(
+        `http://localhost:8080/workings/${subObjectId.value}?page=${works.value.number}&size=${pageSize.value}`,
+        { headers }
+    )
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
+      }
+      error.value = 'Ошибка загрузки работ';
+      return;
     }
-  },
-  computed: {
-    pageNumbers() {
-      const current = this.works.number;
-      const total = this.works.totalPages;
-      const range = 2;
 
-      let start = Math.max(0, current - range);
-      let end = Math.min(total - 1, current + range);
-
-      if (current - range < 0) {
-        end = Math.min(total - 1, end + (range - current));
-      }
-
-      if (current + range >= total) {
-        start = Math.max(0, start - (current + range - total + 1));
-      }
-
-      const pages = [];
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-      return pages;
+    works.value = await response.json()
+  } catch (err) {
+    console.error('Ошибка:', err)
+    if (err.message.includes('авторизация')) {
+      handleUnauthorized()
     }
-  },
-  mounted() {
-    this.getWorks()
-    this.getSubObjects()
-  },
-  methods: {
-    getWorks() {
-      this.isLoading = true;
-      fetch(`http://localhost:8080/workings/${this.subObjectId}?page=${this.works.number}&size=${this.pageSize}`)
-          .then(res => res.json())
-          .then(data => {
-            this.works = data;
-          })
-          .catch(console.error)
-          .finally(() => {
-            this.isLoading = false;
-          });
-    },
-    deleteWork(id) {
-      if (confirm('Вы действительно хотите удалить эту работу?')) {
-        fetch(`http://localhost:8080/workings/${id}`, {
-          method: 'DELETE'
-        })
-            .then(response => {
-              if (!response.ok) throw new Error('Ошибка при удалении');
-              this.getWorks();
-              alert('Работа успешно удалена');
-            })
-            .catch(error => {
-              console.error('Ошибка:', error);
-              alert('Не удалось удалить работу');
-            });
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const deleteWork = async (id) => {
+  if (!confirm('Вы действительно хотите удалить эту работу?')) return
+
+  try {
+    const headers = getAuthHeaders()
+
+    const response = await fetch(`http://localhost:8080/workings/${id}`, {
+      method: 'DELETE',
+      headers
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
       }
-    },
-    getSubObjects() {
-      fetch(`http://localhost:8080/subobjects`)
-          .then(res => res.json())
-          .then(data => this.subObjects = data)
-    },
-    onChangeSubObject() {
-      this.works.number = 0; // Сброс пагинации при смене подобъекта
-      this.getWorks();
-    },
-    changePage(pageNumber) {
-      if (pageNumber >= 0 && pageNumber < this.works.totalPages) {
-        this.works.number = pageNumber;
-        this.getWorks();
+      error.value = 'Ошибка при удалении';
+      return;
+    }
+
+    await getWorks()
+    alert('Работа успешно удалена')
+  } catch (err) {
+    console.error('Ошибка:', err)
+    alert(err.message || 'Не удалось удалить работу')
+  }
+}
+
+const getSubObjects = async () => {
+  try {
+    const headers = getAuthHeaders()
+
+    const response = await fetch('http://localhost:8080/subobjects', { headers })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        handleUnauthorized()
+        return;
       }
+      error.value = 'Ошибка загрузки подобъектов';
+      return;
+    }
+
+    subObjects.value = await response.json()
+  } catch (err) {
+    console.error('Ошибка:', err)
+    if (err.message.includes('авторизация')) {
+      handleUnauthorized()
     }
   }
 }
+
+const onChangeSubObject = () => {
+  works.value.number = 0
+  getWorks()
+}
+
+const changePage = (pageNumber) => {
+  if (pageNumber >= 0 && pageNumber < works.value.totalPages) {
+    works.value.number = pageNumber
+    getWorks()
+  }
+}
+
+onMounted(() => {
+  getWorks()
+  getSubObjects()
+})
 </script>
 
 <style scoped>
+/* Стили остаются без изменений */
 .card {
   border-radius: 10px;
   overflow: hidden;

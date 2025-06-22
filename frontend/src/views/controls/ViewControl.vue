@@ -2,7 +2,7 @@
   <main class="bg-light min-vh-100" style="overflow-y: hidden;">
     <Navbar />
 
-    <div class="container-fluid px-4 py-4">
+    <div class="container-fluid px-5 py-4">
       <div class="card shadow-sm border-0">
         <div class="card-header text-primary py-3 mt-3">
           <h1 class="mb-0 text-center">Входной контроль</h1>
@@ -11,7 +11,7 @@
         <div class="card-body p-0">
           <!-- Кнопка выгрузки -->
           <div class="d-flex justify-content-start px-4 py-3">
-            <button @click="generateLogPdf" class="btn btn-primary">
+            <button @click="generateLogPdf" class="btn btn-primary rounded-pill px-4" :disabled="isLoading">
               <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить журнал в PDF
             </button>
           </div>
@@ -27,8 +27,6 @@
                 <th class="text-white fw-normal" style="width: 30%; background-color: #000000; color: white;">Документы</th>
                 <th class="text-white fw-normal" style="width: 10%; background-color: #000000; color: white;">Автор серта</th>
                 <th class="text-white fw-normal" style="width: 15%; background-color: #000000; color: white;">ГОСТ, ТУ</th>
-                <th class="text-white fw-normal text-center" style="width: 5%; background-color: #000000; color: white;">Кол. стр.</th>
-                <th class="text-white fw-normal text-center" style="width: 10%; background-color: #000000; color: white;">Действие</th>
               </tr>
               </thead>
               <tbody>
@@ -44,17 +42,6 @@
                 <td>{{ control.documents }}</td>
                 <td>{{ control.author }}</td>
                 <td>{{ control.standard }}</td>
-                <td class="text-center">{{ control.controlSheetNumbers }}</td>
-                <td class="text-center">
-                  <div class="d-flex justify-content-center gap-2">
-                    <a class="btn btn-sm btn-outline-primary" :href="`/editControl/${control.id}`">
-                      <i class="bi bi-pencil"></i>
-                    </a>
-                    <button class="btn btn-sm btn-outline-danger" @click="deleteControl(control.id)" disabled>
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </div>
-                </td>
               </tr>
               </tbody>
             </table>
@@ -65,53 +52,101 @@
   </main>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from 'vue'
 import Navbar from '../../components/Navbar.vue'
 
-export default {
-  name: 'ViewControl',
-  components: {
-    Navbar
-  },
-  data() {
-    return {
-      controls: []
-    }
-  },
-  mounted() {
-    this.getControls()
-  },
-  methods: {
-    getControls() {
-      fetch('http://localhost:8080/acts/entrance', {
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      })
-          .then(res => res.json())
-          .then(data => {
-            this.controls = data
-          })
-          .catch(console.error)
-    },
-    generatePdf(id) {
-      window.open(`http://localhost:8080/acts/${id}/pdf/control`, '_blank')
-    },
-    generateLogPdf() {
-      window.open(`http://localhost:8080/acts/pdf/controlLog`, '_blank')
-    },
-    deleteControl(id) {
-      if(confirm('Вы уверены, что хотите удалить эту запись?')) {
-        fetch(`http://localhost:8080/acts/entrance/${id}`, {
-          method: 'DELETE'
-        })
-            .then(() => this.getControls())
-            .catch(console.error)
-      }
-    }
+const controls = ref([])
+const isLoading = ref(false)
+const error = ref(null)
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Требуется авторизация')
+  }
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
   }
 }
+
+const handleUnauthorized = () => {
+  localStorage.removeItem('token')
+  window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname)
+}
+
+const getControls = async () => {
+  try {
+    isLoading.value = true
+    error.value = null
+
+    const response = await fetch('http://localhost:8080/acts/entrance', {
+      headers: getAuthHeaders()
+    })
+
+    if (response.status === 401) {
+      handleUnauthorized()
+      return
+    }
+
+    if (!response.ok) {
+      error.value = 'Ошибка загрузки данных входного контроля';
+      isLoading.value = false;
+      return;
+    }
+
+    controls.value = await response.json()
+  } catch (err) {
+    console.error('Ошибка:', err)
+    error.value = err.message
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const generateLogPdf = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      handleUnauthorized();
+      return;
+    }
+
+    // Открываем новое окно заранее, чтобы блокировщики не мешали
+    const pdfWindow = window.open('', '_blank');
+
+    // Делаем запрос с заголовками авторизации
+    const response = await fetch(`http://localhost:8080/acts/pdf/controlLog`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (response.status === 401) {
+      handleUnauthorized();
+      pdfWindow.close();
+      return;
+    }
+
+    if (!response.ok) {
+      error.value = 'Ошибка сервера';
+      return;
+    }
+
+    // Получаем PDF как blob
+    const blob = await response.blob();
+    // Отображаем PDF в новом окне
+    pdfWindow.location.href = URL.createObjectURL(blob);
+
+  } catch (err) {
+    console.error('Ошибка при генерации PDF:', err);
+    error.value = 'Не удалось сформировать PDF';
+  }
+}
+
+onMounted(() => {
+  getControls()
+})
 </script>
 
 <style scoped>
@@ -136,16 +171,6 @@ export default {
   transition: all 0.2s;
 }
 
-.btn-outline-primary:hover {
-  background-color: #0d6efd;
-  color: white;
-}
-
-.btn-outline-danger:hover {
-  background-color: #dc3545;
-  color: white;
-}
-
 .table-responsive::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -163,11 +188,6 @@ export default {
 @media (max-width: 768px) {
   .table-responsive {
     font-size: 0.8rem;
-  }
-
-  .btn-sm {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.7rem;
   }
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <main class="bg-light min-vh-100">
-    <Navbar />
+    <Navbar/>
 
     <div class="container py-5">
       <div class="card shadow-sm border-0">
@@ -33,7 +33,8 @@
                   <a :href="`/editProject/${project.id}`" class="btn btn-sm btn-outline-primary rounded-pill px-3 me-2">
                     <i class="bi bi-pencil-square me-1"></i>Изменить
                   </a>
-                  <button @click="deleteProject(project.id)" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                  <button @click="confirmDelete(project.id, project.name)"
+                          class="btn btn-sm btn-outline-danger rounded-pill px-3">
                     <i class="bi bi-trash3 me-1"></i>Удалить
                   </button>
                 </td>
@@ -48,33 +49,84 @@
 </template>
 
 <script setup>
-import { ref, onBeforeMount } from 'vue'
+import {ref, onBeforeMount} from 'vue'
+import {useRouter} from 'vue-router'
 import Navbar from '../../components/Navbar.vue'
 
+const router = useRouter()
 const projects = ref([])
+const error = ref(null)
 
 const getProjects = async () => {
   try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      router.push('/login')
+      return
+    }
+
     const response = await fetch('http://localhost:8080/projects', {
       mode: 'cors',
       headers: {
         'Content-Type': 'application/json',
-      }
+        'Authorization': `Bearer ${token}`
+      },
+      credentials: 'include'
     })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+        router.push('/login')
+      }
+      error.value = `Ошибка HTTP: ${response.status}`;
+      return;
+    }
+
     projects.value = await response.json()
-  } catch (error) {
-    console.error('Ошибка при загрузке проектов:', error)
+  } catch (err) {
+    error.value = err.message
+    console.error('Ошибка при загрузке проектов:', err)
+  }
+}
+
+const confirmDelete = (id, name) => {
+  if (confirm(`Вы действительно хотите удалить объект "${name}"?`)) {
+    deleteProject(id)
   }
 }
 
 const deleteProject = async (id) => {
   try {
-    await fetch(`http://localhost:8080/projects/${id}`, {
-      method: 'DELETE'
+    const token = localStorage.getItem('token')
+    if (!token) {
+      router.push('/login')
+      return
+    }
+
+    const response = await fetch(`http://localhost:8080/projects/${id}`, {
+      method: 'DELETE',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      credentials: 'include'
     })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+        router.push('/login')
+      }
+      error.value = `Ошибка HTTP: ${response.status}`;
+      return;
+    }
+
     await getProjects()
-  } catch (error) {
-    console.error('Ошибка при удалении проекта:', error)
+  } catch (err) {
+    error.value = err.message
+    console.error('Ошибка при удалении проекта:', err)
   }
 }
 
@@ -82,17 +134,19 @@ onBeforeMount(getProjects)
 </script>
 
 <style scoped>
-/* Дополнительные стили для красоты */
 .card {
   border-radius: 12px;
   overflow: hidden;
 }
+
 .table {
   margin-bottom: 0;
 }
+
 .table th, .table td {
   padding: 1rem;
 }
+
 .table-hover tbody tr:hover {
   background-color: rgba(0, 123, 255, 0.05);
 }

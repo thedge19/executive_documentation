@@ -20,10 +20,21 @@
                      required v-model="standard.name">
             </div>
 
+            <!-- Ошибка -->
+            <div v-if="error" class="alert alert-danger mb-4">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+            </div>
+
             <!-- Кнопка отправки -->
             <div class="d-grid">
-              <button type="submit" class="btn btn-primary py-2">
-                <i class="bi bi-check-circle me-2"></i>Добавить стандарт
+              <button type="submit" class="btn btn-primary py-2" :disabled="isLoading">
+                <template v-if="isLoading">
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Сохранение...
+                </template>
+                <template v-else>
+                  <i class="bi bi-check-circle me-2"></i>Добавить стандарт
+                </template>
               </button>
             </div>
           </form>
@@ -33,35 +44,66 @@
   </main>
 </template>
 
-<script>
-import Navbar from '../../components/Navbar.vue';
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import Navbar from '../../components/Navbar.vue'
 
-export default {
-  name: 'AddStandard',
-  components: {
-    Navbar
-  },
-  data() {
-    return {
-      standard: {
-        name: '',
-      }
+const router = useRouter()
+const standard = ref({
+  name: ''
+})
+const isLoading = ref(false)
+const error = ref(null)
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Требуется авторизация')
+  }
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  }
+}
+
+const handleUnauthorized = () => {
+  localStorage.removeItem('token')
+  router.push('/login?redirect=' + encodeURIComponent(router.currentRoute.value.fullPath))
+}
+
+const addStandard = async () => {
+  try {
+    isLoading.value = true
+    error.value = null
+
+    const response = await fetch('http://localhost:8080/standards', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(standard.value)
+    })
+
+    if (response.status === 401) {
+      handleUnauthorized()
+      return;
     }
-  },
-  methods: {
-    addStandard() {
-      fetch('http://localhost:8080/standards', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(this.standard)
-      })
-          .then(data => {
-            console.log(data)
-            this.$router.push("/standards");
-          })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      error.value = errorData.message || 'Ошибка при добавлении стандарта';
+      return;
     }
+
+    await router.push("/standards")
+  } catch (err) {
+    console.error('Ошибка:', err)
+    error.value = err.message
+
+    if (err.message.includes('авторизация')) {
+      handleUnauthorized()
+    }
+  } finally {
+    isLoading.value = false
   }
 }
 </script>
@@ -86,6 +128,10 @@ export default {
 .btn {
   border-radius: 8px;
   transition: all 0.2s;
+}
+
+.alert {
+  border-radius: 8px;
 }
 
 @media (max-width: 576px) {
