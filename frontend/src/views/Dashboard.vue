@@ -261,6 +261,7 @@ const settings = ref({
 })
 const isLoading = ref(true)
 const levelChart = ref(null)
+const error = ref("")
 let chartInstance = null
 
 // Улучшенная проверка аутентификации
@@ -302,7 +303,8 @@ const fetchUsers = async () => {
         handleUnauthorized()
         return
       }
-      throw new Error(`Ошибка HTTP: ${response.status}`)
+      error.value = `Ошибка HTTP: ${response.status}`;
+      return;
     }
 
     users.value = await response.json()
@@ -388,9 +390,10 @@ const fetchErrorStats = async () => {
     if (!response.ok) {
       if (response.status === 401) {
         handleUnauthorized()
-        return
+        return;
       }
-      throw new Error(`Ошибка HTTP: ${response.status}`)
+      error.value = `Ошибка HTTP: ${response.status}`;
+      return;
     }
 
     errorStats.value = await response.json()

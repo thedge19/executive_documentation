@@ -23,8 +23,8 @@ public interface ErrorLogRepository extends JpaRepository<ErrorLog, Long> {
             "WHERE e.createdAt >= :since GROUP BY FUNCTION('DATE', e.createdAt)")
     List<Object[]> countByDaySince(LocalDateTime since);
 
-    @Query("SELECT e.message, COUNT(e) FROM ErrorLog e GROUP BY e.message ORDER BY COUNT(e) DESC LIMIT 1")
-    Object[] findMostCommonErrorMessage();
+//    @Query("SELECT e.message, COUNT(e) FROM ErrorLog e GROUP BY e.message ORDER BY COUNT(e) DESC LIMIT 1")
+//    Object[] findMostCommonErrorMessage();
 
     @Query("SELECT e.endpoint, COUNT(e) as cnt FROM ErrorLog e GROUP BY e.endpoint ORDER BY cnt DESC")
     List<Object[]> findMostFrequentEndpoint();
