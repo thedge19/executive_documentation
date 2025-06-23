@@ -36,7 +36,7 @@
               <div class="card bg-warning text-dark h-100">
                 <div class="card-body">
                   <h5 class="card-title"><i class="bi bi-exclamation-triangle me-2"></i>Ошибки</h5>
-                  <p class="card-text display-5">{{ stats.errors }}</p>
+                  <p class="card-text display-5">{{ errorStats.totalErrors }}</p>
                 </div>
               </div>
             </div>
@@ -52,6 +52,11 @@
             <li class="nav-item" role="presentation">
               <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab">
                 Журналы работ
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="errors-tab" data-bs-toggle="tab" data-bs-target="#errors" type="button" role="tab">
+                Ошибки
               </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -78,6 +83,7 @@
                       <thead>
                       <tr>
                         <th>ID</th>
+                        <th>Имя</th>
                         <th>Email</th>
                         <th>Роль</th>
                         <th>Дата регистрации</th>
@@ -87,6 +93,7 @@
                       <tbody>
                       <tr v-for="user in users" :key="user.id">
                         <td>{{ user.id }}</td>
+                        <td>{{ user.username }}</td>
                         <td>{{ user.email }}</td>
                         <td>
                           <span class="badge" :class="{'bg-primary': user.role === 'ROLE_ADMIN', 'bg-secondary': user.role === 'ROLE_USER'}">
@@ -95,9 +102,9 @@
                         </td>
                         <td>{{ user.createdAt }}</td>
                         <td>
-                          <button @click="editUser(user)" class="btn btn-sm btn-outline-primary me-2">
+                          <a :href="`/editUser/${user.id}`" class="btn btn-sm btn-outline-primary me-2">
                             <i class="bi bi-pencil"></i>
-                          </button>
+                          </a>
                           <button @click="confirmDeleteUser(user)" class="btn btn-sm btn-outline-danger">
                             <i class="bi bi-trash"></i>
                           </button>
@@ -112,43 +119,78 @@
 
             <!-- Таб журналов -->
             <div class="tab-pane fade" id="logs" role="tabpanel">
+              <!-- ... существующий код ... -->
+            </div>
+
+            <!-- Новый таб ошибок -->
+            <div class="tab-pane fade" id="errors" role="tabpanel">
               <div class="card shadow-sm border-0">
-                <div class="card-header bg-white">
-                  <h5 class="mb-0">Журналы работ</h5>
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                  <h5 class="mb-0">Статистика ошибок</h5>
+                  <button @click="fetchErrorStats" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-clockwise"></i> Обновить
+                  </button>
                 </div>
-                <div class="card-body p-0">
-                  <div class="table-responsive" style="max-height: 50vh;">
-                    <table class="table table-hover mb-0">
-                      <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Раздел</th>
-                        <th>Дата создания</th>
-                        <th>Статус</th>
-                        <th>Действия</th>
-                      </tr>
-                      </thead>
-                      <tbody>
-                      <tr v-for="log in adminLogs" :key="log.id">
-                        <td>{{ log.id }}</td>
-                        <td>Раздел {{ log.section }}</td>
-                        <td>{{ formatDate(log.createdAt) }}</td>
-                        <td>
-                          <span class="badge" :class="{'bg-success': log.status === 'COMPLETED', 'bg-warning': log.status === 'PENDING'}">
-                            {{ log.status === 'COMPLETED' ? 'Завершен' : 'В процессе' }}
-                          </span>
-                        </td>
-                        <td>
-                          <button @click="downloadLog(log.id)" class="btn btn-sm btn-outline-primary me-2">
-                            <i class="bi bi-download me-1"></i>Скачать
-                          </button>
-                          <button @click="deleteLog(log.id)" class="btn btn-sm btn-outline-danger">
-                            <i class="bi bi-trash"></i>
-                          </button>
-                        </td>
-                      </tr>
-                      </tbody>
-                    </table>
+                <div class="card-body">
+                  <div class="row mb-4">
+                    <div class="col-md-4">
+                      <div class="card bg-light">
+                        <div class="card-body">
+                          <h6 class="card-title text-center">За последние 24 часа</h6>
+                          <p class="card-text display-4 text-center text-danger">{{ errorStats.last24Hours }}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="card bg-light">
+                        <div class="card-body">
+                          <h6 class="card-title text-center">За последние 7 дней</h6>
+                          <p class="card-text display-4 text-center text-warning">{{ errorStats.last7Days }}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="card bg-light">
+                        <div class="card-body">
+                          <h6 class="card-title text-center">Всего ошибок</h6>
+                          <p class="card-text display-4 text-center text-primary">{{ errorStats.totalErrors }}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="card">
+                        <div class="card-header bg-white">
+                          <h6 class="mb-0">Распределение по уровням</h6>
+                        </div>
+                        <div class="card-body">
+                          <div class="chart-container" style="height: 250px;">
+                            <canvas ref="levelChart"></canvas>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="card">
+                        <div class="card-header bg-white">
+                          <h6 class="mb-0">Частые ошибки</h6>
+                        </div>
+                        <div class="card-body">
+                          <ul class="list-group">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                              Самая частая ошибка
+                              <span class="badge bg-primary rounded-pill">{{ errorStats.mostCommonErrorMessage }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                              Самый проблемный endpoint
+                              <span class="badge bg-primary rounded-pill">{{ errorStats.mostFrequentEndpoint }}</span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -174,8 +216,8 @@
                       <input type="checkbox" class="form-check-input" id="enableNotifications" v-model="settings.enableNotifications">
                       <label class="form-check-label" for="enableNotifications">Уведомления по email</label>
                     </div>
-                    <button type="submit" class="btn btn-primary" :disabled="isSaving">
-                      <span v-if="isSaving" class="spinner-border spinner-border-sm me-1"></span>
+                    <button type="submit" class="btn btn-primary">
+                      <span class="spinner-border spinner-border-sm me-1"></span>
                       Сохранить
                     </button>
                   </form>
@@ -190,9 +232,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import Navbar from '../components/Navbar.vue'
-import Swal from 'sweetalert2';
+import Swal from 'sweetalert2'
+import Chart from 'chart.js/auto'
 
 const stats = ref({
   users: 0,
@@ -202,40 +245,69 @@ const stats = ref({
 })
 
 const users = ref([])
-const adminLogs = ref([])
+const errorStats = ref({
+  totalErrors: 0,
+  last24Hours: 0,
+  last7Days: 0,
+  countByLevel: {},
+  countByDay: {},
+  mostCommonErrorMessage: '',
+  mostFrequentEndpoint: ''
+})
 const settings = ref({
   userLogLimit: 10,
   autoDeleteDays: 30,
   enableNotifications: true
 })
+const isLoading = ref(true)
+const levelChart = ref(null)
+const error = ref("")
+let chartInstance = null
 
-const isSaving = ref(false)
-const error = ref(null)
-
-const getAuthHeaders = () => {
+// Улучшенная проверка аутентификации
+const checkAuth = () => {
   const token = localStorage.getItem('token')
   if (!token) {
-    throw new Error('Требуется авторизация')
+    handleUnauthorized()
+    return false
   }
+  return true
+}
+
+// Получение заголовков с авторизацией
+const getAuthHeaders = () => {
   return {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`
+    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    'Content-Type': 'application/json'
   }
 }
 
+// Обработка неавторизованного доступа
 const handleUnauthorized = () => {
   localStorage.removeItem('token')
   window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname)
 }
 
+
+// Загрузка пользователей
 const fetchUsers = async () => {
+  if (!checkAuth()) return
+
   try {
     const response = await fetch('http://localhost:8080/api/auth/users', {
       headers: getAuthHeaders()
     })
-    if (response.ok) {
-      users.value = await response.json()
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
+      }
+      error.value = `Ошибка HTTP: ${response.status}`;
+      return;
     }
+
+    users.value = await response.json()
   } catch (err) {
     console.error("Ошибка загрузки пользователей:", err)
   }
@@ -306,72 +378,93 @@ const deleteUser = async (userId) => {
   }
 };
 
-const downloadLog = async (logId) => {
-  try {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      handleUnauthorized()
-      return
-    }
+// Загрузка статистики ошибок
+const fetchErrorStats = async () => {
+  if (!checkAuth()) return
 
-    const pdfWindow = window.open('', '_blank')
-    const response = await fetch(`http://localhost:8080/admin/logs/${logId}/download`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+  try {
+    const response = await fetch('http://localhost:8080/errors/stats', {
+      headers: getAuthHeaders()
     })
 
-    if (response.status === 401) {
-      handleUnauthorized()
-      pdfWindow.close()
-      return
-    }
-
-    const blob = await response.blob()
-    pdfWindow.location.href = URL.createObjectURL(blob)
-  } catch (err) {
-    console.error('Ошибка при загрузке журнала:', err)
-    error.value = 'Не удалось загрузить журнал'
-  }
-}
-
-const deleteLog = async (logId) => {
-  if (confirm('Удалить этот журнал?')) {
-    try {
-      const response = await fetch(`http://localhost:8080/admin/logs/${logId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      })
-      if (response.ok) {
-        await fetchLogs()
+    if (!response.ok) {
+      if (response.status === 401) {
+        handleUnauthorized()
+        return;
       }
-    } catch (err) {
-      console.error("Ошибка удаления журнала:", err)
+      error.value = `Ошибка HTTP: ${response.status}`;
+      return;
     }
+
+    errorStats.value = await response.json()
+    updateChart()
+  } catch (err) {
+    console.error('Ошибка загрузки статистики:', err)
+    Swal.fire('Ошибка', 'Не удалось загрузить статистику ошибок', 'error')
   }
 }
 
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('ru-RU')
+const updateChart = () => {
+  nextTick(() => {
+    if (chartInstance) {
+      chartInstance.destroy()
+    }
+
+    const ctx = levelChart.value.getContext('2d')
+    chartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(errorStats.value.countByLevel),
+        datasets: [{
+          data: Object.values(errorStats.value.countByLevel),
+          backgroundColor: [
+            '#4e73df', // INFO
+            '#f6c23e', // WARNING
+            '#e74a3b', // ERROR
+            '#5a5c69'  // CRITICAL
+          ],
+          hoverBackgroundColor: [
+            '#2e59d9',
+            '#dda20a',
+            '#be2617',
+            '#373840'
+          ],
+          hoverBorderColor: "rgba(234, 236, 244, 1)",
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right'
+          }
+        },
+        cutout: '70%'
+      }
+    })
+  })
 }
 
-onMounted(() => {
-  // fetchStats()
-  fetchUsers()
-  // fetchLogs()
-  // fetchSettings()
+onMounted(async () => {
+  if (!checkAuth()) return
+
+  isLoading.value = true
+  try {
+    await Promise.all([fetchUsers(), fetchErrorStats()])
+  } catch (err) {
+    console.error('Ошибка инициализации:', err)
+  } finally {
+    isLoading.value = false
+  }
 })
 </script>
 
 <style scoped>
-/* Основные стили */
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+.chart-container {
+  position: relative;
+  min-height: 250px;
 }
 
-/* Карточки статистики */
 .card {
   transition: transform 0.2s;
   border-radius: 8px;
@@ -381,9 +474,8 @@ body {
   transform: translateY(-3px);
 }
 
-/* Табы */
 .nav-tabs .nav-link {
-  color: #495057;
+  color: white;
   font-weight: 500;
 }
 
@@ -392,52 +484,16 @@ body {
   border-bottom: 3px solid #0d6efd;
 }
 
-/* Таблицы */
-.table {
-  font-size: 0.9rem;
-}
-
 .table th {
   font-weight: 500;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }
 
-.table-hover tbody tr:hover {
-  background-color: rgba(0, 45, 114, 0.05);
-}
-
-/* Скролл таблицы */
-.table-responsive {
-  scrollbar-width: thin;
-  scrollbar-color: #002d72 #f1f1f1;
-}
-
-.table-responsive::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.table-responsive::-webkit-scrollbar-thumb {
-  background-color: #002d72;
-  border-radius: 4px;
-}
-
-.table-responsive::-webkit-scrollbar-track {
-  background-color: #f1f1f1;
-}
-
-/* Бейджи */
 .badge {
   font-weight: 500;
   padding: 5px 10px;
 }
 
-/* Модальное окно */
-.modal-content {
-  border-radius: 10px;
-}
-
-/* Анимации */
 @keyframes fadeIn {
   from {
     opacity: 0;
