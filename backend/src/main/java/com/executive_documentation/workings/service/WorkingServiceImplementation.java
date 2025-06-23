@@ -1,7 +1,6 @@
 package com.executive_documentation.workings.service;
 
 import com.executive_documentation.exception.NotFoundException;
-import com.executive_documentation.standard.model.Standard;
 import com.executive_documentation.standard.repository.StandardRepository;
 import com.executive_documentation.workings.dto.WorkingMapper;
 import com.executive_documentation.workings.dto.WorkingRequestDto;
@@ -13,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +26,6 @@ import java.util.stream.Collectors;
 public class WorkingServiceImplementation implements WorkingService {
 
     private final WorkingRepository workingRepository;
-    private final StandardRepository standardRepository;
     private final WorkingMapper workingMapper;
 
     @Override

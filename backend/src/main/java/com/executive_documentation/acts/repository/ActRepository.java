@@ -21,23 +21,12 @@ public interface ActRepository extends JpaRepository<Act, Long> {
 
     List<Act> findAllByOrderByActNumberAsc();
 
-    Act findByActNumber(String actNumber);
-
-    @Query("SELECT a FROM Act a WHERE a.inRegistry is null ORDER BY a.endDate ASC, a.actNumber ASC")
-    List<Act> findAllByOrderByEndDateAsc();
-
-    @Query("SELECT a.executiveSchema.id FROM Act a WHERE a.id = :actId")
-    Optional<Long> findExecutiveSchemaIdByActId(@Param("actId") Long actId);
-
     Optional<Act> findByExecutiveSchema(ExecutiveSchema executiveSchema);
 
     List<Act> findByEndDateBetween(LocalDate start, LocalDate end);
 
     @Query("SELECT a.subObject.title, COUNT(a) FROM Act a GROUP BY a.subObject.title")
     List<Object[]> countActsBySubObjectTitle();
-
-    @Query("SELECT a.subObject.title, COUNT(a) FROM Act a GROUP BY a.subObject.title")
-    Map<String, Long> countActsBySubObjectTitleMap();
 
     @Query("SELECT COUNT(a) FROM Act a")
     long countAllActs();

@@ -22,9 +22,6 @@ public interface WorkingRepository extends JpaRepository<Working, Long> {
     @Query("SELECT w.subObject.title, COUNT(w) FROM Working w GROUP BY w.subObject.title")
     List<Object[]> countWorksBySubObjectTitle();
 
-    @Query("SELECT w.subObject.title, COUNT(w) FROM Working w GROUP BY w.subObject.title")
-    Map<String, Long> countWorksBySubObjectTitleMap();
-
     @Transactional
     @Modifying
     @Query("DELETE FROM Working w WHERE w.subObject.id = :subObjectId")

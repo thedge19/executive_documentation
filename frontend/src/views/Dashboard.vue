@@ -524,7 +524,8 @@ const fetchGlobalStats = async () => {
         handleUnauthorized();
         return;
       }
-      throw new Error(`Ошибка HTTP: ${response.status}`);
+      error.value = `Ошибка HTTP: ${response.status}`;
+      return;
     }
 
     globalStats.value = await response.json();
@@ -548,7 +549,8 @@ const fetchActStats = async () => {
         handleUnauthorized();
         return;
       }
-      throw new Error(`Ошибка HTTP: ${response.status}`);
+      error.value = `Ошибка HTTP: ${response.status}`;
+      return;
     }
 
     const statsData = await response.json();
