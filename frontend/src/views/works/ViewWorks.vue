@@ -44,7 +44,9 @@
                 <th scope="col" class="text-nowrap">Ед. изм.</th>
                 <th scope="col" class="text-nowrap">Количество</th>
                 <th scope="col" class="text-nowrap">Выполнено</th>
+                <th scope="col" class="text-nowrap">Закрыто, руб.</th>
                 <th scope="col" class="text-nowrap">Осталось</th>
+                <th scope="col" class="text-nowrap">Не закрыто, руб.</th>
                 <th scope="col" class="text-nowrap text-end" style="width:15%">Действие</th>
               </tr>
               </thead>
@@ -55,7 +57,9 @@
                 <td class="text-center">{{ work.units }}</td>
                 <td class="text-center">{{ work.quantity }}</td>
                 <td class="text-center">{{ work.done }}</td>
+                <td class="text-center">{{ work.doneAmount }}</td>
                 <td class="text-center">{{ work.finalQuantity }}</td>
+                <td class="text-center">{{ work.remainingAmount }}</td>
                 <td class="text-end">
                   <div class="d-flex justify-content-end gap-2">
                     <a class="btn btn-sm btn-outline-primary" :href="`/editWork/${work.id}`">

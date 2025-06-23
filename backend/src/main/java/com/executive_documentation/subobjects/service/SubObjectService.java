@@ -11,7 +11,7 @@ public interface SubObjectService {
 
     SubObject getSubObject(long subObjectId);
 
-    List<SubObject> getAll();
+    List<SubObjectResponseDto> getAll();
 
     List<SubObjectResponseDto> getAllByProjectId(long id);
 

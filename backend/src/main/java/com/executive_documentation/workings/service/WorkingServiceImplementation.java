@@ -32,8 +32,8 @@ public class WorkingServiceImplementation implements WorkingService {
     private final WorkingMapper workingMapper;
 
     @Override
-    public Working get(Long id) {
-        return findWorkingOrNot(id);
+    public WorkingResponseDto get(Long id) {
+        return workingMapper.toDto(findWorkingOrNot(id));
     }
 
     @Override
@@ -43,8 +43,9 @@ public class WorkingServiceImplementation implements WorkingService {
     }
 
     @Override
-    public List<Working> getAllByPositiveDone(long id) {
-        return workingRepository.findAllBySubObjectId(id);
+    public List<WorkingResponseDto> getAllByPositiveDone(long id) {
+        return workingRepository.findAllBySubObjectId(id)
+                .stream().map(workingMapper::toDto).toList();
     }
 
     @Transactional
@@ -55,36 +56,12 @@ public class WorkingServiceImplementation implements WorkingService {
 
     @Transactional
     @Override
-    public Working update(long id, WorkingUpdateDto dto) {
+    public WorkingResponseDto update(long id, WorkingUpdateDto dto) {
         Working updatedWorking = findWorkingOrNot(id);
 
-        if (dto.getName() != null) {
-            updatedWorking.setName(dto.getName());
-        }
+        updatedWorking = workingMapper.updateDtoToEntity(dto, updatedWorking);
 
-        if (dto.getUnits() != null) {
-            updatedWorking.setUnits(dto.getUnits());
-        }
-
-        if (dto.getQuantity() != null) {
-            updatedWorking.setQuantity(dto.getQuantity());
-        }
-
-        if (dto.getDone() != null) {
-            updatedWorking.setDone(dto.getDone());
-        }
-
-        if (dto.getStandardId() != null) {
-            Standard updatedStandard = standardRepository.findById(dto.getStandardId()).orElse(null);
-            updatedWorking.setStandard(updatedStandard);
-        }
-
-        log.info("Updating working standard {}, units {}, quantity {}",
-                updatedWorking.getStandard().getName(),
-                updatedWorking.getUnits(),
-                updatedWorking.getQuantity());
-
-        return updatedWorking;
+        return workingMapper.toDto(updatedWorking);
     }
 
     @Transactional

@@ -26,5 +26,14 @@ public class WorkingResponseDto {
     @NotNull
     private Long standardId;
 
+    @NotNull
+    private Long subObjectId;
+
+    private BigDecimal unitPrice;
+
     private BigDecimal finalQuantity;
+
+    private BigDecimal doneAmount;
+
+    private BigDecimal remainingAmount;
 }

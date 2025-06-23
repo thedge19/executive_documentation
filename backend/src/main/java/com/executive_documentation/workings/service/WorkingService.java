@@ -11,15 +11,15 @@ import java.util.List;
 import java.util.Map;
 
 public interface WorkingService {
-    Working get(Long id);
+    WorkingResponseDto get(Long id);
 
     Page<WorkingResponseDto> getAll(long id, Pageable pageable);
 
-    List<Working> getAllByPositiveDone(long id);
+    List<WorkingResponseDto> getAllByPositiveDone(long id);
 
     Working create(WorkingRequestDto workingRequestDto);
 
-    Working update(long id, WorkingUpdateDto dto);
+    WorkingResponseDto update(long id, WorkingUpdateDto dto);
 
     void delete(long id);
 

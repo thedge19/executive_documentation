@@ -28,11 +28,11 @@ public class WorkingController {
     private final WorkingService workingService;
 
     @GetMapping("/working/{id}")
-    public Working get(@PathVariable Long id) {
+    public WorkingResponseDto get(@PathVariable Long id) {
         log.info("Get Working by id: {}", id);
-        Working working = workingService.get(id);
-        log.info("Get Working: {}", working);
-        return working;
+        WorkingResponseDto dto = workingService.get(id);
+        log.info("Get Working: {}", dto);
+        return dto;
     }
 
     @GetMapping("/{id}")
@@ -82,9 +82,9 @@ public class WorkingController {
     }
 
     @GetMapping("/undone/{id}")
-    public List<Working> getAllByPositiveDone(@PathVariable Long id) {
+    public ResponseEntity<List<WorkingResponseDto>> getAllByPositiveDone(@PathVariable Long id) {
         log.info("Get All By Positive Done");
-        return workingService.getAllByPositiveDone(id);
+        return ResponseEntity.ok(workingService.getAllByPositiveDone(id));
     }
 
     @PostMapping
@@ -97,12 +97,12 @@ public class WorkingController {
     }
 
     @PatchMapping("/{id}")
-    public Working update(@PathVariable long id,
+    public ResponseEntity<WorkingResponseDto> update(@PathVariable long id,
                           @RequestBody WorkingUpdateDto dto) {
         log.info("Update Working: {}", id);
-        Working workingUpdated = workingService.update(id, dto);
+        WorkingResponseDto workingUpdated = workingService.update(id, dto);
         log.info("Update Working: {}", workingUpdated);
-        return workingUpdated;
+        return ResponseEntity.ok(workingUpdated);
     }
 
     @DeleteMapping("/{id}")

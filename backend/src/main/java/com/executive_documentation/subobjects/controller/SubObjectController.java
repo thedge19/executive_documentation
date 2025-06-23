@@ -21,8 +21,8 @@ public class SubObjectController {
     private final SubObjectService subObjectService;
 
     @GetMapping
-    public List<SubObject> getAll() {
-        return subObjectService.getAll();
+    public ResponseEntity<List<SubObjectResponseDto>> getAll() {
+        return ResponseEntity.ok(subObjectService.getAll());
     }
 
     @GetMapping("/{id}")

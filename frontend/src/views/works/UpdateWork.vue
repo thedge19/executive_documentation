@@ -40,6 +40,16 @@
                      required v-model="work.quantity">
             </div>
 
+            <!-- Цена за единицу -->
+            <div class="mb-4">
+              <label for="unitPrice" class="form-label fw-semibold">
+                <i class="bi bi-currency-dollar me-2"></i>Цена за единицу
+              </label>
+              <input id="unitPrice" type="number" step="0.01" min="0" class="form-control"
+                     placeholder="Введите цену за единицу"
+                     required v-model="work.unitPrice">
+            </div>
+
             <!-- Стандарт -->
             <div class="mb-4">
               <label class="form-label fw-semibold">
@@ -106,9 +116,12 @@ const work = ref({
   name: '',
   units: '',
   quantity: '',
+  unitPrice: 0, // Добавлено поле для цены
   done: '',
+  doneAmount: 0,
+  remainingAmount: 0,
   standardId: '',
-  subObject: { id: '' }
+  subObjectId: '',
 })
 const standards = ref([])
 const error = ref(null)
@@ -216,7 +229,7 @@ const updateWork = async () => {
       return;
     }
 
-    await router.push(`/works/${work.value.subObject.id}`)
+    await router.push(`/works/${work.value.subObjectId}`)
   } catch (err) {
     console.error('Ошибка:', err)
     error.value = err.message
