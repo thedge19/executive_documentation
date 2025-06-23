@@ -1,12 +1,10 @@
 package com.executive_documentation.auth.service;
 
-import com.executive_documentation.auth.dto.LoginDto;
-import com.executive_documentation.auth.dto.UserCreateDto;
-import com.executive_documentation.auth.dto.UserMapper;
-import com.executive_documentation.auth.dto.UserResponseDto;
+import com.executive_documentation.auth.dto.*;
 import com.executive_documentation.auth.model.AppUser;
 import com.executive_documentation.auth.model.UserRole;
 import com.executive_documentation.auth.repository.UserRepository;
+import com.executive_documentation.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -58,6 +56,13 @@ public class AuthService {
                 .toList();
     }
 
+    public UserResponseDto get(Long userId) {
+        AppUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        return UserMapper.appUserToResponseDto(user);
+    }
+
     public UserResponseDto createUser(UserCreateDto userCreateDto) {
         // Проверка на существование пользователя
         if (userRepository.existsByUsername(userCreateDto.getUsername())) {
@@ -76,6 +81,37 @@ public class AuthService {
 
         // Возвращаем DTO без пароля
         return UserMapper.appUserToResponseDto(savedUser);
+    }
+
+    public UserResponseDto updateUser(Long userId, UserUpdateDto userUpdateDto) {
+        // Находим пользователя
+        AppUser existingUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        // Проверяем уникальность email, если он изменился
+        if (!existingUser.getEmail().equals(userUpdateDto.getEmail())) {
+            if (userRepository.existsByEmail(userUpdateDto.getEmail())) {
+                throw new RuntimeException("Email already exists");
+            }
+        }
+
+        // Проверяем уникальность username, если он изменился
+        if (!existingUser.getUsername().equals(userUpdateDto.getUsername())) {
+            if (userRepository.existsByUsername(userUpdateDto.getUsername())) {
+                throw new RuntimeException("Username already exists");
+            }
+        }
+
+        // Обновляем данные
+        existingUser.setUsername(userUpdateDto.getUsername());
+        existingUser.setEmail(userUpdateDto.getEmail());
+
+        existingUser.setRole(userUpdateDto.getRole());
+
+        // Сохраняем обновленного пользователя
+        AppUser updatedUser = userRepository.save(existingUser);
+
+        return UserMapper.appUserToResponseDto(updatedUser);
     }
 
     public void deleteUser(Long userId) {

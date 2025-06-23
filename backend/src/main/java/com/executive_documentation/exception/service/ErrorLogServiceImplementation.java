@@ -57,7 +57,7 @@ public class ErrorLogServiceImplementation implements ErrorLogService {
                 .last7Days(errorLogRepository.countErrorsSince(last7Days))
                 .countByLevel(convertToLevelCountMap(errorLogRepository.countByErrorLevel()))
                 .countByDay(convertToDayCountMap(errorLogRepository.countByDaySince(last7Days)))
-                .mostCommonErrorMessage(getMostCommonMessage(errorLogRepository.findMostCommonErrorMessage()))
+                .mostCommonErrorMessage(getMostCommonMessage(errorLogRepository.findMostCommonMessage()))
                 .mostFrequentEndpoint(getMostFrequentEndpoint(errorLogRepository.findMostFrequentEndpoint()))
                 .build();
     }
@@ -78,11 +78,17 @@ public class ErrorLogServiceImplementation implements ErrorLogService {
                 ));
     }
 
-    private String getMostCommonMessage(Object[] result) {
-        return result != null && result.length > 0 ? (String) result[0] : "No errors";
+    private String getMostCommonMessage(List<Object[]> results) {
+        if (results == null || results.isEmpty() || results.getFirst() == null || results.getFirst().length == 0) {
+            return "No errors";
+        }
+        return (String) results.getFirst()[0];
     }
 
-    private String getMostFrequentEndpoint(Object[] result) {
-        return result != null && result.length > 0 ? (String) result[0] : "No endpoints";
+    private String getMostFrequentEndpoint(List<Object[]> results) {
+        if (results == null || results.isEmpty() || results.getFirst() == null || results.getFirst().length == 0) {
+            return "No endpoints";
+        }
+        return (String) results.getFirst()[0];
     }
 }

@@ -83,6 +83,7 @@
                       <thead>
                       <tr>
                         <th>ID</th>
+                        <th>Имя</th>
                         <th>Email</th>
                         <th>Роль</th>
                         <th>Дата регистрации</th>
@@ -92,6 +93,7 @@
                       <tbody>
                       <tr v-for="user in users" :key="user.id">
                         <td>{{ user.id }}</td>
+                        <td>{{ user.username }}</td>
                         <td>{{ user.email }}</td>
                         <td>
                           <span class="badge" :class="{'bg-primary': user.role === 'ROLE_ADMIN', 'bg-secondary': user.role === 'ROLE_USER'}">
@@ -100,9 +102,9 @@
                         </td>
                         <td>{{ user.createdAt }}</td>
                         <td>
-                          <button @click="editUser(user)" class="btn btn-sm btn-outline-primary me-2">
+                          <a :href="`/editUser/${user.id}`" class="btn btn-sm btn-outline-primary me-2">
                             <i class="bi bi-pencil"></i>
-                          </button>
+                          </a>
                           <button @click="confirmDeleteUser(user)" class="btn btn-sm btn-outline-danger">
                             <i class="bi bi-trash"></i>
                           </button>
@@ -214,8 +216,8 @@
                       <input type="checkbox" class="form-check-input" id="enableNotifications" v-model="settings.enableNotifications">
                       <label class="form-check-label" for="enableNotifications">Уведомления по email</label>
                     </div>
-                    <button type="submit" class="btn btn-primary" :disabled="isSaving">
-                      <span v-if="isSaving" class="spinner-border spinner-border-sm me-1"></span>
+                    <button type="submit" class="btn btn-primary">
+                      <span class="spinner-border spinner-border-sm me-1"></span>
                       Сохранить
                     </button>
                   </form>
@@ -470,7 +472,7 @@ onMounted(async () => {
 }
 
 .nav-tabs .nav-link {
-  color: #495057;
+  color: white;
   font-weight: 500;
 }
 

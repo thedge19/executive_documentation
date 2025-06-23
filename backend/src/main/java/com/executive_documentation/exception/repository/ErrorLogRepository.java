@@ -26,6 +26,9 @@ public interface ErrorLogRepository extends JpaRepository<ErrorLog, Long> {
     @Query("SELECT e.message, COUNT(e) FROM ErrorLog e GROUP BY e.message ORDER BY COUNT(e) DESC LIMIT 1")
     Object[] findMostCommonErrorMessage();
 
-    @Query("SELECT e.endpoint, COUNT(e) FROM ErrorLog e GROUP BY e.endpoint ORDER BY COUNT(e) DESC LIMIT 1")
-    Object[] findMostFrequentEndpoint();
+    @Query("SELECT e.endpoint, COUNT(e) as cnt FROM ErrorLog e GROUP BY e.endpoint ORDER BY cnt DESC")
+    List<Object[]> findMostFrequentEndpoint();
+
+    @Query("SELECT e.message, COUNT(e) as cnt FROM ErrorLog e GROUP BY e.message ORDER BY cnt DESC")
+    List<Object[]> findMostCommonMessage();
 }

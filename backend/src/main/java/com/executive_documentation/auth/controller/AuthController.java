@@ -33,10 +33,23 @@ public class AuthController {
         return ResponseEntity.ok(authService.getAllUsers());
     }
 
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<UserResponseDto> get(@PathVariable Long userId) {
+        return ResponseEntity.ok(authService.get(userId));
+    }
+
     @PostMapping("/users")
     public ResponseEntity<UserResponseDto> createUser(@Valid @RequestBody UserCreateDto userCreateDto) {
         UserResponseDto createdUser = authService.createUser(userCreateDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    }
+
+    @PatchMapping("/users/{userId}")
+    public ResponseEntity<UserResponseDto> updateUser(
+            @PathVariable Long userId,
+            @Valid @RequestBody UserUpdateDto userUpdateDto) {
+        UserResponseDto updatedUser = authService.updateUser(userId, userUpdateDto);
+        return ResponseEntity.ok(updatedUser);
     }
 
     @DeleteMapping("/users/{userId}")
