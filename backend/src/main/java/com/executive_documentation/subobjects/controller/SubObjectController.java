@@ -1,10 +1,12 @@
 package com.executive_documentation.subobjects.controller;
 
 import com.executive_documentation.subobjects.dto.SubObjectRequestDto;
+import com.executive_documentation.subobjects.dto.SubObjectResponseDto;
 import com.executive_documentation.subobjects.model.SubObject;
 import com.executive_documentation.subobjects.service.SubObjectService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,9 +26,8 @@ public class SubObjectController {
     }
 
     @GetMapping("/{id}")
-    public List<SubObject> getAllByProjectId(@PathVariable long id) {
-        log.info("Get all SubObjects");
-        return subObjectService.getAllByProjectId(id);
+    public ResponseEntity<List<SubObjectResponseDto>> getAllByProjectId(@PathVariable long id) {
+        return ResponseEntity.ok(subObjectService.getAllByProjectId(id));
     }
 
     @GetMapping("/subObject/{subObjectId}")

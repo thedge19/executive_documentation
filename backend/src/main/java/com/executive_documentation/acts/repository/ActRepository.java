@@ -9,12 +9,11 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface ActRepository extends JpaRepository<Act, Long> {
     Long countBySubObject(SubObject subObject);
-
-    List<Act> findAllByEndDateBetweenOrderByEndDateAscActNumberAsc(LocalDate startDate, LocalDate endDate);
 
     List<Act> findAllByOrderByEndDateAscActNumberAsc();
 
@@ -33,4 +32,13 @@ public interface ActRepository extends JpaRepository<Act, Long> {
     Optional<Act> findByExecutiveSchema(ExecutiveSchema executiveSchema);
 
     List<Act> findByEndDateBetween(LocalDate start, LocalDate end);
+
+    @Query("SELECT a.subObject.title, COUNT(a) FROM Act a GROUP BY a.subObject.title")
+    List<Object[]> countActsBySubObjectTitle();
+
+    @Query("SELECT a.subObject.title, COUNT(a) FROM Act a GROUP BY a.subObject.title")
+    Map<String, Long> countActsBySubObjectTitleMap();
+
+    @Query("SELECT COUNT(a) FROM Act a")
+    long countAllActs();
 }

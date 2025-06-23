@@ -3,8 +3,10 @@ package com.executive_documentation.subobjects.service;
 import com.executive_documentation.exception.NotFoundException;
 import com.executive_documentation.subobjects.dto.SubObjectMapper;
 import com.executive_documentation.subobjects.dto.SubObjectRequestDto;
+import com.executive_documentation.subobjects.dto.SubObjectResponseDto;
 import com.executive_documentation.subobjects.model.SubObject;
 import com.executive_documentation.subobjects.repository.SubObjectRepository;
+import com.executive_documentation.workings.repository.WorkingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,7 @@ import java.util.List;
 public class SubObjectServiceImplementation implements SubObjectService {
 
     private final SubObjectRepository subObjectRepository;
+    private final WorkingRepository workingRepository;
 
     @Override
     public SubObject get(Long id) {
@@ -29,8 +32,11 @@ public class SubObjectServiceImplementation implements SubObjectService {
     }
 
     @Override
-    public List<SubObject> getAllByProjectId(long id) {
-        return subObjectRepository.findAllByProjectIdOrderByIdAsc(id);
+    public List<SubObjectResponseDto> getAllByProjectId(long id) {
+        return subObjectRepository.findAllByProjectIdOrderByIdAsc(id)
+                .stream()
+                .map(SubObjectMapper::toResponseDto)
+                .toList();
     }
 
     @Override
@@ -42,7 +48,7 @@ public class SubObjectServiceImplementation implements SubObjectService {
     @Transactional
     @Override
     public SubObject create(SubObjectRequestDto dto) {
-        return subObjectRepository.save(SubObjectMapper.INSTANCE.toEntity(dto));
+        return subObjectRepository.save(SubObjectMapper.toEntity(dto));
     }
 
     @Transactional
@@ -64,8 +70,13 @@ public class SubObjectServiceImplementation implements SubObjectService {
     @Transactional
     @Override
     public void delete(long id) {
-        findSubObjectOrNot(id);
-        subObjectRepository.deleteById(id);
+        SubObject subObject = findSubObjectOrNot(id);
+
+        // Удаляем все связанные работы
+        workingRepository.deleteAllBySubObjectId(id);
+
+        // Теперь можно безопасно удалить подобъект
+        subObjectRepository.delete(subObject);
     }
 
     @Override

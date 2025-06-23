@@ -1,11 +1,13 @@
 package com.executive_documentation.subobjects.model;
 
 import com.executive_documentation.projects.model.Project;
+import com.executive_documentation.workings.model.Working;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+import java.util.List;
 import java.util.Objects;
 
 @Table(name = "subobjects")
@@ -35,6 +37,8 @@ public class SubObject {
     @ManyToOne
     private Project project;
 
+    @OneToMany(mappedBy = "subObject", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Working> workings;
 
     @Override
     public boolean equals(Object o) {

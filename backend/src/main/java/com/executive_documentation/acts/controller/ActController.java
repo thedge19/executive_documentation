@@ -51,7 +51,6 @@ public class ActController {
         return actService.filterBySubObject();
     }
 
-
     @GetMapping("/schema/{id}")
     public ExecutiveSchema getSchema(@PathVariable Long id) {
         return actService.getExecutiveSchema(id);
@@ -125,5 +124,15 @@ public class ActController {
     @DeleteMapping("/schema/{id}")
     void deleteSchema(@PathVariable Long id) {
         actService.deleteSchema(id);
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Double>> getActStats() {
+        return ResponseEntity.ok(actService.getActStats());
+    }
+
+    @GetMapping("/globalStats")
+    public ResponseEntity<Long> getGlobalStats() {
+        return ResponseEntity.ok(actService.getGlobalStats());
     }
 }

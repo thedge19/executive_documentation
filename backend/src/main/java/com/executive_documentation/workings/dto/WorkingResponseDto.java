@@ -26,8 +26,5 @@ public class WorkingResponseDto {
     @NotNull
     private Long standardId;
 
-    @NotNull
-    private Long subObjectId;
-
     private BigDecimal finalQuantity;
 }

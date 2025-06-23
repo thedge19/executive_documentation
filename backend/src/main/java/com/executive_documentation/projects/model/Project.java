@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotEmpty;
 
 import lombok.*;
 
+@Builder
 @Table(name = "projects")
 @Entity
 @NoArgsConstructor

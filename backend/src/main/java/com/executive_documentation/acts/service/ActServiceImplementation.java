@@ -22,6 +22,7 @@ import com.executive_documentation.projects.service.ProjectService;
 import com.executive_documentation.subobjects.model.SubObject;
 import com.executive_documentation.subobjects.service.SubObjectService;
 import com.executive_documentation.workings.model.Working;
+import com.executive_documentation.workings.repository.WorkingRepository;
 import com.executive_documentation.workings.service.WorkingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +51,7 @@ public class ActServiceImplementation implements ActService {
     private final EntranceControlMapper entranceControlMapper;
     private final FileStorageService fileStorageService;
     private final ExecutiveSchemaRepository executiveSchemaRepository;
+    private final WorkingRepository workingRepository;
     private final MaterialRepository materialRepository;
 
     private final static String CONTROL_ACT = "Акт результатов входного контроля МТР и оборудования №";
@@ -256,6 +258,43 @@ public class ActServiceImplementation implements ActService {
         act.setExecutiveSchema(null);
         executiveSchemaRepository.deleteById(id);
         fileStorageService.deleteFile(schema.getSchemaPath());
+    }
+
+    @Override
+    public Map<String, Double> getActStats() {
+        // Получаем количество актов по подобъектам
+        Map<String, Long> actCounts = actRepository.countActsBySubObjectTitle().stream()
+                .collect(Collectors.toMap(
+                        obj -> (String) obj[0],
+                        obj -> (Long) obj[1]
+                ));
+
+        // Получаем количество работ по подобъектам
+        Map<String, Long> workCounts = workingRepository.countWorksBySubObjectTitle().stream()
+                .collect(Collectors.toMap(
+                        obj -> (String) obj[0],
+                        obj -> (Long) obj[1]
+                ));
+
+        // Вычисляем процентное соотношение
+        Map<String, Double> result = new HashMap<>();
+
+        // Добавляем все подобъекты, которые есть в работах
+        for (Map.Entry<String, Long> entry : workCounts.entrySet()) {
+            String subObjectTitle = entry.getKey();
+            Long workCount = entry.getValue();
+            Long actCount = actCounts.getOrDefault(subObjectTitle, 0L);
+
+            double percentage = workCount == 0 ? 0 : (actCount * 100.0 / workCount);
+            result.put(subObjectTitle, percentage);
+        }
+
+        return result;
+    }
+
+    @Override
+    public long getGlobalStats() {
+        return 100 * actRepository.countAllActs() / workingRepository.countAllWorkings();
     }
 
     // Вспомогательные методы

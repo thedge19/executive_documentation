@@ -16,7 +16,6 @@ public class WorkingMapper {
                 .quantity(working.getQuantity())
                 .done(working.getDone())
                 .standardId(working.getStandard() != null ? working.getStandard().getId() : null)
-                .subObjectId(working.getSubObject() != null ? working.getSubObject().getId() : null)
                 .finalQuantity(working.getFinalQuantity())
                 .build();
     }

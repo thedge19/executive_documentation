@@ -22,13 +22,9 @@ public interface ActService {
 
     List<ExecutiveSchema> getExecutiveSchemasFilteredByName();
 
-//    ActUpdateResponseDto getUpdatedAct(long id);
-
     List<ActResponseDto> getAll();
 
     List<ActResponseDto> filterBySubObject();
-
-//    List<ActResponseDto> findAllByEndDateBetween(LocalDate startDate, LocalDate endDate);
 
     List<EntranceControlResponseDto> getAllEntranceControl();
 
@@ -36,27 +32,11 @@ public interface ActService {
 
     ActResponseDto actUpdate(long id, MultipartFile file);
 
-//    Act update(long id, ActUpdateRequestDto requestDto);
-
     void delete(Long actId);
 
     void deleteSchema(long id);
 
-//    void deleteControl(long id);
+    Map<String, Double> getActStats();
 
-//    Act findActOrNot(long id);
-
-//    EntranceControl findEntranceControl(long id);
-
-//    List<EntranceControl> controls(Act act);
-
-//    EntranceControl updateEntranceControl(long id, EntranceControlRequestDto requestDto);
-
-//    LocalDate jsDateToLocalDate(String date);
-
-
-//    List<ActResponseDto> getAllWithNullInRegistries();
-
-
-
+    long getGlobalStats();
 }

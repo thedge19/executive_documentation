@@ -84,40 +84,48 @@ const isLoading = ref(false)
 
 const getSubObjects = async () => {
   try {
-    isLoading.value = true
-    const token = localStorage.getItem('token')
+    isLoading.value = true;
+    const token = localStorage.getItem('token');
 
     if (!token) {
-      await router.push('/login')
-      return
-    }
-
-    const response = await fetch(`http://localhost:8080/subobjects/${projectId.value}`, {
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      credentials: 'include'
-    })
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        localStorage.removeItem('token')
-        await router.push('/login')
-      }
-      error.value = `HTTP error! status: ${response.status}`;
+      await router.push('/login');
       return;
     }
 
-    subObjects.value = await response.json()
+    const response = await fetch(`http://localhost:8080/subobjects/${projectId.value}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        await router.push('/login');
+      }
+      error.value = `Ошибка HTTP! Статус: ${response.status}`;
+      return;
+    }
+
+    // Логируем сырой ответ для отладки
+    const rawResponse = await response.text();
+    console.log("Ответ сервера (сырой):", rawResponse);
+
+    // Пробуем распарсить JSON
+    try {
+      subObjects.value = JSON.parse(rawResponse);
+    } catch (parseError) {
+      console.error("Ошибка парсинга JSON:", parseError);
+      error.value = "Сервер вернул некорректные данные";
+    }
   } catch (err) {
-    error.value = err.message
-    console.error('Ошибка при загрузке подобъектов:', err)
+    error.value = err.message;
+    console.error('Ошибка при загрузке подобъектов:', err);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const deleteSubObject = async (id) => {
   if (!confirm('Вы действительно хотите удалить подобъект?')) return

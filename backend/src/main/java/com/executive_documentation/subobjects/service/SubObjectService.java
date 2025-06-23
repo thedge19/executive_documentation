@@ -1,6 +1,7 @@
 package com.executive_documentation.subobjects.service;
 
 import com.executive_documentation.subobjects.dto.SubObjectRequestDto;
+import com.executive_documentation.subobjects.dto.SubObjectResponseDto;
 import com.executive_documentation.subobjects.model.SubObject;
 
 import java.util.List;
@@ -12,7 +13,7 @@ public interface SubObjectService {
 
     List<SubObject> getAll();
 
-    List<SubObject> getAllByProjectId(long id);
+    List<SubObjectResponseDto> getAllByProjectId(long id);
 
     SubObject create(SubObjectRequestDto dto);
 

@@ -1,5 +1,6 @@
 package com.executive_documentation.subobjects.dto;
 
+import com.executive_documentation.projects.model.Project;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,8 +10,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SubObjectRequestDto {
+public class SubObjectResponseDto {
+    private Long id;
     private String name;
     private String title;
-    private Long projectId;
+    private Project project;
 }

@@ -1,15 +1,37 @@
 package com.executive_documentation.subobjects.dto;
 
+import com.executive_documentation.projects.model.Project;
 import com.executive_documentation.subobjects.model.SubObject;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 
-@Mapper
-public interface SubObjectMapper {
+public class SubObjectMapper {
 
-    SubObjectMapper INSTANCE = Mappers.getMapper(SubObjectMapper.class);
+    public static SubObject toEntity(SubObjectRequestDto dto) {
+        if (dto == null) {
+            return null;
+        }
 
-    @Mapping(target = "project.id", source = "projectId")
-    SubObject toEntity(SubObjectRequestDto dto);
+        return SubObject.builder()
+                .name(dto.getName())
+                .title(dto.getTitle())
+                .project(Project.builder().id(dto.getProjectId()).build())
+                .build();
+    }
+
+    public static SubObjectResponseDto toResponseDto(SubObject subObject) {
+        if (subObject == null) {
+            return null;
+        }
+
+        return SubObjectResponseDto.builder()
+                .id(subObject.getId())
+                .name(subObject.getName())
+                .title(subObject.getTitle())
+                .project(subObject.getProject() != null ?
+                        Project.builder()
+                                .id(subObject.getProject().getId())
+                                .name(subObject.getProject().getName())
+                                .build() :
+                        null)
+                .build();
+    }
 }

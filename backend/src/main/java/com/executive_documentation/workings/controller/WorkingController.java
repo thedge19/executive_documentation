@@ -1,6 +1,7 @@
 package com.executive_documentation.workings.controller;
 
 import com.executive_documentation.workings.dto.WorkingRequestDto;
+import com.executive_documentation.workings.dto.WorkingResponseDto;
 import com.executive_documentation.workings.dto.WorkingUpdateDto;
 import com.executive_documentation.workings.model.Working;
 import com.executive_documentation.workings.service.WorkingService;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping(path = "/workings")
@@ -34,7 +36,7 @@ public class WorkingController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Page<Working>> getAllWorksBySubObject(
+    public ResponseEntity<Page<WorkingResponseDto>> getAllWorksBySubObject(
             @PathVariable Long id,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -58,7 +60,7 @@ public class WorkingController {
             }
 
             Pageable pageable = PageRequest.of(page, size, sorting);
-            Page<Working> worksPage = workingService.getAll(id, pageable);
+            Page<WorkingResponseDto> worksPage = workingService.getAll(id, pageable);
 
             log.info("Found {} works out of {}",
                     worksPage.getNumberOfElements(),
@@ -72,6 +74,11 @@ public class WorkingController {
             log.error("Error fetching works for subObjectId {}: {}", id, e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    @GetMapping("/count-by-subobject")
+    public ResponseEntity<Map<String, Long>> getWorksCountBySubObject() {
+        return ResponseEntity.ok(workingService.getWorksCountBySubObject());
     }
 
     @GetMapping("/undone/{id}")
