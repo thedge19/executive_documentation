@@ -48,6 +48,7 @@ public class WorkingServiceImplementation implements WorkingService {
     @Override
     public WorkingResponseDto create(WorkingRequestDto workingDto) {
         Working working = workingMapper.toEntity(workingDto);
+        log.info("Created new working with id {}", working);
         return workingMapper.toDto(workingRepository.save(working));
     }
 

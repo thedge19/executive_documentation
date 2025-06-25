@@ -13,7 +13,8 @@
           <!-- Controls -->
           <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
             <div class="d-flex justify-content-start">
-              <a :href="`/addWork/${subObjectId}`" class="btn btn-primary rounded-pill my-2">
+              <a :href="`/addWork/${subObjectId}?page=${works.totalPages - 1}`"
+                 class="btn btn-primary rounded-pill my-2">
                 <i class="bi bi-plus-circle me-2"></i>Добавить работу
               </a>
               <router-link
@@ -56,7 +57,7 @@
               <tbody>
               <tr v-if="works.content && works.content.length > 0" v-for="work in works.content" :key="work.id">
                 <th scope="row" class="fw-semibold">{{ work.id }}</th>
-                <td>{{ work.name }}</td>
+                <td :class="{ 'fw-bold': work.unitPrice > 0 }">{{ work.name }}</td>
                 <td class="text-center">{{ work.units }}</td>
                 <td class="text-center">{{ work.quantity }}</td>
                 <td class="text-center">{{ work.done }}</td>
@@ -142,7 +143,7 @@ const isLoading = ref(false)
 const works = ref({
   content: [],
   number: 0,
-  size: 15,
+  size: 10,
   totalElements: 0,
   totalPages: 0,
   first: true,
@@ -150,7 +151,7 @@ const works = ref({
 })
 const subObjects = ref([])
 const subObjectId = ref(route.params.id)
-const pageSize = ref(15)
+const pageSize = ref(10)
 
 const pageNumbers = computed(() => {
   const current = works.value.number

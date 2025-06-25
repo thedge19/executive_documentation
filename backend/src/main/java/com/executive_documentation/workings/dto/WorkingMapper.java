@@ -1,14 +1,21 @@
 package com.executive_documentation.workings.dto;
 
 import com.executive_documentation.standard.model.Standard;
+import com.executive_documentation.standard.repository.StandardRepository;
 import com.executive_documentation.subobjects.model.SubObject;
+import com.executive_documentation.subobjects.repository.SubObjectRepository;
 import com.executive_documentation.workings.model.Working;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
+@RequiredArgsConstructor
 @Component
 public class WorkingMapper {
+
+    private final SubObjectRepository subObjectRepository;
+    private final StandardRepository standardRepository;
 
     public WorkingResponseDto toDto(Working working) {
         BigDecimal done = working.getDone();
@@ -51,8 +58,8 @@ public class WorkingMapper {
                 .quantity(workingDto.getQuantity())
                 .done(workingDto.getDone())
                 .unitPrice(workingDto.getUnitPrice())
-                .standard(Standard.builder().id(workingDto.getStandardId()).build())
-                .subObject(SubObject.builder().id(workingDto.getSubObjectId()).build())
+                .standard(standardRepository.findById(workingDto.getStandardId()).orElse(null))
+                .subObject(subObjectRepository.findById(workingDto.getSubObjectId()).orElse(null))
                 .build();
     }
 

@@ -89,7 +89,7 @@ public class WorkingController {
     @PostMapping
     public ResponseEntity<WorkingResponseDto> create(
             @RequestBody WorkingRequestDto workingDto) {
-        log.info("Create Working: {}", workingDto.getName());
+        log.info("Create Working: {}", workingDto);
         WorkingResponseDto workingCreated = workingService.create(workingDto);
         log.info("Created Working: {}", workingCreated);
         return ResponseEntity.ok(workingCreated);

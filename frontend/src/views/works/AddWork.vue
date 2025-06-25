@@ -215,7 +215,12 @@ const addWork = async () => {
       return;
     }
 
-    await router.push(`/works/${route.params.id}`)
+    // Получаем номер последней страницы из URL или используем 0
+    const lastPage = parseInt(route.query.page) || 0
+
+    // Перенаправляем на последнюю страницу
+    await router.push(`/works/${route.params.id}?page=${lastPage}`)
+
   } catch (err) {
     console.error('Ошибка:', err)
     error.value = err.message
