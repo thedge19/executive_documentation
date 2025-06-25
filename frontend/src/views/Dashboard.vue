@@ -27,8 +27,30 @@
             <div class="col-md-3 mb-3">
               <div class="card bg-info text-white h-100">
                 <div class="card-body">
-                  <h5 class="card-title"><i class="bi bi-file-earmark-pdf me-2"></i>PDF</h5>
-                  <p class="card-text display-5">{{ stats.pdfs }}</p>
+                  <h5 class="card-title"><i class="bi bi-cash-stack me-2"></i>Финансы</h5>
+                  <div class="d-flex flex-column">
+                    <div class="d-flex justify-content-between">
+                      <span>Выполнено:</span>
+                      <span>{{ formatCurrency(totalFinancialStats.totalDone) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                      <span>Всего:</span>
+                      <span>{{ formatCurrency(totalFinancialStats.totalAmount) }}</span>
+                    </div>
+                    <div class="progress mt-2 bg-white bg-opacity-25" style="height: 10px;">
+                      <div
+                          class="progress-bar bg-success"
+                          role="progressbar"
+                          :style="{ width: totalFinancialStats.percentage + '%' }"
+                          :aria-valuenow="totalFinancialStats.percentage"
+                          aria-valuemin="0"
+                          aria-valuemax="100"
+                      ></div>
+                    </div>
+                    <p class="card-text text-center mt-2 mb-0">
+                      {{ (financialStats.percentage || 0).toFixed(1) }}% выполнено
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -831,6 +853,47 @@ const updateFinancialStatsChart = () => {
   });
 };
 
+const totalFinancialStats = ref({
+  totalDone: 0,
+  totalAmount: 0,
+  percentage: 0
+})
+
+const fetchTotalFinancialStats = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/workings/total-financial-stats', {
+      headers: getAuthHeaders()
+    })
+
+    if (!response.ok) {
+      error.value = 'Ошибка загрузки финансовых данных';
+      return;
+    }
+
+    const data = await response.json()
+    totalFinancialStats.value = {
+      totalDone: data.totalDone || 0,
+      totalAmount: data.totalAmount || 0,
+      percentage: data.totalAmount > 0
+          ? (data.totalDone / data.totalAmount * 100)
+          : 0
+    }
+  } catch (err) {
+    console.error('Ошибка загрузки финансовых данных:', err)
+    // Сбросить значения при ошибке
+    totalFinancialStats.value = { totalDone: 0, totalAmount: 0, percentage: 0 }
+  }
+};
+
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: 'RUB',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(value || 0)
+}
+
 onMounted(async () => {
   if (!checkAuth()) return;
 
@@ -841,7 +904,8 @@ onMounted(async () => {
       fetchErrorStats(),
       fetchActStats(),
       fetchGlobalStats(),
-      fetchFinancialStats() // Добавляем загрузку финансовой статистики
+      fetchFinancialStats(),
+      fetchTotalFinancialStats(),// Добавляем загрузку финансовой статистики
     ]);
   } catch (err) {
     console.error('Ошибка инициализации:', err);
