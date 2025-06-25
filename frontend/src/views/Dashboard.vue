@@ -353,13 +353,6 @@ import Navbar from '../components/Navbar.vue'
 import Swal from 'sweetalert2'
 import Chart from 'chart.js/auto'
 
-const stats = ref({
-  users: 0,
-  journals: 0,
-  pdfs: 0,
-  errors: 0
-})
-
 const users = ref([])
 const errorStats = ref({
   totalErrors: 0,
@@ -370,11 +363,7 @@ const errorStats = ref({
   mostCommonErrorMessage: '',
   mostFrequentEndpoint: ''
 })
-const settings = ref({
-  userLogLimit: 10,
-  autoDeleteDays: 30,
-  enableNotifications: true
-})
+
 const isLoading = ref(true)
 const levelChart = ref(null)
 const error = ref("")
