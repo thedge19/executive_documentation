@@ -48,6 +48,16 @@
                      required v-model="work.quantity">
             </div>
 
+            <!-- Цена за единицу -->
+            <div class="mb-4">
+              <label for="unitPrice" class="form-label fw-semibold">
+                <i class="bi bi-currency-dollar me-2"></i>Цена за единицу
+              </label>
+              <input id="unitPrice" type="number" step="0.01" min="0" class="form-control"
+                     placeholder="Введите цену за единицу"
+                     required v-model="work.unitPrice">
+            </div>
+
             <!-- Стандарт -->
             <div class="mb-4">
               <label class="form-label fw-semibold">
@@ -99,6 +109,7 @@ const work = ref({
   name: '',
   units: '',
   quantity: '',
+  unitPrice: 0,
   done: 0,
   standardId: '',
   subObjectId: route.params.id

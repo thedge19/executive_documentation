@@ -31,8 +31,8 @@ public class SubObjectController {
     }
 
     @GetMapping("/subObject/{subObjectId}")
-    public SubObject getBySubObjectId(@PathVariable long subObjectId) {
-        return subObjectService.getSubObject(subObjectId);
+    public ResponseEntity<SubObjectResponseDto> getBySubObjectId(@PathVariable long subObjectId) {
+        return ResponseEntity.ok(subObjectService.getSubObject(subObjectId));
     }
 
     @PostMapping

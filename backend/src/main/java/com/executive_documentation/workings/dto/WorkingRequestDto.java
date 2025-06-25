@@ -21,6 +21,9 @@ public class WorkingRequestDto {
     @NotNull
     private BigDecimal quantity;
 
+    @NotNull
+    private BigDecimal unitPrice;
+
     private BigDecimal done;
 
     @NotNull

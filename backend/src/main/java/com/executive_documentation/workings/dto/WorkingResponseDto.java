@@ -26,6 +26,8 @@ public class WorkingResponseDto {
     @NotNull
     private Long standardId;
 
+    private Long projectId;
+
     @NotNull
     private Long subObjectId;
 

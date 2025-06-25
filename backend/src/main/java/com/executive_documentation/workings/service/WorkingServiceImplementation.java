@@ -46,8 +46,9 @@ public class WorkingServiceImplementation implements WorkingService {
 
     @Transactional
     @Override
-    public Working create(WorkingRequestDto workingDto) {
-        return workingRepository.save(workingMapper.toEntity(workingDto));
+    public WorkingResponseDto create(WorkingRequestDto workingDto) {
+        Working working = workingMapper.toEntity(workingDto);
+        return workingMapper.toDto(workingRepository.save(working));
     }
 
     @Transactional

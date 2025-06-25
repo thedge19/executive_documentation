@@ -88,12 +88,12 @@ public class WorkingController {
     }
 
     @PostMapping
-    public Working create(
+    public ResponseEntity<WorkingResponseDto> create(
             @RequestBody WorkingRequestDto workingDto) {
         log.info("Create Working: {}", workingDto.getName());
-        Working workingCreated = workingService.create(workingDto);
+        WorkingResponseDto workingCreated = workingService.create(workingDto);
         log.info("Created Working: {}", workingCreated);
-        return workingCreated;
+        return ResponseEntity.ok(workingCreated);
     }
 
     @PatchMapping("/{id}")

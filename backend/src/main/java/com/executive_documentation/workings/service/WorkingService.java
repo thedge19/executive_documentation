@@ -17,7 +17,7 @@ public interface WorkingService {
 
     List<WorkingResponseDto> getAllByPositiveDone(long id);
 
-    Working create(WorkingRequestDto workingRequestDto);
+    WorkingResponseDto create(WorkingRequestDto workingRequestDto);
 
     WorkingResponseDto update(long id, WorkingUpdateDto dto);
 

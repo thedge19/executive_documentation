@@ -28,8 +28,9 @@ public class SubObjectServiceImplementation implements SubObjectService {
     }
 
     @Override
-    public SubObject getSubObject(long subObjectId) {
-        return subObjectRepository.findById(subObjectId).orElse(null);
+    public SubObjectResponseDto getSubObject(long subObjectId) {
+        SubObject subObject = subObjectRepository.findById(subObjectId).orElse(null);
+        return SubObjectMapper.toResponseDto(subObject);
     }
 
     @Override
