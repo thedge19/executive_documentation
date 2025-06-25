@@ -1,8 +1,6 @@
 package com.executive_documentation.workings.controller;
 
-import com.executive_documentation.workings.dto.WorkingRequestDto;
-import com.executive_documentation.workings.dto.WorkingResponseDto;
-import com.executive_documentation.workings.dto.WorkingUpdateDto;
+import com.executive_documentation.workings.dto.*;
 import com.executive_documentation.workings.service.WorkingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -78,6 +76,16 @@ public class WorkingController {
     @GetMapping("/count-by-subobject")
     public ResponseEntity<Map<String, Long>> getWorksCountBySubObject() {
         return ResponseEntity.ok(workingService.getWorksCountBySubObject());
+    }
+
+    @GetMapping("/financial-stats")
+    public Map<String, FinancialStats> getFinancialStats() {
+        return workingService.getFinancialStatsBySubObject();
+    }
+
+    @GetMapping("/total-financial-stats")
+    public ResponseEntity<TotalFinancialStats> getTotalFinancialStats() {
+        return ResponseEntity.ok(workingService.getTotalFinancialStats());
     }
 
     @GetMapping("/undone/{id}")

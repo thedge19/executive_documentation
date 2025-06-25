@@ -1,8 +1,6 @@
 package com.executive_documentation.workings.service;
 
-import com.executive_documentation.workings.dto.WorkingRequestDto;
-import com.executive_documentation.workings.dto.WorkingResponseDto;
-import com.executive_documentation.workings.dto.WorkingUpdateDto;
+import com.executive_documentation.workings.dto.*;
 import com.executive_documentation.workings.model.Working;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,4 +24,8 @@ public interface WorkingService {
     Working findWorkingOrNot(long id);
 
     Map<String, Long> getWorksCountBySubObject();
+
+    Map<String, FinancialStats> getFinancialStatsBySubObject();
+
+    TotalFinancialStats getTotalFinancialStats();
 }
