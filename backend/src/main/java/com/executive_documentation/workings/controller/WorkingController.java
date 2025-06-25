@@ -3,7 +3,6 @@ package com.executive_documentation.workings.controller;
 import com.executive_documentation.workings.dto.WorkingRequestDto;
 import com.executive_documentation.workings.dto.WorkingResponseDto;
 import com.executive_documentation.workings.dto.WorkingUpdateDto;
-import com.executive_documentation.workings.model.Working;
 import com.executive_documentation.workings.service.WorkingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
