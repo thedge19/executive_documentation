@@ -1,6 +1,8 @@
 package com.executive_documentation.workings.service;
 
 import com.executive_documentation.exception.NotFoundException;
+import com.executive_documentation.subobjects.model.SubObject;
+import com.executive_documentation.subobjects.repository.SubObjectRepository;
 import com.executive_documentation.workings.dto.*;
 import com.executive_documentation.workings.model.Working;
 import com.executive_documentation.workings.repository.WorkingRepository;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 public class WorkingServiceImplementation implements WorkingService {
 
     private final WorkingRepository workingRepository;
+    private final SubObjectRepository subObjectRepository;
     private final WorkingMapper workingMapper;
 
     @Override
@@ -40,6 +43,12 @@ public class WorkingServiceImplementation implements WorkingService {
     public List<WorkingResponseDto> getAllByPositiveDone(long id) {
         return workingRepository.findAllBySubObjectId(id)
                 .stream().map(workingMapper::toDto).toList();
+    }
+
+    @Override
+    public BigDecimal getTotalAmountBySubObject(long subObjectId) {
+        SubObject subObject = subObjectRepository.findById(subObjectId).orElse(null);
+        return workingRepository.sumTotalAmountBySubObject(subObject);
     }
 
     @Transactional
@@ -113,6 +122,9 @@ public class WorkingServiceImplementation implements WorkingService {
         BigDecimal totalAmount = workings.stream()
                 .map(w -> w.getTotalAmount() != null ? w.getTotalAmount() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        totalDone = totalDone.add(totalDone.multiply(new BigDecimal("0.20")));
+        totalAmount = totalAmount.add(totalAmount.multiply(new BigDecimal("0.20")));
 
         return new TotalFinancialStats(totalDone, totalAmount);
     }

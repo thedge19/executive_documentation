@@ -4,7 +4,9 @@ import com.executive_documentation.workings.dto.*;
 import com.executive_documentation.workings.model.Working;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.PathVariable;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +16,8 @@ public interface WorkingService {
     Page<WorkingResponseDto> getAll(long id, Pageable pageable);
 
     List<WorkingResponseDto> getAllByPositiveDone(long id);
+
+    BigDecimal getTotalAmountBySubObject(long subObjectId);
 
     WorkingResponseDto create(WorkingRequestDto workingRequestDto);
 

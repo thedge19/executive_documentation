@@ -46,6 +46,7 @@ public class WorkingMapper {
                 .finalQuantity(working.getFinalQuantity())
                 .doneAmount(doneAmount)
                 .remainingAmount(remainingAmount)
+                .totalAmount(working.getTotalAmount())
                 .subObjectId(working.getSubObject() != null ? working.getSubObject().getId() : null)
                 .projectId(working.getSubObject() != null ? working.getSubObject().getProject().getId() : null)
                 .build();

@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +93,11 @@ public class WorkingController {
     public ResponseEntity<List<WorkingResponseDto>> getAllByPositiveDone(@PathVariable Long id) {
         log.info("Get All By Positive Done");
         return ResponseEntity.ok(workingService.getAllByPositiveDone(id));
+    }
+
+    @GetMapping("/subobject/{subObjectId}/total-sum")
+    public ResponseEntity<BigDecimal> getTotalAmountBySubObject(@PathVariable Long subObjectId) {
+        return ResponseEntity.ok(workingService.getTotalAmountBySubObject(subObjectId));
     }
 
     @PostMapping

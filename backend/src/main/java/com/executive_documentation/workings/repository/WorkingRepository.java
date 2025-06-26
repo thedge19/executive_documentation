@@ -1,5 +1,6 @@
 package com.executive_documentation.workings.repository;
 
+import com.executive_documentation.subobjects.model.SubObject;
 import com.executive_documentation.workings.model.Working;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface WorkingRepository extends JpaRepository<Working, Long> {
@@ -28,4 +30,7 @@ public interface WorkingRepository extends JpaRepository<Working, Long> {
 
     @Query("SELECT COUNT(w) FROM Working w")
     long countAllWorkings();
+
+    @Query("SELECT SUM(w.totalAmount) FROM Working w WHERE w.subObject = :subObject")
+    BigDecimal sumTotalAmountBySubObject(@Param("subObject") SubObject subObject);
 }

@@ -48,7 +48,7 @@
                       ></div>
                     </div>
                     <p class="card-text text-center mt-2 mb-0">
-                      {{ (financialStats.percentage || 0).toFixed(1) }}% выполнено
+                      {{ (totalFinancialStats.percentage || 0).toFixed(1) }}% выполнено
                     </p>
                   </div>
                 </div>
@@ -291,10 +291,10 @@
                     <table class="table table-hover mb-0">
                       <thead class="sticky-top" style="background-color: #002d72;">
                       <tr>
-                        <th class="text-white fw-normal" style="width: 40%; background-color: #000000;">Подобъект</th>
-                        <th class="text-white fw-normal" style="width: 40%; background-color: #000000;">Выполнение</th>
-                        <th class="text-center text-white fw-normal" style="width: 10%; background-color: #000000;">Процент</th>
-                        <th class="text-center text-white fw-normal" style="width: 10%; background-color: #000000;">Сумма/Всего</th>
+                        <th class="text-white fw-normal" style="width: 10%; background-color: #000000;">Подобъект</th>
+                        <th class="text-white fw-normal" style="width: 30%; background-color: #000000;">Выполнение</th>
+                        <th class="text-center text-white fw-normal" style="width: 20%; background-color: #000000;">Процент</th>
+                        <th class="text-center text-white fw-normal" style="width: 40%; background-color: #000000;">Сумма/Всего</th>
                       </tr>
                       </thead>
                       <tbody>
@@ -867,6 +867,7 @@ const fetchTotalFinancialStats = async () => {
           ? (data.totalDone / data.totalAmount * 100)
           : 0
     }
+    console.log('Financial stats loaded:', totalFinancialStats.value); // Для отладки
   } catch (err) {
     console.error('Ошибка загрузки финансовых данных:', err)
     // Сбросить значения при ошибке

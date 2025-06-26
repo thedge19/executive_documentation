@@ -38,4 +38,6 @@ public class WorkingResponseDto {
     private BigDecimal doneAmount;
 
     private BigDecimal remainingAmount;
+
+    private BigDecimal totalAmount;
 }

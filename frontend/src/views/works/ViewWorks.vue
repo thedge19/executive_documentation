@@ -5,13 +5,13 @@
 
     <div class="container py-4">
       <div class="card shadow-sm border-0">
-        <div class="card-header bg-primary text-white py-3 mt-5">
+        <div class="card-header bg-primary text-white py-3 mt-3">
           <h1 class="h3 mb-0 text-center">Учет выполненных работ</h1>
         </div>
 
-        <div class="card-body">-
+        <div class="card-body">
           <!-- Controls -->
-          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-1 gap-3">
             <div class="d-flex justify-content-start">
               <a :href="`/addWork/${subObjectId}?page=${works.totalPages - 1}`"
                  class="btn btn-primary rounded-pill my-2">
@@ -51,6 +51,7 @@
                 <th scope="col" class="text-nowrap">Закрыто, руб.</th>
                 <th scope="col" class="text-nowrap">Осталось</th>
                 <th scope="col" class="text-nowrap">Не закрыто, руб.</th>
+                <th scope="col" class="text-nowrap">Всего, руб.</th>
                 <th scope="col" class="text-nowrap text-end" style="width:15%">Действие</th>
               </tr>
               </thead>
@@ -64,6 +65,7 @@
                 <td class="text-center">{{ work.doneAmount.toFixed(2) }}</td>
                 <td class="text-center">{{ work.finalQuantity }}</td>
                 <td class="text-center">{{ work.remainingAmount.toFixed(2) }}</td>
+                <td class="text-center">{{ work.totalAmount.toFixed(2) }}</td>
                 <td class="text-end">
                   <div class="d-flex justify-content-end gap-2">
                     <a class="btn btn-sm btn-outline-primary"
@@ -124,6 +126,13 @@
               (Страница {{ works.number + 1 }} из {{ works.totalPages }})
             </div>
           </div>
+          <!-- Итоговая сумма -->
+          <div v-if="works.content && works.content.length > 0" class="d-flex justify-content-end mt-3">
+            <div class="alert alert-success mb-0 py-2 px-3">
+              <strong>Итого по подобъекту:</strong>
+              <span class="ms-2">{{ formatCurrency(totalAmountBySubObject) }}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -131,13 +140,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import {computed, onMounted, ref, watch} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
 import Navbar from '../../components/Navbar.vue'
 
 const router = useRouter()
 const route = useRoute()
 const error = ref("")
+const totalAmountBySubObject = ref(0)
 
 const isLoading = ref(false)
 const works = ref({
@@ -285,6 +295,39 @@ const getSubObjects = async () => {
   }
 }
 
+// Форматирование валюты (если нужно)
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: 'RUB',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value || 0)
+}
+
+// Запрос суммы totalAmount для SubObject
+const fetchTotalAmountBySubObject = async () => {
+  if (!subObjectId.value) return;
+
+  try {
+    const headers = getAuthHeaders();
+    const response = await fetch(
+        `http://localhost:8080/workings/subobject/${subObjectId.value}/total-sum`,
+        { headers }
+    );
+
+    if (!response.ok) {
+      error.value = "Ошибка при получении суммы";
+      return;
+    }
+
+    totalAmountBySubObject.value = await response.json(); // Предполагаем, что бэкенд возвращает число
+  } catch (err) {
+    console.error("Ошибка загрузки суммы:", err);
+    totalAmountBySubObject.value = 0;
+  }
+};
+
 const onChangeSubObject = () => {
   works.value.number = 0
   getWorks()
@@ -304,8 +347,13 @@ onMounted(() => {
   if (route.query.page) {
     works.value.number = parseInt(route.query.page);
   }
+  fetchTotalAmountBySubObject();
   getWorks();
   getSubObjects();
+});
+
+watch(subObjectId, async () => {
+  await fetchTotalAmountBySubObject(); // Обновляем сумму при смене подобъекта
 });
 </script>
 
