@@ -107,8 +107,8 @@ public class MaterialController {
     @DeleteMapping("/certificate/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void deleteCertificate(@PathVariable Long id) {
-        log.info("Delete Material: {}", id);
+        log.info("Delete Certificate: {}", id);
         materialService.deleteCertificate(id);
-        log.info("Material with id: {} deleted", id);
+        log.info("Certificate with id: {} deleted", id);
     }
 }
