@@ -40,6 +40,16 @@
                      required v-model="work.quantity">
             </div>
 
+            <!-- Цена за единицу -->
+            <div class="mb-4">
+              <label for="unitPrice" class="form-label fw-semibold">
+                <i class="bi bi-currency-dollar me-2"></i>Цена за единицу
+              </label>
+              <input id="unitPrice" type="number" step="0.01" min="0" class="form-control"
+                     placeholder="Введите цену за единицу"
+                     required v-model="work.unitPrice">
+            </div>
+
             <!-- Стандарт -->
             <div class="mb-4">
               <label class="form-label fw-semibold">
@@ -70,7 +80,7 @@
 
             <!-- Кнопки -->
             <div class="d-flex gap-3">
-              <button type="button" @click="router.back()"
+              <button type="button" @click="goBack"
                       class="btn btn-outline-secondary flex-grow-1 py-2">
                 <i class="bi bi-arrow-left me-2"></i>Назад
               </button>
@@ -101,14 +111,22 @@ import Navbar from '../../components/Navbar.vue'
 const router = useRouter()
 const route = useRoute()
 
+// Сохраняем параметры из URL при загрузке компонента
+const sourcePage = ref(route.query.page || 0)
+const sourceSubObjectId = ref(route.query.subObjectId || '')
+
+
 const work = ref({
   id: '',
   name: '',
   units: '',
   quantity: '',
+  unitPrice: 0, // Добавлено поле для цены
   done: '',
+  doneAmount: 0,
+  remainingAmount: 0,
   standardId: '',
-  subObject: { id: '' }
+  subObjectId: sourceSubObjectId.value,
 })
 const standards = ref([])
 const error = ref(null)
@@ -216,13 +234,24 @@ const updateWork = async () => {
       return;
     }
 
-    await router.push(`/works/${work.value.subObject.id}`)
+    await router.push({
+      path: `/works/${sourceSubObjectId.value}`,
+      query: { page: sourcePage.value }
+    })
+
   } catch (err) {
     console.error('Ошибка:', err)
     error.value = err.message
   } finally {
     isLoading.value = false
   }
+}
+
+const goBack = () => {
+  router.push({
+    path: `/works/${sourceSubObjectId.value}`,
+    query: { page: sourcePage.value }
+  })
 }
 
 onMounted(() => {

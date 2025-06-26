@@ -27,8 +27,30 @@
             <div class="col-md-3 mb-3">
               <div class="card bg-info text-white h-100">
                 <div class="card-body">
-                  <h5 class="card-title"><i class="bi bi-file-earmark-pdf me-2"></i>PDF</h5>
-                  <p class="card-text display-5">{{ stats.pdfs }}</p>
+                  <h5 class="card-title"><i class="bi bi-cash-stack me-2"></i>Финансы</h5>
+                  <div class="d-flex flex-column">
+                    <div class="d-flex justify-content-between">
+                      <span>Выполнено:</span>
+                      <span>{{ formatCurrency(totalFinancialStats.totalDone) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                      <span>Всего:</span>
+                      <span>{{ formatCurrency(totalFinancialStats.totalAmount) }}</span>
+                    </div>
+                    <div class="progress mt-2 bg-white bg-opacity-25" style="height: 10px;">
+                      <div
+                          class="progress-bar bg-success"
+                          role="progressbar"
+                          :style="{ width: totalFinancialStats.percentage + '%' }"
+                          :aria-valuenow="totalFinancialStats.percentage"
+                          aria-valuemin="0"
+                          aria-valuemax="100"
+                      ></div>
+                    </div>
+                    <p class="card-text text-center mt-2 mb-0">
+                      {{ (totalFinancialStats.percentage || 0).toFixed(1) }}% выполнено
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -61,7 +83,7 @@
             </li>
             <li class="nav-item" role="presentation">
               <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
-                Настройки
+                Деньги
               </button>
             </li>
           </ul>
@@ -258,28 +280,63 @@
             <!-- Таб настроек -->
             <div class="tab-pane fade" id="settings" role="tabpanel">
               <div class="card shadow-sm border-0">
-                <div class="card-header bg-white">
-                  <h5 class="mb-0">Настройки системы</h5>
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                  <h5 class="mb-0">Финансовая статистика по подобъектам</h5>
+                  <button @click="fetchFinancialStats" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-clockwise"></i> Обновить
+                  </button>
                 </div>
-                <div class="card-body">
-                  <form @submit.prevent="saveSettings">
-                    <div class="mb-3">
-                      <label class="form-label">Лимит журналов на пользователя</label>
-                      <input type="number" class="form-control" v-model="settings.userLogLimit">
+                <div class="card-body p-0">
+                  <div class="table-responsive" style="max-height: 30vh;">
+                    <table class="table table-hover mb-0">
+                      <thead class="sticky-top" style="background-color: #002d72;">
+                      <tr>
+                        <th class="text-white fw-normal" style="width: 10%; background-color: #000000;">Подобъект</th>
+                        <th class="text-white fw-normal" style="width: 30%; background-color: #000000;">Выполнение</th>
+                        <th class="text-center text-white fw-normal" style="width: 20%; background-color: #000000;">Процент</th>
+                        <th class="text-center text-white fw-normal" style="width: 40%; background-color: #000000;">Сумма/Всего</th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      <tr v-for="(stats, key) in financialStats" :key="key" class="table-light">
+                        <td class="align-middle">{{ key }}</td>
+                        <td class="align-middle">
+                          <div class="progress" style="height: 20px;">
+                            <div
+                                class="progress-bar"
+                                role="progressbar"
+                                :style="{ width: stats.percentage + '%' }"
+                                :class="{
+                      'bg-success': stats.percentage >= 75,
+                      'bg-warning': stats.percentage >= 25 && stats.percentage < 75,
+                      'bg-danger': stats.percentage < 25
+                    }"
+                                :aria-valuenow="stats.percentage"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                            ></div>
+                          </div>
+                        </td>
+                        <td class="text-center align-middle">{{ stats.percentage.toFixed(1) }}%</td>
+                        <td class="text-center align-middle">{{ stats.doneAmount.toFixed(2) }}/{{ stats.totalAmount.toFixed(2) }}</td>
+                      </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- График финансовой статистики -->
+                  <div class="mt-4 p-3">
+                    <div class="card">
+                      <div class="card-header bg-white">
+                        <h6 class="mb-0">Финансовое выполнение работ</h6>
+                      </div>
+                      <div class="card-body">
+                        <div class="chart-container" style="height: 250px;">
+                          <canvas ref="financialStatsChart"></canvas>
+                        </div>
+                      </div>
                     </div>
-                    <div class="mb-3">
-                      <label class="form-label">Автоматическое удаление старых журналов (дней)</label>
-                      <input type="number" class="form-control" v-model="settings.autoDeleteDays">
-                    </div>
-                    <div class="mb-3 form-check">
-                      <input type="checkbox" class="form-check-input" id="enableNotifications" v-model="settings.enableNotifications">
-                      <label class="form-check-label" for="enableNotifications">Уведомления по email</label>
-                    </div>
-                    <button type="submit" class="btn btn-primary">
-                      <span class="spinner-border spinner-border-sm me-1"></span>
-                      Сохранить
-                    </button>
-                  </form>
+                  </div>
                 </div>
               </div>
             </div>
@@ -291,17 +348,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import {nextTick, onMounted, ref} from 'vue'
 import Navbar from '../components/Navbar.vue'
 import Swal from 'sweetalert2'
 import Chart from 'chart.js/auto'
-
-const stats = ref({
-  users: 0,
-  journals: 0,
-  pdfs: 0,
-  errors: 0
-})
 
 const users = ref([])
 const errorStats = ref({
@@ -313,11 +363,7 @@ const errorStats = ref({
   mostCommonErrorMessage: '',
   mostFrequentEndpoint: ''
 })
-const settings = ref({
-  userLogLimit: 10,
-  autoDeleteDays: 30,
-  enableNotifications: true
-})
+
 const isLoading = ref(true)
 const levelChart = ref(null)
 const error = ref("")
@@ -326,6 +372,10 @@ let chartInstance = null
 const actStats = ref({});
 const actStatsChart = ref(null);
 let actChartInstance = null;
+
+const financialStats = ref({});
+const financialStatsChart = ref(null);
+let financialChartInstance = null;
 
 // Улучшенная проверка аутентификации
 const checkAuth = () => {
@@ -524,7 +574,8 @@ const fetchGlobalStats = async () => {
         handleUnauthorized();
         return;
       }
-      throw new Error(`Ошибка HTTP: ${response.status}`);
+      error.value = `Ошибка HTTP: ${response.status}`;
+      return;
     }
 
     globalStats.value = await response.json();
@@ -548,7 +599,8 @@ const fetchActStats = async () => {
         handleUnauthorized();
         return;
       }
-      throw new Error(`Ошибка HTTP: ${response.status}`);
+      error.value = `Ошибка HTTP: ${response.status}`;
+      return;
     }
 
     const statsData = await response.json();
@@ -686,12 +738,165 @@ const shadeColor = (color, percent) => {
   return "#"+RR+GG+BB;
 };
 
+const fetchFinancialStats = async () => {
+  if (!checkAuth()) return;
+
+  try {
+    const response = await fetch('http://localhost:8080/workings/financial-stats', {
+      headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+      error.value = `Ошибка HTTP: ${response.status}`;
+      return;
+    }
+
+    financialStats.value = await response.json();
+
+    // Рассчитываем проценты выполнения
+    Object.keys(financialStats.value).forEach(key => {
+      const stats = financialStats.value[key];
+      stats.percentage = (stats.doneAmount / stats.totalAmount) * 100;
+    });
+
+    updateFinancialStatsChart();
+  } catch (err) {
+    console.error('Ошибка загрузки финансовой статистики:', err);
+    Swal.fire('Ошибка', 'Не удалось загрузить финансовую статистику', 'error');
+  }
+};
+
+const updateFinancialStatsChart = () => {
+  nextTick(() => {
+    if (financialChartInstance) {
+      financialChartInstance.destroy();
+    }
+
+    const ctx = financialStatsChart.value.getContext('2d');
+    const labels = Object.keys(financialStats.value);
+    const data = labels.map(key => financialStats.value[key].percentage);
+
+    // Сортируем данные для лучшего отображения
+    const sortedIndices = [...Array(labels.length).keys()]
+        .sort((a, b) => data[b] - data[a]);
+
+    const sortedLabels = sortedIndices.map(i => labels[i]);
+    const sortedData = sortedIndices.map(i => data[i]);
+    const backgroundColors = sortedData.map(value =>
+        value >= 75 ? '#28a745' :
+            value >= 25 ? '#ffc107' :
+                '#dc3545'
+    );
+
+    financialChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: sortedLabels,
+        datasets: [{
+          label: 'Процент выполнения (финансы)',
+          data: sortedData,
+          backgroundColor: backgroundColors,
+          borderColor: backgroundColors.map(c => shadeColor(c, -20)),
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            title: {
+              display: true,
+              text: 'Процент выполнения (%)'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Подобъекты'
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const stats = financialStats.value[sortedLabels[context.dataIndex]];
+                return [
+                  `Процент: ${context.raw.toFixed(1)}%`,
+                  `Выполнено: ${stats.doneAmount.toFixed(2)} руб.`,
+                  `Всего: ${stats.totalAmount.toFixed(2)} руб.`
+                ];
+              }
+            }
+          }
+        }
+      }
+    });
+  });
+};
+
+const totalFinancialStats = ref({
+  totalDone: 0,
+  totalAmount: 0,
+  percentage: 0
+})
+
+const fetchTotalFinancialStats = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/workings/total-financial-stats', {
+      headers: getAuthHeaders()
+    })
+
+    if (!response.ok) {
+      error.value = 'Ошибка загрузки финансовых данных';
+      return;
+    }
+
+    const data = await response.json()
+    totalFinancialStats.value = {
+      totalDone: data.totalDone || 0,
+      totalAmount: data.totalAmount || 0,
+      percentage: data.totalAmount > 0
+          ? (data.totalDone / data.totalAmount * 100)
+          : 0
+    }
+    console.log('Financial stats loaded:', totalFinancialStats.value); // Для отладки
+  } catch (err) {
+    console.error('Ошибка загрузки финансовых данных:', err)
+    // Сбросить значения при ошибке
+    totalFinancialStats.value = { totalDone: 0, totalAmount: 0, percentage: 0 }
+  }
+};
+
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: 'RUB',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(value || 0)
+}
+
 onMounted(async () => {
   if (!checkAuth()) return;
 
   isLoading.value = true;
   try {
-    await Promise.all([fetchUsers(), fetchErrorStats(), fetchActStats(), fetchGlobalStats()]);
+    await Promise.all([
+      fetchUsers(),
+      fetchErrorStats(),
+      fetchActStats(),
+      fetchGlobalStats(),
+      fetchFinancialStats(),
+      fetchTotalFinancialStats(),// Добавляем загрузку финансовой статистики
+    ]);
   } catch (err) {
     console.error('Ошибка инициализации:', err);
   } finally {

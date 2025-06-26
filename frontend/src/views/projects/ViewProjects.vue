@@ -61,7 +61,7 @@ const getProjects = async () => {
   try {
     const token = localStorage.getItem('token')
     if (!token) {
-      router.push('/login')
+      await router.push('/login')
       return
     }
 
@@ -77,7 +77,7 @@ const getProjects = async () => {
     if (!response.ok) {
       if (response.status === 401) {
         localStorage.removeItem('token')
-        router.push('/login')
+        await router.push('/login')
       }
       error.value = `Ошибка HTTP: ${response.status}`;
       return;
@@ -100,7 +100,7 @@ const deleteProject = async (id) => {
   try {
     const token = localStorage.getItem('token')
     if (!token) {
-      router.push('/login')
+      await router.push('/login')
       return
     }
 
@@ -117,7 +117,7 @@ const deleteProject = async (id) => {
     if (!response.ok) {
       if (response.status === 401) {
         localStorage.removeItem('token')
-        router.push('/login')
+        await router.push('/login')
       }
       error.value = `Ошибка HTTP: ${response.status}`;
       return;

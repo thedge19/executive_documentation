@@ -5,20 +5,24 @@
 
     <div class="container py-4">
       <div class="card shadow-sm border-0">
-        <div class="card-header bg-primary text-white py-3 mt-5">
+        <div class="card-header bg-primary text-white py-3 mt-3">
           <h1 class="h3 mb-0 text-center">Учет выполненных работ</h1>
         </div>
 
         <div class="card-body">
           <!-- Controls -->
-          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-1 gap-3">
             <div class="d-flex justify-content-start">
-              <a :href="`/addWork/${subObjectId}`" class="btn btn-primary rounded-pill my-2">
+              <a :href="`/addWork/${subObjectId}?page=${works.totalPages - 1}`"
+                 class="btn btn-primary rounded-pill my-2">
                 <i class="bi bi-plus-circle me-2"></i>Добавить работу
               </a>
-              <a @click="router.back()" class="btn btn-outline-secondary rounded-pill m-lg-2">
-                <i class="bi bi-arrow-left me-2"></i>Назад
-              </a>
+              <router-link
+                  v-if="works.content && works.content.length > 0"
+                  :to="`/subObjects/${works.content[0].projectId}`"
+                  class="btn btn-outline-secondary rounded-pill m-lg-2">
+                <i class="bi bi-arrow-left me-2"></i>В подобъекты
+              </router-link>
             </div>
 
             <div class="flex-grow-1 mx-md-3" style="max-width: 500px;">
@@ -44,21 +48,28 @@
                 <th scope="col" class="text-nowrap">Ед. изм.</th>
                 <th scope="col" class="text-nowrap">Количество</th>
                 <th scope="col" class="text-nowrap">Выполнено</th>
+                <th scope="col" class="text-nowrap">Закрыто, руб.</th>
                 <th scope="col" class="text-nowrap">Осталось</th>
+                <th scope="col" class="text-nowrap">Не закрыто, руб.</th>
+                <th scope="col" class="text-nowrap">Всего, руб.</th>
                 <th scope="col" class="text-nowrap text-end" style="width:15%">Действие</th>
               </tr>
               </thead>
               <tbody>
               <tr v-if="works.content && works.content.length > 0" v-for="work in works.content" :key="work.id">
                 <th scope="row" class="fw-semibold">{{ work.id }}</th>
-                <td>{{ work.name }}</td>
+                <td :class="{ 'fw-bold': work.unitPrice > 0 }">{{ work.name }}</td>
                 <td class="text-center">{{ work.units }}</td>
                 <td class="text-center">{{ work.quantity }}</td>
                 <td class="text-center">{{ work.done }}</td>
+                <td class="text-center">{{ work.doneAmount.toFixed(2) }}</td>
                 <td class="text-center">{{ work.finalQuantity }}</td>
+                <td class="text-center">{{ work.remainingAmount.toFixed(2) }}</td>
+                <td class="text-center">{{ work.totalAmount.toFixed(2) }}</td>
                 <td class="text-end">
                   <div class="d-flex justify-content-end gap-2">
-                    <a class="btn btn-sm btn-outline-primary" :href="`/editWork/${work.id}`">
+                    <a class="btn btn-sm btn-outline-primary"
+                       :href="`/editWork/${work.id}?page=${works.number}&subObjectId=${subObjectId}`">
                       <i class="bi bi-pencil"></i>
                     </a>
                     <button class="btn btn-sm btn-outline-danger" @click="deleteWork(work.id)">
@@ -115,6 +126,13 @@
               (Страница {{ works.number + 1 }} из {{ works.totalPages }})
             </div>
           </div>
+          <!-- Итоговая сумма -->
+          <div v-if="works.content && works.content.length > 0" class="d-flex justify-content-end mt-3">
+            <div class="alert alert-success mb-0 py-2 px-3">
+              <strong>Итого по подобъекту:</strong>
+              <span class="ms-2">{{ formatCurrency(totalAmountBySubObject) }}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -122,19 +140,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import {computed, onMounted, ref, watch} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
 import Navbar from '../../components/Navbar.vue'
 
 const router = useRouter()
 const route = useRoute()
 const error = ref("")
+const totalAmountBySubObject = ref(0)
 
 const isLoading = ref(false)
 const works = ref({
   content: [],
   number: 0,
-  size: 15,
+  size: 10,
   totalElements: 0,
   totalPages: 0,
   first: true,
@@ -142,7 +161,7 @@ const works = ref({
 })
 const subObjects = ref([])
 const subObjectId = ref(route.params.id)
-const pageSize = ref(15)
+const pageSize = ref(10)
 
 const pageNumbers = computed(() => {
   const current = works.value.number
@@ -184,25 +203,36 @@ const handleUnauthorized = () => {
 }
 
 const getWorks = async () => {
-  isLoading.value = true
+  isLoading.value = true;
   try {
-    const headers = getAuthHeaders()
+    const headers = getAuthHeaders();
+
+    // Получаем page из URL или используем 0
+    const page = parseInt(route.query.page) || 0;
+
+    // Обязательно сохраняем номер страницы в состоянии
+    works.value.number = page;
 
     const response = await fetch(
-        `http://localhost:8080/workings/${subObjectId.value}?page=${works.value.number}&size=${pageSize.value}`,
+        `http://localhost:8080/workings/${subObjectId.value}?page=${page}&size=${pageSize.value}`,
         { headers }
     )
 
     if (!response.ok) {
-      if (response.status === 401) {
-        handleUnauthorized()
-        return
-      }
-      error.value = 'Ошибка загрузки работ';
-      return;
+      // обработка ошибок
     }
 
-    works.value = await response.json()
+    const data = await response.json();
+    works.value = {
+      ...data,
+      number: page // Сохраняем актуальный номер страницы
+    }
+
+    // Если в URL не было параметра page - добавляем его
+    if (!route.query.page && page !== 0) {
+      await router.replace({ query: { ...route.query, page } })
+    }
+
   } catch (err) {
     console.error('Ошибка:', err)
     if (err.message.includes('авторизация')) {
@@ -265,6 +295,39 @@ const getSubObjects = async () => {
   }
 }
 
+// Форматирование валюты (если нужно)
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: 'RUB',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value || 0)
+}
+
+// Запрос суммы totalAmount для SubObject
+const fetchTotalAmountBySubObject = async () => {
+  if (!subObjectId.value) return;
+
+  try {
+    const headers = getAuthHeaders();
+    const response = await fetch(
+        `http://localhost:8080/workings/subobject/${subObjectId.value}/total-sum`,
+        { headers }
+    );
+
+    if (!response.ok) {
+      error.value = "Ошибка при получении суммы";
+      return;
+    }
+
+    totalAmountBySubObject.value = await response.json(); // Предполагаем, что бэкенд возвращает число
+  } catch (err) {
+    console.error("Ошибка загрузки суммы:", err);
+    totalAmountBySubObject.value = 0;
+  }
+};
+
 const onChangeSubObject = () => {
   works.value.number = 0
   getWorks()
@@ -272,15 +335,26 @@ const onChangeSubObject = () => {
 
 const changePage = (pageNumber) => {
   if (pageNumber >= 0 && pageNumber < works.value.totalPages) {
-    works.value.number = pageNumber
-    getWorks()
+    works.value.number = pageNumber;
+    // Обновляем URL с новым параметром page
+    router.push({ query: { ...route.query, page: pageNumber } });
+    getWorks();
   }
-}
+};
 
 onMounted(() => {
-  getWorks()
-  getSubObjects()
-})
+  // Инициализируем номер страницы из URL
+  if (route.query.page) {
+    works.value.number = parseInt(route.query.page);
+  }
+  fetchTotalAmountBySubObject();
+  getWorks();
+  getSubObjects();
+});
+
+watch(subObjectId, async () => {
+  await fetchTotalAmountBySubObject(); // Обновляем сумму при смене подобъекта
+});
 </script>
 
 <style scoped>

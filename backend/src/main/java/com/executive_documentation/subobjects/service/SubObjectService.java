@@ -9,9 +9,9 @@ import java.util.List;
 public interface SubObjectService {
     SubObject get(Long id);
 
-    SubObject getSubObject(long subObjectId);
+    SubObjectResponseDto getSubObject(long subObjectId);
 
-    List<SubObject> getAll();
+    List<SubObjectResponseDto> getAll();
 
     List<SubObjectResponseDto> getAllByProjectId(long id);
 

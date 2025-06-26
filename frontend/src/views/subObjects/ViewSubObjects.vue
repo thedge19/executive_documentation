@@ -53,10 +53,10 @@
                 <td class="text-center">{{ subObject.project?.name }}</td>
                 <td class="text-center pe-4">
                   <div class="d-flex justify-content-center">
-                    <a :href="`/editSubObject/${subObject.id}`" class="btn btn-sm btn-outline-primary rounded-pill px-2 me-2 my-2">
+                    <a :href="`/editSubObject/${subObject.id}`" class="btn btn-sm btn-outline-primary rounded-pill px-2 me-2">
                       <i class="bi bi-pencil-square me-1"></i>Изменить
                     </a>
-                    <button @click="deleteSubObject(subObject.id)" class="btn btn-sm btn-outline-danger rounded-pill px-2 my-2">
+                    <button @click="deleteSubObject(subObject.id)" class="btn btn-sm btn-outline-danger rounded-pill px-2">
                       <i class="bi bi-trash3 me-1"></i>Удалить
                     </button>
                   </div>

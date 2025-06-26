@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,8 +28,9 @@ public class SubObjectServiceImplementation implements SubObjectService {
     }
 
     @Override
-    public SubObject getSubObject(long subObjectId) {
-        return subObjectRepository.findById(subObjectId).orElse(null);
+    public SubObjectResponseDto getSubObject(long subObjectId) {
+        SubObject subObject = subObjectRepository.findById(subObjectId).orElse(null);
+        return SubObjectMapper.toResponseDto(subObject);
     }
 
     @Override
@@ -40,8 +42,11 @@ public class SubObjectServiceImplementation implements SubObjectService {
     }
 
     @Override
-    public List<SubObject> getAll() {
-        return subObjectRepository.findAll();
+    public List<SubObjectResponseDto> getAll() {
+        return subObjectRepository.findAll()
+                .stream()
+                .map(SubObjectMapper::toResponseDto)
+                .collect(Collectors.toList());
     }
 
 

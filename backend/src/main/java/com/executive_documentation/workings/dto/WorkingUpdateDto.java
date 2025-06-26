@@ -19,4 +19,6 @@ public class WorkingUpdateDto {
     private BigDecimal done;
 
     private Long standardId;
+
+    private BigDecimal unitPrice;
 }
