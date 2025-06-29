@@ -1,9 +1,7 @@
 package com.executive_documentation.materials.service;
 
 import com.executive_documentation.exception.NotFoundException;
-import com.executive_documentation.fileStorage.dto.FileStorageResponse;
 import com.executive_documentation.fileStorage.service.FileStorageService;
-import com.executive_documentation.materials.dto.CertificateRequestDto;
 import com.executive_documentation.materials.dto.MaterialMapper;
 import com.executive_documentation.materials.dto.MaterialRequestDto;
 import com.executive_documentation.materials.dto.MaterialResponseDto;

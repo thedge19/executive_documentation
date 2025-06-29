@@ -124,7 +124,7 @@ public class ControlLogPdfService {
         log.info("PDF ЖВК сгенерирован");
     }
 
-    public ByteArrayOutputStream generateControlLogPdf() throws DocumentException, IOException {
+    public ByteArrayOutputStream generateControlLogPdf() throws DocumentException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4.rotate());
         List<EntranceControlExportDto> controls = entranceControlRepository
