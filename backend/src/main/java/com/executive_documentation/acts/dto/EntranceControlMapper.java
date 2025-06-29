@@ -3,10 +3,13 @@ package com.executive_documentation.acts.dto;
 import com.executive_documentation.acts.model.EntranceControl;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 @Component
 public class EntranceControlMapper {
+
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     public EntranceControlResponseDto toResponseDto(EntranceControl entranceControl) {
         if (entranceControl == null) {
@@ -16,7 +19,7 @@ public class EntranceControlMapper {
         return EntranceControlResponseDto.builder()
                 .id(entranceControl.getId())
                 .controlNumber(entranceControl.getControlNumber())
-                .date(entranceControl.getDate())
+                .date(entranceControl.getDate()) // оставляем как LocalDate
                 .materials(entranceControl.getMaterials())
                 .documents(entranceControl.getDocuments())
                 .author(entranceControl.getAuthor())
@@ -25,18 +28,20 @@ public class EntranceControlMapper {
                 .build();
     }
 
-    public static EntranceControlExportDto toExportDto(EntranceControl entranceControl) {
+    public EntranceControlExportDto toExportDto(EntranceControl entranceControl) {
         if (entranceControl == null) {
             return null;
         }
 
         return EntranceControlExportDto.builder()
                 .id(entranceControl.getId())
-                .date(entranceControl.getDate() != null
-                        ? entranceControl.getDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
-                        : null)
+                .date(formatDate(entranceControl.getDate()))
                 .materials(entranceControl.getMaterials())
                 .documents(entranceControl.getDocuments())
                 .build();
+    }
+
+    private String formatDate(LocalDate date) {
+        return date != null ? date.format(DATE_FORMATTER) : null;
     }
 }

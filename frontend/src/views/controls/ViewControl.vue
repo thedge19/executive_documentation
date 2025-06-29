@@ -34,10 +34,7 @@
                 <td>{{ control.controlNumber }}</td>
                 <td>{{ control.date }}</td>
                 <td>
-                  <a href="#" @click.prevent="generatePdf(control.id)" class="text-decoration-none text-primary">
                     {{ control.materials }}
-                    <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>
-                  </a>
                 </td>
                 <td>{{ control.documents }}</td>
                 <td>{{ control.author }}</td>

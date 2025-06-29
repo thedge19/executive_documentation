@@ -1,5 +1,5 @@
 <template>
-  <main class="bg-light min-vh-100">
+  <main :style="{'background-image': 'url(/09-12-2016_yuzhno-russkoe_2.jpg)', 'min-height': '100vh'}">
     <Navbar/>
     <div class="container py-5">
       <div class="card shadow-sm border-0 mx-auto" style="max-width: 600px;">

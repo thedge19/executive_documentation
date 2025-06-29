@@ -15,15 +15,16 @@ import com.executive_documentation.exception.ValidationException;
 import com.executive_documentation.fileStorage.dto.FileStorageResponse;
 import com.executive_documentation.fileStorage.service.FileStorageService;
 import com.executive_documentation.materials.dto.MaterialQuantityDto;
+import com.executive_documentation.materials.model.Certificate;
 import com.executive_documentation.materials.model.Material;
+import com.executive_documentation.materials.repository.CertificateRepository;
 import com.executive_documentation.materials.repository.MaterialRepository;
 import com.executive_documentation.projects.model.Project;
-import com.executive_documentation.projects.service.ProjectService;
+import com.executive_documentation.projects.repository.ProjectRepository;
 import com.executive_documentation.subobjects.model.SubObject;
-import com.executive_documentation.subobjects.service.SubObjectService;
+import com.executive_documentation.subobjects.repository.SubObjectRepository;
 import com.executive_documentation.workings.model.Working;
 import com.executive_documentation.workings.repository.WorkingRepository;
-import com.executive_documentation.workings.service.WorkingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +36,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -44,20 +46,21 @@ import java.util.stream.Collectors;
 public class ActServiceImplementation implements ActService {
     private final ActMapper actMapper;
     private final ActRepository actRepository;
-    private final ProjectService projectService;
-    private final SubObjectService subObjectService;
-    private final WorkingService workingService;
+    private final ProjectRepository projectRepository;
+    private final SubObjectRepository subObjectRepository;
     private final EntranceControlRepository entranceControlRepository;
     private final EntranceControlMapper entranceControlMapper;
     private final FileStorageService fileStorageService;
     private final ExecutiveSchemaRepository executiveSchemaRepository;
     private final WorkingRepository workingRepository;
     private final MaterialRepository materialRepository;
+    private final CertificateRepository certificateRepository;
 
-    private final static String CONTROL_ACT = "Акт результатов входного контроля МТР и оборудования №";
-    private final static String EXECUTIVE_SCHEMA = "Исполнительная схема №";
+    private static final String CONTROL_ACT = "Акт результатов входного контроля МТР и оборудования №";
+    private static final String EXECUTIVE_SCHEMA = "Исполнительная схема №";
     private static final String SETS_OF_RULES = " СП 48.13330.2019 «Организация строительства»; СП 49.13330.2010" +
             "«Безопасность труда в строительстве» ";
+
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_DATE;
 
     @Value("${app.storage.base-url}") // Изменили с ${app.base-url}
@@ -133,9 +136,9 @@ public class ActServiceImplementation implements ActService {
     }
 
     @Override
+    // Оптимизированная версия с жадной загрузкой
     public List<EntranceControlResponseDto> getAllEntranceControl() {
-        return entranceControlRepository
-                .findAll()
+        return entranceControlRepository.findAllWithRelations()
                 .stream()
                 .map(entranceControlMapper::toResponseDto)
                 .toList();
@@ -147,13 +150,13 @@ public class ActServiceImplementation implements ActService {
 
         Act createdAct = new Act();
 
-        Project project = projectService.findProjectOrThrow(parseLong(formData.get("projectId")));
+        Project project = projectRepository.findById(parseLong(formData.get("projectId"))).orElseThrow();
         createdAct.setProject(project);
 
-        SubObject subObject = subObjectService.findSubObjectOrNot(parseLong(formData.get("subObjectId")));
+        SubObject subObject = subObjectRepository.findById(parseLong(formData.get("subObjectId"))).orElseThrow();
         createdAct.setSubObject(subObject);
 
-        Working working = workingService.findWorkingOrNot(parseLong(formData.get("workId")));
+        Working working = workingRepository.findById(parseLong(formData.get("workId"))).orElseThrow();
         createdAct.setWorking(working);
 
         working.setDone(parseBigDecimal(formData.get("workDone")));
@@ -177,7 +180,7 @@ public class ActServiceImplementation implements ActService {
         log.info("nextWorkId {}", nextWorkId);
         if (!Objects.equals(nextWorkId, "null")) {
             nextWorking = subObject.getName() + ": " +
-                    workingService.findWorkingOrNot(parseLong(nextWorkId)).getName();
+                    workingRepository.findById(parseLong(nextWorkId)).orElseThrow().getName();
         }
 
         createdAct.setNextWorks(nextWorking);
@@ -188,13 +191,17 @@ public class ActServiceImplementation implements ActService {
         createdAct.setWorkDone(parseBigDecimal(formData.get("workDone")));
         createdAct.setSubmittedDocuments(addSubmittedDocuments(formData, actNumber));
 
-        createdAct.setMaterials(getMaterials(formData));
+        String materials = formData.get("materials");
+
+        createdAct.setMaterials(getMaterials(materials));
         createdAct.setExecutiveSchema(addExecutiveSchema(actNumber, file));
 
         actRepository.save(createdAct);
 
-        if (getMaterials(formData) != null) {
-            addEntranceControl(createdAct, formData);
+        String controlDate = formData.get("controlDate");
+
+        if (getMaterials(materials) != null) {
+            addEntranceControl(createdAct, materials, controlDate);
         }
 
         log.info("Акт: {}", createdAct);
@@ -439,35 +446,53 @@ public class ActServiceImplementation implements ActService {
         return String.join("; ", submittedDocuments);
     }
 
-    private String getMaterials(Map<String, String> formData) {
-        List<Long> materialIds = getMaterialIds(formData);
-        List<BigDecimal> quantities = getMaterialQuantities(formData);
-
-        if (materialIds.isEmpty() || quantities.isEmpty() || materialIds.size() != quantities.size()) {
+    private String getMaterials(String materials) {
+        List<MaterialQuantityDto> materialsDto = parseMaterials(materials);
+        if (materialsDto.isEmpty()) {
             return null;
         }
 
-        List<String> materialStrings = new ArrayList<>();
-        for (int i = 0; i < materialIds.size(); i++) {
-            Material material = materialRepository.findById(materialIds.get(i)).orElseThrow(); // Предполагается, что у вас есть materialService
-            BigDecimal quantity = quantities.get(i);
+        // Получаем все материалы и их сертификаты одним запросом
+        List<Long> materialIds = materialsDto.stream()
+                .map(MaterialQuantityDto::getMaterialId)
+                .collect(Collectors.toList());
 
-            String materialString = material.getName() + " - " + quantity + " " + material.getUnits() + ", " + material.getDocuments();
-            materialStrings.add(materialString);
-        }
+        Map<Long, Material> materialsMap = materialRepository.findAllWithCertificatesByIdIn(materialIds)
+                .stream()
+                .collect(Collectors.toMap(Material::getId, Function.identity()));
 
-        return String.join("; ", materialStrings);
+        // Формируем строку с материалами
+        return materialsDto.stream()
+                .map(dto -> {
+                    Material material = materialsMap.get(dto.getMaterialId());
+                    if (material == null) {
+                        return null;
+                    }
+
+                    String certificates = material.getCertificates().stream()
+                            .map(Certificate::getName)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.joining("; "));
+
+                    return String.format("%s - %s %s, %s",
+                            material.getName(),
+                            dto.getQuantity(),
+                            material.getUnits(),
+                            certificates);
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining("; "));
     }
 
-    private void addEntranceControl(Act act, Map<String, String> formData) {
+    private void addEntranceControl(Act act, String strMaterials, String strControlDate) {
 
-        List<Long> materialIds = getMaterialIds(formData);
-        List<BigDecimal> materialQuantities = getMaterialQuantities(formData);
+        List<Long> materialIds = getMaterialIds(strMaterials);
+        List<BigDecimal> materialQuantities = getMaterialQuantities(strMaterials);
 
         List<Material> materials = materialRepository.findAllById(materialIds);
         int counter = 1;
 
-        LocalDate controlDate = parseDate(formData.get("controlDate"));
+        LocalDate controlDate = parseDate(strControlDate);
 
         for (int count = 0; count < materials.size(); count++) {
             EntranceControl entranceControl = new EntranceControl();
@@ -475,8 +500,17 @@ public class ActServiceImplementation implements ActService {
             Material material = materials.get(count);
 
             String addedMaterial = material.getName() + " - " + materialQuantities.get(count) + " " + materials.get(count).getUnits();
-            String addedDocuments = material.getDocuments();
+
+            List<Certificate> certificates = certificateRepository.findAllByMaterial(material);
+
+            String addedDocuments = certificates.stream()
+                    .map(Certificate::getName)  // Извлекаем только имена
+                    .filter(Objects::nonNull)   // Фильтруем null значения (если нужно)
+                    .collect(Collectors.joining("; "));
             String controlActNumber = materials.size() == 1 ? act.getActNumber() : act.getActNumber() + "-" + counter;
+            int totalPages = certificates.stream()
+                    .mapToInt(cert -> cert.getNumberOfPages() != null ? cert.getNumberOfPages() : 0)
+                    .sum();
 
             entranceControl.setAct(act);
             entranceControl.setProject(act.getProject());
@@ -486,8 +520,8 @@ public class ActServiceImplementation implements ActService {
             entranceControl.setMaterials(addedMaterial);
             entranceControl.setDocuments(addedDocuments);
             entranceControl.setStandard(material.getStandard());
-            entranceControl.setControlSheetNumbers(material.getNumberOfPages());
-            entranceControl.setAuthor(material.getAuthor());
+            entranceControl.setControlSheetNumbers(totalPages);
+            entranceControl.setAuthor(certificates.getFirst().getAuthor());
             entranceControl.setMaterial(material);
 
             counter++;
@@ -502,15 +536,15 @@ public class ActServiceImplementation implements ActService {
         }
     }
 
-    private List<Long> getMaterialIds(Map<String, String> formData) {
-        return parseMaterials(formData.get("materials")).stream()
+    private List<Long> getMaterialIds(String materials) {
+        return parseMaterials(materials).stream()
                 .map(MaterialQuantityDto::getMaterialId)
                 .filter(Objects::nonNull)
                 .toList();
     }
 
-    private List<BigDecimal> getMaterialQuantities(Map<String, String> formData) {
-        return parseMaterials(formData.get("materials")).stream()
+    private List<BigDecimal> getMaterialQuantities(String materials) {
+        return parseMaterials(materials).stream()
                 .map(MaterialQuantityDto::getQuantity)
                 .filter(Objects::nonNull)
                 .toList();

@@ -7,6 +7,8 @@ import com.executive_documentation.acts.repository.ActRepository;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.executive_documentation.acts.service.ActService;
 import com.executive_documentation.fileStorage.service.FileStorageService;
+import com.executive_documentation.materials.model.Certificate;
+import com.executive_documentation.materials.repository.CertificateRepository;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Font;
@@ -39,6 +41,7 @@ public class ActPdfService {
     private final EntranceControlRepository entranceControlRepository;
     private final ActRepository actRepository;
     private final PdfCellCreator creator;
+    private final CertificateRepository certificateRepository;
 
     private Font f5;
     private Font fontToFillIn;
@@ -46,13 +49,14 @@ public class ActPdfService {
     private Font f13;
     private Font f14;
 
-    public ActPdfService(ActService actService, ControlPdfService controlPdfService, FileStorageService fileStorageService, EntranceControlRepository entranceControlRepository, ActRepository actRepository, PdfCellCreator creator) {
+    public ActPdfService(ActService actService, ControlPdfService controlPdfService, FileStorageService fileStorageService, EntranceControlRepository entranceControlRepository, ActRepository actRepository, PdfCellCreator creator, CertificateRepository certificateRepository) {
         this.actService = actService;
         this.controlPdfService = controlPdfService;
         this.fileStorageService = fileStorageService;
         this.entranceControlRepository = entranceControlRepository;
         this.creator = creator;
         this.actRepository = actRepository;
+        this.certificateRepository = certificateRepository;
     }
 
     @PostConstruct
@@ -150,15 +154,17 @@ public class ActPdfService {
                     addDocumentToMerge(copy, new ByteArrayInputStream(controlPdf.toByteArray()));
 
                     // 4.4. Добавляем сертификат (если есть у контроля)
-                    if (control.getMaterial() != null &&
-                            control.getMaterial().getCertificate() != null &&
-                            control.getMaterial().getCertificate().getPath() != null) {
+                    List<Certificate> certificates = certificateRepository.findAllByMaterial(control.getMaterial());
+                    for (Certificate certificate : certificates) {
 
-                        try {
-                            addRemoteDocumentToMerge(copy, fileStorageService.getStorageBaseUrl(
-                                    control.getMaterial().getCertificate().getPath()));
-                        } catch (Exception e) {
-                            log.warn("Не удалось добавить сертификат: {}", e.getMessage());
+                        if (certificate.getPath() != null) {
+
+                            try {
+                                addRemoteDocumentToMerge(copy, fileStorageService.getStorageBaseUrl(
+                                        certificate.getPath()));
+                            } catch (Exception e) {
+                                log.warn("Не удалось добавить сертификат: {}", e.getMessage());
+                            }
                         }
                     }
                 }

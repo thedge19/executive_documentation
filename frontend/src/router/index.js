@@ -1,5 +1,5 @@
 import {createRouter, createWebHistory} from 'vue-router'
-import Home from "@/views/Home.vue";
+import Home from "@/views/acts/Home.vue";
 import ViewMaterials from "@/views/materials/ViewMaterials.vue";
 import ViewProjects from "@/views/projects/ViewProjects.vue";
 import ViewStandards from "@/views/standards/ViewStandards.vue";
@@ -46,13 +46,13 @@ const router = createRouter({
     {
       path: '/addAct',
       name: 'addAct',
-      component: () => import('../views/AddAct.vue'),
+      component: () => import('../views/acts/AddAct.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/editAct/:id',
       name: 'editAct',
-      component: () => import('../views/EditAct.vue'),
+      component: () => import('../views/acts/EditAct.vue'),
       meta: { requiresAuth: true }
     },
     {

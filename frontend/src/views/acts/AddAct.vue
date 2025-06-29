@@ -1,6 +1,6 @@
 <template>
   <main class="bg-light min-vh-100">
-    <Navbar />
+    <Navbar/>
 
     <div class="container py-5">
       <div class="card shadow-sm border-0 mx-auto" style="max-width: 800px;">
@@ -62,30 +62,44 @@
 
             <!-- Выбор работ -->
             <div class="mb-4">
-              <label class="form-label fw-semibold">
-                <i class="bi bi-hammer me-2"></i>Работы
-              </label>
-              <div class="d-flex gap-3 align-items-center">
-                <select class="form-select" id="workSelect"
-                        v-model="workId" @change="onChangeWork">
-                  <option selected disabled value="">Выберите работу...</option>
-                  <option v-for="work in works" :value="work.id">
-                    {{ work.name }}
-                  </option>
-                </select>
+              <div class="row align-items-end mb-2">
+                <!-- Заголовок для select -->
+                <div class="col-md-8">
+                  <label class="form-label fw-semibold">
+                    <i class="bi bi-hammer me-2"></i>Работы
+                  </label>
+                </div>
 
-                <div v-if="workId" class="d-flex gap-2 align-items-center">
-                  <span class="badge bg-light text-dark">{{ currentWork.units }}</span>
-                  <span class="badge bg-light text-dark">{{ currentWork.finalQuantity }}</span>
+                <!-- Заголовок для input -->
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold">
+                    <i class="bi bi-123 me-2"></i>Выполненный объём
+                  </label>
                 </div>
               </div>
 
-              <div class="mt-3">
-                <label class="form-label fw-semibold">
-                  <i class="bi bi-123 me-2"></i>Выполненный объём
-                </label>
-                <input class="form-control" type="number" step="0.001"
-                       v-model="workDone" placeholder="Введите количество">
+              <div class="row align-items-center">
+                <!-- Select для работ (широкий) -->
+                <div class="col-md-8 mb-2 mb-md-0">
+                  <select class="form-select" id="workSelect"
+                          v-model="workId" @change="onChangeWork">
+                    <option selected disabled value="">Выберите работу...</option>
+                    <option v-for="work in works" :value="work.id">
+                      {{ work.name }}
+                    </option>
+                  </select>
+                </div>
+
+                <!-- Input для объема (узкий) + единицы измерения -->
+                <div class="col-md-4 d-flex align-items-center gap-2">
+                  <input class="form-control" type="number" step="0.001"
+                         v-model="workDone"
+                         :placeholder="currentWork?.finalQuantity || 'Введите количество'"
+                         style="flex: 1;">
+                  <span class="badge bg-light text-dark" style="white-space: nowrap;">
+        {{ currentWork?.units || '' }}
+      </span>
+                </div>
               </div>
             </div>
 
@@ -158,7 +172,7 @@
                       {{ material.name }}
                     </option>
                   </select>
-                  <span class="badge bg-light text-dark">{{ materialInputs[n-1].units }}</span>
+                  <span class="badge bg-light text-dark">{{ materialInputs[n - 1].units }}</span>
                   <input class="form-control" type="number" step="0.001"
                          v-model="materialInputs[n-1].quantity" placeholder="Количество">
                 </div>
@@ -218,8 +232,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import {ref, computed, onMounted} from 'vue'
+import {useRouter} from 'vue-router'
 import Navbar from '@/components/Navbar.vue'
 
 const router = useRouter()
@@ -312,7 +326,7 @@ const onChangeMaterial = async (index) => {
   if (materialId) {
     try {
       const headers = getAuthHeaders()
-      const response = await fetch(`http://localhost:8080/materials/${materialId}`, { headers })
+      const response = await fetch(`http://localhost:8080/materials/${materialId}`, {headers})
 
       if (!response.ok) {
         if (response.status === 401) handleUnauthorized()
@@ -332,7 +346,7 @@ const onChangeMaterial = async (index) => {
 const getSubObjects = async () => {
   try {
     const headers = getAuthHeaders()
-    const response = await fetch(`http://localhost:8080/subobjects/${projectId.value}`, { headers })
+    const response = await fetch(`http://localhost:8080/subobjects/${projectId.value}`, {headers})
 
     if (!response.ok) {
       if (response.status === 401) handleUnauthorized()
@@ -351,7 +365,7 @@ const getWorks = async () => {
   if (subObjectId.value) {
     try {
       const headers = getAuthHeaders()
-      const response = await fetch(`http://localhost:8080/workings/undone/${subObjectId.value}`, { headers })
+      const response = await fetch(`http://localhost:8080/workings/undone/${subObjectId.value}`, {headers})
 
       if (!response.ok) {
         if (response.status === 401) handleUnauthorized()
@@ -370,7 +384,7 @@ const getWork = async () => {
   if (workId.value) {
     try {
       const headers = getAuthHeaders()
-      const response = await fetch(`http://localhost:8080/workings/working/${workId.value}`, { headers })
+      const response = await fetch(`http://localhost:8080/workings/working/${workId.value}`, {headers})
 
       if (!response.ok) {
         if (response.status === 401) handleUnauthorized()
@@ -389,7 +403,7 @@ const getWork = async () => {
 const getMaterials = async () => {
   try {
     const headers = getAuthHeaders()
-    const response = await fetch('http://localhost:8080/materials/notPageable', { headers })
+    const response = await fetch('http://localhost:8080/materials', {headers})
 
     if (!response.ok) {
       if (response.status === 401) handleUnauthorized()

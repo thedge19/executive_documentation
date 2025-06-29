@@ -1,6 +1,6 @@
 <template>
   <!-- Шаблон остается без изменений -->
-  <main class="bg-light min-vh-100">
+  <main :style="{'background-image': 'url(/09-12-2016_yuzhno-russkoe_2.jpg)', 'min-height': '100vh'}">
     <Navbar />
 
     <div class="container py-5">

@@ -3,6 +3,7 @@ package com.executive_documentation.acts.repository;
 import com.executive_documentation.acts.model.Act;
 import com.executive_documentation.acts.model.ExecutiveSchema;
 import com.executive_documentation.subobjects.model.SubObject;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -13,8 +14,10 @@ import java.util.Optional;
 public interface ActRepository extends JpaRepository<Act, Long> {
     Long countBySubObject(SubObject subObject);
 
+    @EntityGraph(attributePaths = {"executiveSchema", "project"})
     List<Act> findAllByOrderByEndDateAscActNumberAsc();
 
+    @EntityGraph(attributePaths = {"executiveSchema", "project"})
     List<Act> findAllByOrderByStartDateAscActNumberAsc();
 
     List<Act> findAllByOrderByActNumberAsc();

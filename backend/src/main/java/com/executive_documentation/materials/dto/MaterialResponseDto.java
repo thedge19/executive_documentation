@@ -3,6 +3,9 @@ package com.executive_documentation.materials.dto;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 @Data
 @Builder
 public class MaterialResponseDto {
@@ -12,13 +15,8 @@ public class MaterialResponseDto {
 
     private String units;
 
-    private String documents;
-
-    private String author;
-
-    private Integer numberOfPages;
-
     private String standard;
 
-    private String certificateUrl; // Ссылка на скачивание сертификата
+    @Builder.Default
+    private Map<String, String> certificates = new LinkedHashMap<>();
 }

@@ -1,116 +1,86 @@
 <template>
-  <main class="bg-light min-vh-100" style="overflow-y: hidden;">
-    <Navbar />
+  <main :style="{'background-image': 'url(/09-12-2016_yuzhno-russkoe_2.jpg)', 'min-height': '100vh'}">
+    <Navbar/>
 
-    <div class="container py-4 mx-5" style="max-width: 96%;">
-      <div class="card shadow-sm border-0">
-        <div class="card-header text-primary py-3 mt-3">
-          <h1 class="mb-0 text-center">Учет материалов</h1>
-        </div>
+    <div class="container py-4">
+      <div class="row justify-content-center">
+        <div class="col-12 mt-5">
+          <h1 class="text-center mb-4 text-light">Учет материалов</h1>
 
-        <div class="card-body">
           <!-- Кнопка добавления -->
           <div class="d-flex justify-content-start mb-4">
-            <a href="/addMaterial" class="btn btn-primary rounded-pill px-4">
+            <a href="/addMaterial" class="btn btn-success mx-2 shadow-sm rounded-pill">
               <i class="bi bi-plus-circle me-2"></i>Добавить материал
             </a>
           </div>
 
-          <!-- Таблица с увеличенной шириной -->
-          <div class="table-responsive" style="width: 110%;">
-            <table class="table table-hover align-middle text-center" style="width: 100%;">
-              <!-- Остальной код таблицы без изменений -->
-              <thead class="table-dark">
-              <tr>
-                <th scope="col" class="text-nowrap" style="width: 20%;">Наименование</th>
-                <th scope="col" class="text-nowrap" style="width: 8%;">Ед. изм.</th>
-                <th scope="col" class="text-nowrap" style="width: 20%;">Документы</th>
-                <th scope="col" class="text-nowrap" style="width: 15%;">Автор</th>
-                <th scope="col" class="text-nowrap" style="width: 10%;">ГОСТ, ТУ</th>
-                <th scope="col" class="text-nowrap text-start" style="width: 15%;">Действие</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr v-if="materials.content && materials.content.length > 0"
-                  v-for="material in materials.content"
-                  :key="material.id">
-                <td>{{ material.name }}</td>
-                <td>{{ material.units }}</td>
-                <td>
-                  <span v-if="!material.certificateUrl">{{ material.documents }}</span>
-                  <a v-else
-                     :href="material.certificateUrl"
-                     target="_blank"
-                     class="text-decoration-none text-primary"
-                     :title="material.documents">
-                    {{ material.documents || 'Скачать сертификат' }}
-                    <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>
-                  </a>
-                </td>
-                <td>{{ material.author }}</td>
-                <td>{{ material.standard }}</td>
-                <td>
-                  <div class="d-flex justify-content-start gap-2">
-                    <a class="btn btn-sm btn-outline-primary" :href="`/editMaterial/${material.id}`">
-                      <i class="bi bi-pencil"></i>
-                    </a>
-                    <button class="btn btn-sm btn-outline-danger" @click="deleteMaterial(material.id)">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                    <button v-if="material.certificateUrl"
-                            class="btn btn-sm btn-outline-secondary"
-                            @click="deleteCertificate(material.id)">
-                      <i class="bi bi-file-earmark-minus text-danger"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr v-else>
-                <td colspan="7" class="text-center py-4 text-muted">
-                  <i class="bi bi-exclamation-circle fs-4 d-block mb-2"></i>
-                  Нет данных для отображения
-                </td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
+          <!-- Таблица -->
+          <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+              <div class="table-responsive" style="max-height: 75vh;">
+                <table class="table table-hover mb-0">
+                  <thead class="sticky-top" style="background-color: #002d72;">
+                  <tr>
+                    <th class="text-center text-white fw-normal" style="width: 40%; background-color: #000000;">Наименование</th>
+                    <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">Ед. изм.</th>
+                    <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">ГОСТ, ТУ</th>
+                    <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">Действие</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr v-if="materials && materials.length > 0"
+                      v-for="(material, index) in materials"
+                      :key="material.id"
+                      :class="{'table-light': index % 2 === 0}">
+                    <td class="align-middle">
+                      <div>{{ material.name }}</div>
+                      <div v-if="material.certificates && Object.keys(material.certificates).length > 0"
+                           class="mt-2">
+                        <a href="#"
+                           @click.prevent="toggleDocuments(material.id)"
+                           class="small text-primary text-decoration-none document-toggle">
+                          <i class="bi"
+                             :class="{'bi-chevron-down': !expandedDocuments[material.id],
+                           'bi-chevron-up': expandedDocuments[material.id]}"></i>
+                          посмотреть документы
+                        </a>
 
-          <!-- Пагинация -->
-          <div class="d-flex flex-column align-items-center mt-4">
-            <nav aria-label="Page navigation">
-              <ul class="pagination pagination-sm">
-                <li class="page-item" :class="{ disabled: materials.first }">
-                  <button class="page-link" @click="changePage(0)">
-                    <i class="bi bi-chevron-double-left"></i>
-                  </button>
-                </li>
-                <li class="page-item" :class="{ disabled: materials.first }">
-                  <button class="page-link" @click="changePage(materials.number - 1)">
-                    <i class="bi bi-chevron-left"></i>
-                  </button>
-                </li>
-
-                <li class="page-item" v-for="page in pageNumbers" :key="page"
-                    :class="{ active: materials.number === page }">
-                  <button class="page-link" @click="changePage(page)">{{ page + 1 }}</button>
-                </li>
-
-                <li class="page-item" :class="{ disabled: materials.last }">
-                  <button class="page-link" @click="changePage(materials.number + 1)">
-                    <i class="bi bi-chevron-right"></i>
-                  </button>
-                </li>
-                <li class="page-item" :class="{ disabled: materials.last }">
-                  <button class="page-link" @click="changePage(materials.totalPages - 1)">
-                    <i class="bi bi-chevron-double-right"></i>
-                  </button>
-                </li>
-              </ul>
-            </nav>
-
-            <div v-if="materials.totalElements > 0" class="text-muted small mt-2">
-              Показано {{ materials.numberOfElements }} из {{ materials.totalElements }} материалов
-              (Страница {{ materials.number + 1 }} из {{ materials.totalPages }})
+                        <div v-if="expandedDocuments[material.id]" class="mt-2 small document-list">
+                          <div v-for="(url, name) in material.certificates"
+                               :key="name"
+                               class="mb-1">
+                            <a :href="url"
+                               target="_blank"
+                               class="text-decoration-none text-primary document-link">
+                              <i class="bi bi-file-earmark-pdf me-1 text-danger"></i>
+                              {{ name }}
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="text-center align-middle">{{ material.units }}</td>
+                    <td class="text-center align-middle">{{ material.standard }}</td>
+                    <td class="text-center align-middle">
+                      <div class="d-flex justify-content-center gap-2">
+                        <a class="btn btn-sm btn-outline-primary" :href="`/editMaterial/${material.id}`">
+                          <i class="bi bi-pencil"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger" @click="deleteMaterial(material.id)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr v-else>
+                    <td colspan="4" class="text-center py-4 text-muted">
+                      <i class="bi bi-exclamation-circle fs-4 d-block mb-2"></i>
+                      Нет данных для отображения
+                    </td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -120,7 +90,7 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue';
+import {ref, onMounted} from 'vue';
 import Navbar from '../../components/Navbar.vue';
 
 export default {
@@ -129,20 +99,17 @@ export default {
     Navbar
   },
   setup() {
+    const expandedDocuments = ref({});
     const isLoading = ref(false);
     const error = ref(null);
-    const pageSize = ref(15);
+    const materials = ref([]);
 
-    const materials = ref({
-      content: [],
-      number: 0,
-      size: 15,
-      totalElements: 0,
-      totalPages: 0,
-      first: true,
-      last: true,
-      numberOfElements: 0
-    });
+    const toggleDocuments = (materialId) => {
+      expandedDocuments.value = {
+        ...expandedDocuments.value,
+        [materialId]: !expandedDocuments.value[materialId]
+      };
+    };
 
     const getAuthHeaders = () => {
       const token = localStorage.getItem('token');
@@ -171,7 +138,7 @@ export default {
         }
 
         const response = await fetch(
-            `http://localhost:8080/materials?page=${materials.value.number}&size=${pageSize.value}&sort=name`,
+            `http://localhost:8080/materials`,
             {
               headers: getAuthHeaders()
             }
@@ -188,7 +155,9 @@ export default {
           return;
         }
 
-        materials.value = await response.json();
+        // Получаем сразу массив материалов (без обертки в Page)
+        materials.value = await response.json() || [];
+
       } catch (err) {
         console.error('Ошибка:', err);
         error.value = 'Не удалось загрузить материалы';
@@ -197,13 +166,6 @@ export default {
         }
       } finally {
         isLoading.value = false;
-      }
-    };
-
-    const changePage = (pageNumber) => {
-      if (pageNumber >= 0 && pageNumber < materials.value.totalPages) {
-        materials.value.number = pageNumber;
-        getMaterials();
       }
     };
 
@@ -235,50 +197,6 @@ export default {
       }
     };
 
-    const deleteCertificate = async (id) => {
-      if (!confirm('Вы уверены, что хотите удалить сертификат?')) return;
-
-      try {
-        const response = await fetch(`http://localhost:8080/materials/certificate/${id}`, {
-          method: 'DELETE',
-          headers: getAuthHeaders()
-        });
-
-        if (response.status === 401) {
-          handleUnauthorized();
-          return;
-        }
-
-        await getMaterials();
-      } catch (err) {
-        console.error('Ошибка:', err);
-        alert('Не удалось удалить сертификат');
-      }
-    };
-
-    const pageNumbers = computed(() => {
-      const current = materials.value.number;
-      const total = materials.value.totalPages;
-      const range = 2;
-
-      let start = Math.max(0, current - range);
-      let end = Math.min(total - 1, current + range);
-
-      if (current - range < 0) {
-        end = Math.min(total - 1, end + (range - current));
-      }
-
-      if (current + range >= total) {
-        start = Math.max(0, start - (current + range - total + 1));
-      }
-
-      const pages = [];
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-      return pages;
-    });
-
     onMounted(() => {
       getMaterials();
     });
@@ -287,66 +205,120 @@ export default {
       isLoading,
       materials,
       error,
-      pageNumbers,
-      getMaterials,
-      changePage,
       deleteMaterial,
-      deleteCertificate
+      expandedDocuments,
+      toggleDocuments,
     };
   }
 }
 </script>
 
 <style scoped>
+/* Основные стили */
 body {
-  overflow-y: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.card {
-  border-radius: 10px;
-  overflow: hidden;
-}
-
+/* Стили для таблицы */
 .table {
   font-size: 0.9rem;
-  margin-bottom: 0;
 }
 
 .table th {
   font-weight: 500;
-  white-space: nowrap;
+  letter-spacing: 0.5px;
 }
 
 .table-hover tbody tr:hover {
-  background-color: rgba(0, 0, 0, 0.03);
+  background-color: rgba(0, 45, 114, 0.05);
 }
 
+/* Стили для карточки */
+.card {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Стили для кнопок */
 .btn {
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  padding: 8px 16px;
 }
 
-.btn-outline-primary:hover, .btn-outline-danger:hover, .btn-outline-secondary:hover {
+.btn-success {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.btn-success:hover {
+  background-color: #218838;
+  border-color: #218838;
+}
+
+.btn-outline-primary {
+  color: #002d72;
+  border-color: #002d72;
+}
+
+.btn-outline-primary:hover {
+  background-color: #002d72;
   color: white;
 }
 
-.page-item.active .page-link {
-  background-color: #0d6efd;
-  border-color: #0d6efd;
+.btn-outline-danger:hover {
+  color: white;
 }
 
-.page-link {
-  min-width: 36px;
-  text-align: center;
+/* Скролл таблицы */
+.table-responsive {
+  scrollbar-width: thin;
+  scrollbar-color: #002d72 #f1f1f1;
 }
 
-@media (max-width: 768px) {
-  .table-responsive {
-    font-size: 0.8rem;
-  }
+.table-responsive::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
 
-  .btn-sm {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.7rem;
-  }
+.table-responsive::-webkit-scrollbar-thumb {
+  background-color: #002d72;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+}
+
+/* Документы */
+.document-link {
+  transition: all 0.2s;
+  display: block;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+.document-link:hover {
+  background-color: rgba(13, 110, 253, 0.1);
+}
+
+.document-toggle {
+  cursor: pointer;
+  user-select: none;
+}
+
+.document-toggle:hover {
+  text-decoration: underline;
+}
+
+.document-list {
+  border-left: 2px solid #dee2e6;
+  padding-left: 10px;
+  margin-left: 5px;
+}
+
+/* Loading state */
+.btn:disabled {
+  opacity: 0.7;
 }
 </style>

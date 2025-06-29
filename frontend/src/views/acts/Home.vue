@@ -97,7 +97,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import Navbar from '../components/Navbar.vue'
+import Navbar from '../../components/Navbar.vue'
 
 const acts = ref([])
 const path = ref('http://localhost:8080/acts')

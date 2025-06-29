@@ -11,6 +11,7 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @ToString
+@Builder
 public class Certificate {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,4 +24,14 @@ public class Certificate {
 
     @Column(name="number_of_pages")
     private Integer numberOfPages;
+
+    @Column(name = "certificate_name")
+    private String name;
+
+    @Column(name = "certificate_author")
+    private String author;
+
+    @ManyToOne
+    @JoinColumn(name = "material_id")
+    private Material material;
 }

@@ -1,14 +1,11 @@
 package com.executive_documentation.materials.controller;
 
+import com.executive_documentation.materials.dto.MaterialRequestDto;
 import com.executive_documentation.materials.dto.MaterialResponseDto;
 import com.executive_documentation.materials.model.Material;
 import com.executive_documentation.materials.service.MaterialService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -36,56 +33,23 @@ public class MaterialController {
     }
 
     @GetMapping
-    ResponseEntity<Page<MaterialResponseDto>> getAllPageable(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id,asc") String[] sort) {
-        log.info("Get all Materials");
-
-        try {
-            // Создаем объект сортировки
-            Sort sorting = Sort.by(
-                    sort[0].contains(",") ?
-                            sort[0].split(",")[0] :
-                            sort[0]
-            );
-
-            if (sort[0].contains(",")) {
-                sorting = sort[0].split(",")[1].equalsIgnoreCase("desc") ?
-                        sorting.descending() :
-                        sorting.ascending();
-            }
-
-            Pageable pageable = PageRequest.of(page, size, sorting);
-            Page<MaterialResponseDto> worksPage = materialService.getAll(pageable);
-
-            log.info("Found {} materials out of {}",
-                    worksPage.getNumberOfElements(),
-                    worksPage.getTotalElements());
-
-            log.info(worksPage.toString());
-
-            return ResponseEntity.ok(worksPage);
-
-        } catch (Exception e) {
-            log.error("Error fetching works for material: {}", e.getMessage());
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    @GetMapping("/notPageable")
-    List<Material> getAllNotPageable() {
-        log.info("Get all Materials not pageable");
-        return materialService.getAllNotPageable();
+    public ResponseEntity<List<MaterialResponseDto>> getAllMaterials() {
+        return ResponseEntity.ok(materialService.getAll());
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<Material> createMaterial(
-            @RequestPart("material") Material material,
-            @RequestPart(value = "file", required = false) MultipartFile file) {
+            @RequestPart("material") MaterialRequestDto materialDto,
+            @RequestPart("files") List<MultipartFile> files) {
 
-        Material createdMaterial = materialService.create(material, file);
+        // Связываем файлы с соответствующими сертификатами
+        for (int i = 0; i < files.size() && i < materialDto.getCertificates().size(); i++) {
+            materialDto.getCertificates().get(i).setFile(files.get(i));
+        }
+
+        log.info("Create material: {}", materialDto);
+        Material createdMaterial = materialService.create(materialDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdMaterial);
     }
 
