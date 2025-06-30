@@ -1,56 +1,65 @@
 <template>
-  <main :style="{'background-image': 'url(/09-12-2016_yuzhno-russkoe_2.jpg)', 'min-height': '100vh'}">
-    <Navbar/>
-    <div class="container py-4">
-      <div class="row justify-content-center">
-        <div class="col-12 mt-5">
-          <h1 class="text-center mb-4 text-light">Общий журнал работ. Раздел 6</h1>
+  <Navbar/>
+  <div class="container py-4">
+    <div class="row justify-content-center">
+      <div class="col-12 mt-5">
+        <h1 class="text-center mb-4 text-light">Общий журнал работ. Раздел 6</h1>
 
-          <!-- Кнопки действий -->
-          <div class="d-flex justify-content-start mb-4">
-            <button @click="fillInTheLog" class="btn btn-success mx-2 shadow-sm rounded-pill position-relative overflow-hidden">
-              <span class="position-absolute top-0 start-0 w-100 h-100 border-2 border-white border-opacity-25 rounded-pill"></span>
-              <i class="bi bi-file-earmark-plus me-2"></i>Сформировать 6 раздел
-            </button>
+        <!-- Кнопки действий -->
+        <div class="d-flex justify-content-start mb-4">
+          <button @click="fillInTheLog"
+                  class="btn btn-success mx-2 shadow-sm rounded-pill position-relative overflow-hidden">
+            <span
+                class="position-absolute top-0 start-0 w-100 h-100 border-2 border-white border-opacity-25 rounded-pill"></span>
+            <i class="bi bi-file-earmark-plus me-2"></i>Сформировать 6 раздел
+          </button>
 
-            <button @click="generatePdf" class="btn btn-info mx-2 shadow-sm rounded-pill position-relative overflow-hidden">
-              <span class="position-absolute top-0 start-0 w-100 h-100 border-2 border-white border-opacity-25 rounded-pill"></span>
-              <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить в PDF
-            </button>
-          </div>
+          <button @click="generatePdf"
+                  class="btn btn-info mx-2 shadow-sm rounded-pill position-relative overflow-hidden">
+            <span
+                class="position-absolute top-0 start-0 w-100 h-100 border-2 border-white border-opacity-25 rounded-pill"></span>
+            <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить в PDF
+          </button>
+        </div>
 
-          <!-- Таблица -->
-          <div class="card shadow-sm border-0">
-            <div class="card-body p-0">
-              <div class="table-responsive" style="max-height: 75vh;">
-                <table class="table table-hover mb-0">
-                  <thead class="sticky-top" style="background-color: #002d72;">
-                  <tr>
-                    <th class="text-center text-white fw-normal" style="width: 5%; background-color: #000000;">№ п/п</th>
-                    <th class="text-center text-white fw-normal" style="width: 60%; background-color: #000000;">Наименование исполнительной документации</th>
-                    <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">Дата подписания акта</th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  <tr v-for="(act, index) in acts" :key="act.id"
-                      :class="{'table-light': index % 2 === 0}">
-                    <td class="text-center align-middle">{{ index + 1 }}</td>
-                    <td class="align-middle">Акт освидетельствования скрытых работ № {{ act.actNumber }} {{ act.works }}</td>
-                    <td class="text-center align-middle">{{ act.endDate }}</td>
-                  </tr>
-                  </tbody>
-                </table>
-              </div>
+        <!-- Таблица -->
+        <div class="card shadow-sm border-0">
+          <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 75vh;">
+              <table class="table table-hover mb-0">
+                <thead class="sticky-top" style="background-color: #002d72;">
+                <tr>
+                  <th class="text-center text-white fw-normal" style="width: 5%; background-color: #000000;">№ п/п</th>
+                  <th class="text-center text-white fw-normal" style="width: 60%; background-color: #000000;">
+                    Наименование исполнительной документации
+                  </th>
+                  <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">Дата
+                    подписания акта
+                  </th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="(act, index) in acts" :key="act.id"
+                    :class="{'table-light': index % 2 === 0}">
+                  <td class="text-center align-middle">{{ index + 1 }}</td>
+                  <td class="align-middle">Акт освидетельствования скрытых работ № {{ act.actNumber }} {{
+                      act.works
+                    }}
+                  </td>
+                  <td class="text-center align-middle">{{ act.endDate }}</td>
+                </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </main>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import {ref, onMounted} from 'vue'
 import Navbar from '../../components/Navbar.vue'
 
 const acts = ref([])
@@ -282,8 +291,14 @@ body {
 
 /* Анимация загрузки */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .table tbody tr {

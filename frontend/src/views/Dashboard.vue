@@ -1,339 +1,352 @@
 <template>
-  <main :style="{'background-image': 'url(/09-12-2016_yuzhno-russkoe_2.jpg)', 'min-height': '100vh'}">
-    <Navbar/>
-    <div class="container py-4">
-      <div class="row justify-content-center">
-        <div class="col-12 mt-5">
-          <h1 class="text-center mb-4 text-light">Административная панель</h1>
+  <Navbar/>
+  <div class="container py-4">
+    <div class="row justify-content-center">
+      <div class="col-12 mt-5">
+        <h1 class="text-center mb-4 text-light">Административная панель</h1>
 
-          <!-- Статистика -->
-          <div class="row mb-4">
-            <div class="col-md-3 mb-3">
-              <div class="card bg-primary text-white h-100">
-                <div class="card-body">
-                  <h5 class="card-title"><i class="bi bi-people me-2"></i>Пользователи</h5>
-                  <p class="card-text display-5">{{ users.length }}</p>
-                </div>
+        <!-- Статистика -->
+        <div class="row mb-4">
+          <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white h-100">
+              <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-people me-2"></i>Пользователи</h5>
+                <p class="card-text display-5">{{ users.length }}</p>
               </div>
             </div>
-            <div class="col-md-3 mb-3">
-              <div class="card bg-success text-white h-100">
-                <div class="card-body">
-                  <h5 class="card-title"><i class="bi bi-journal-text me-2"></i>Выполнение</h5>
-                  <p class="card-text display-5">{{ globalStats }} %</p>
-                </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white h-100">
+              <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-journal-text me-2"></i>Выполнение</h5>
+                <p class="card-text display-5">{{ globalStats }} %</p>
               </div>
             </div>
-            <div class="col-md-3 mb-3">
-              <div class="card bg-info text-white h-100">
-                <div class="card-body">
-                  <h5 class="card-title"><i class="bi bi-cash-stack me-2"></i>Финансы</h5>
-                  <div class="d-flex flex-column">
-                    <div class="d-flex justify-content-between">
-                      <span>Выполнено:</span>
-                      <span>{{ formatCurrency(totalFinancialStats.totalDone) }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                      <span>Всего:</span>
-                      <span>{{ formatCurrency(totalFinancialStats.totalAmount) }}</span>
-                    </div>
-                    <div class="progress mt-2 bg-white bg-opacity-25" style="height: 10px;">
-                      <div
-                          class="progress-bar bg-success"
-                          role="progressbar"
-                          :style="{ width: totalFinancialStats.percentage + '%' }"
-                          :aria-valuenow="totalFinancialStats.percentage"
-                          aria-valuemin="0"
-                          aria-valuemax="100"
-                      ></div>
-                    </div>
-                    <p class="card-text text-center mt-2 mb-0">
-                      {{ (totalFinancialStats.percentage || 0).toFixed(1) }}% выполнено
-                    </p>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white h-100">
+              <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-cash-stack me-2"></i>Финансы</h5>
+                <div class="d-flex flex-column">
+                  <div class="d-flex justify-content-between">
+                    <span>Выполнено:</span>
+                    <span>{{ formatCurrency(totalFinancialStats.totalDone) }}</span>
                   </div>
+                  <div class="d-flex justify-content-between">
+                    <span>Всего:</span>
+                    <span>{{ formatCurrency(totalFinancialStats.totalAmount) }}</span>
+                  </div>
+                  <div class="progress mt-2 bg-white bg-opacity-25" style="height: 10px;">
+                    <div
+                        class="progress-bar bg-success"
+                        role="progressbar"
+                        :style="{ width: totalFinancialStats.percentage + '%' }"
+                        :aria-valuenow="totalFinancialStats.percentage"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                    ></div>
+                  </div>
+                  <p class="card-text text-center mt-2 mb-0">
+                    {{ (totalFinancialStats.percentage || 0).toFixed(1) }}% выполнено
+                  </p>
                 </div>
               </div>
             </div>
-            <div class="col-md-3 mb-3">
-              <div class="card bg-warning text-dark h-100">
-                <div class="card-body">
-                  <h5 class="card-title"><i class="bi bi-exclamation-triangle me-2"></i>Ошибки</h5>
-                  <p class="card-text display-5">{{ errorStats.totalErrors }}</p>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-dark h-100">
+              <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-exclamation-triangle me-2"></i>Ошибки</h5>
+                <p class="card-text display-5">{{ errorStats.totalErrors }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Табы -->
+        <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button"
+                    role="tab">
+              Пользователи
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab">
+              Выполнение
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="errors-tab" data-bs-toggle="tab" data-bs-target="#errors" type="button"
+                    role="tab">
+              Ошибки
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button"
+                    role="tab">
+              Деньги
+            </button>
+          </li>
+        </ul>
+
+        <!-- Контент табов -->
+        <div class="tab-content">
+          <!-- Таб пользователей -->
+          <div class="tab-pane fade show active" id="users" role="tabpanel">
+            <div class="card shadow-sm border-0">
+              <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Управление пользователями</h5>
+                <a href="/addUser" class="btn btn-primary btn-sm">
+                  <i class="bi bi-plus-lg me-1"></i>Добавить
+                </a>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 50vh;">
+                  <table class="table table-hover mb-0">
+                    <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Имя</th>
+                      <th>Email</th>
+                      <th>Роль</th>
+                      <th>Дата регистрации</th>
+                      <th>Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="user in users" :key="user.id">
+                      <td>{{ user.id }}</td>
+                      <td>{{ user.username }}</td>
+                      <td>{{ user.email }}</td>
+                      <td>
+                          <span class="badge"
+                                :class="{'bg-primary': user.role === 'ROLE_ADMIN', 'bg-secondary': user.role === 'ROLE_USER'}">
+                            {{ user.role === 'ROLE_ADMIN' ? 'Админ' : 'Пользователь' }}
+                          </span>
+                      </td>
+                      <td>{{ user.createdAt }}</td>
+                      <td>
+                        <a :href="`/editUser/${user.id}`" class="btn btn-sm btn-outline-primary me-2">
+                          <i class="bi bi-pencil"></i>
+                        </a>
+                        <button @click="confirmDeleteUser(user)" class="btn btn-sm btn-outline-danger">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Табы -->
-          <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
-                Пользователи
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab">
-                Выполнение
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="errors-tab" data-bs-toggle="tab" data-bs-target="#errors" type="button" role="tab">
-                Ошибки
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
-                Деньги
-              </button>
-            </li>
-          </ul>
-
-          <!-- Контент табов -->
-          <div class="tab-content">
-            <!-- Таб пользователей -->
-            <div class="tab-pane fade show active" id="users" role="tabpanel">
-              <div class="card shadow-sm border-0">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                  <h5 class="mb-0">Управление пользователями</h5>
-                  <a href="/addUser" class="btn btn-primary btn-sm">
-                    <i class="bi bi-plus-lg me-1"></i>Добавить
-                  </a>
-                </div>
-                <div class="card-body p-0">
-                  <div class="table-responsive" style="max-height: 50vh;">
-                    <table class="table table-hover mb-0">
-                      <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Имя</th>
-                        <th>Email</th>
-                        <th>Роль</th>
-                        <th>Дата регистрации</th>
-                        <th>Действия</th>
-                      </tr>
-                      </thead>
-                      <tbody>
-                      <tr v-for="user in users" :key="user.id">
-                        <td>{{ user.id }}</td>
-                        <td>{{ user.username }}</td>
-                        <td>{{ user.email }}</td>
-                        <td>
-                          <span class="badge" :class="{'bg-primary': user.role === 'ROLE_ADMIN', 'bg-secondary': user.role === 'ROLE_USER'}">
-                            {{ user.role === 'ROLE_ADMIN' ? 'Админ' : 'Пользователь' }}
-                          </span>
-                        </td>
-                        <td>{{ user.createdAt }}</td>
-                        <td>
-                          <a :href="`/editUser/${user.id}`" class="btn btn-sm btn-outline-primary me-2">
-                            <i class="bi bi-pencil"></i>
-                          </a>
-                          <button @click="confirmDeleteUser(user)" class="btn btn-sm btn-outline-danger">
-                            <i class="bi bi-trash"></i>
-                          </button>
-                        </td>
-                      </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+          <!-- Таб выполнения -->
+          <div class="tab-pane fade" id="logs" role="tabpanel">
+            <div class="card shadow-sm border-0">
+              <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Статистика выполнения работ по подобъектам</h5>
+                <button @click="fetchActStats" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-arrow-clockwise"></i> Обновить
+                </button>
               </div>
-            </div>
-
-            <!-- Таб выполнения -->
-            <div class="tab-pane fade" id="logs" role="tabpanel">
-              <div class="card shadow-sm border-0">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                  <h5 class="mb-0">Статистика выполнения работ по подобъектам</h5>
-                  <button @click="fetchActStats" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-arrow-clockwise"></i> Обновить
-                  </button>
-                </div>
-                <div class="card-body p-0">
-                  <div class="table-responsive" style="max-height: 30vh;">
-                    <table class="table table-hover mb-0">
-                      <thead class="sticky-top" style="background-color: #002d72;">
-                      <tr>
-                        <th class="text-white fw-normal" style="width: 40%; background-color: #000000;">Подобъект</th>
-                        <th class="text-white fw-normal" style="width: 40%; background-color: #000000;">Выполнение</th>
-                        <th class="text-center text-white fw-normal" style="width: 10%; background-color: #000000;">Процент</th>
-                        <th class="text-center text-white fw-normal" style="width: 10%; background-color: #000000;">Акты/Работы</th>
-                      </tr>
-                      </thead>
-                      <tbody>
-                      <tr v-for="(stats, key) in actStats" :key="key" class="table-light">
-                        <td class="align-middle">{{ key }}</td>
-                        <td class="align-middle">
-                          <div class="progress" style="height: 20px;">
-                            <div
-                                class="progress-bar"
-                                role="progressbar"
-                                :style="{ width: stats.percentage + '%' }"
-                                :class="{
+              <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 30vh;">
+                  <table class="table table-hover mb-0">
+                    <thead class="sticky-top" style="background-color: #002d72;">
+                    <tr>
+                      <th class="text-white fw-normal" style="width: 40%; background-color: #000000;">Подобъект</th>
+                      <th class="text-white fw-normal" style="width: 40%; background-color: #000000;">Выполнение</th>
+                      <th class="text-center text-white fw-normal" style="width: 10%; background-color: #000000;">
+                        Процент
+                      </th>
+                      <th class="text-center text-white fw-normal" style="width: 10%; background-color: #000000;">
+                        Акты/Работы
+                      </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="(stats, key) in actStats" :key="key" class="table-light">
+                      <td class="align-middle">{{ key }}</td>
+                      <td class="align-middle">
+                        <div class="progress" style="height: 20px;">
+                          <div
+                              class="progress-bar"
+                              role="progressbar"
+                              :style="{ width: stats.percentage + '%' }"
+                              :class="{
                       'bg-success': stats.percentage >= 75,
                       'bg-warning': stats.percentage >= 25 && stats.percentage < 75,
                       'bg-danger': stats.percentage < 25
                     }"
-                                :aria-valuenow="stats.percentage"
-                                aria-valuemin="0"
-                                aria-valuemax="100"
-                            ></div>
-                          </div>
-                        </td>
-                        <td class="text-center align-middle">{{ stats.percentage.toFixed(1) }}%</td>
-                        <td class="text-center align-middle">{{ stats.actCount }}/{{ stats.workCount }}</td>
-                      </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                              :aria-valuenow="stats.percentage"
+                              aria-valuemin="0"
+                              aria-valuemax="100"
+                          ></div>
+                        </div>
+                      </td>
+                      <td class="text-center align-middle">{{ stats.percentage.toFixed(1) }}%</td>
+                      <td class="text-center align-middle">{{ stats.actCount }}/{{ stats.workCount }}</td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </div>
 
-                  <!-- График выполнения -->
-                  <div class="mt-4 p-3">
+                <!-- График выполнения -->
+                <div class="mt-4 p-3">
+                  <div class="card">
+                    <div class="card-header bg-white">
+                      <h6 class="mb-0">График выполнения работ</h6>
+                    </div>
+                    <div class="card-body">
+                      <div class="chart-container" style="height: 250px;">
+                        <canvas ref="actStatsChart"></canvas>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Новый таб ошибок -->
+          <div class="tab-pane fade" id="errors" role="tabpanel">
+            <div class="card shadow-sm border-0">
+              <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Статистика ошибок</h5>
+                <button @click="fetchErrorStats" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-arrow-clockwise"></i> Обновить
+                </button>
+              </div>
+              <div class="card-body">
+                <div class="row mb-4">
+                  <div class="col-md-4">
+                    <div class="card bg-light">
+                      <div class="card-body">
+                        <h6 class="card-title text-center">За последние 24 часа</h6>
+                        <p class="card-text display-4 text-center text-danger">{{ errorStats.last24Hours }}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="card bg-light">
+                      <div class="card-body">
+                        <h6 class="card-title text-center">За последние 7 дней</h6>
+                        <p class="card-text display-4 text-center text-warning">{{ errorStats.last7Days }}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="card bg-light">
+                      <div class="card-body">
+                        <h6 class="card-title text-center">Всего ошибок</h6>
+                        <p class="card-text display-4 text-center text-primary">{{ errorStats.totalErrors }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6">
                     <div class="card">
                       <div class="card-header bg-white">
-                        <h6 class="mb-0">График выполнения работ</h6>
+                        <h6 class="mb-0">Распределение по уровням</h6>
                       </div>
                       <div class="card-body">
                         <div class="chart-container" style="height: 250px;">
-                          <canvas ref="actStatsChart"></canvas>
+                          <canvas ref="levelChart"></canvas>
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="card">
+                      <div class="card-header bg-white">
+                        <h6 class="mb-0">Частые ошибки</h6>
+                      </div>
+                      <div class="card-body">
+                        <ul class="list-group">
+                          <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Самая частая ошибка
+                            <span class="badge bg-primary rounded-pill">{{ errorStats.mostCommonErrorMessage }}</span>
+                          </li>
+                          <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Самый проблемный endpoint
+                            <span class="badge bg-primary rounded-pill">{{ errorStats.mostFrequentEndpoint }}</span>
+                          </li>
+                        </ul>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- Новый таб ошибок -->
-            <div class="tab-pane fade" id="errors" role="tabpanel">
-              <div class="card shadow-sm border-0">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                  <h5 class="mb-0">Статистика ошибок</h5>
-                  <button @click="fetchErrorStats" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-arrow-clockwise"></i> Обновить
-                  </button>
-                </div>
-                <div class="card-body">
-                  <div class="row mb-4">
-                    <div class="col-md-4">
-                      <div class="card bg-light">
-                        <div class="card-body">
-                          <h6 class="card-title text-center">За последние 24 часа</h6>
-                          <p class="card-text display-4 text-center text-danger">{{ errorStats.last24Hours }}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="card bg-light">
-                        <div class="card-body">
-                          <h6 class="card-title text-center">За последние 7 дней</h6>
-                          <p class="card-text display-4 text-center text-warning">{{ errorStats.last7Days }}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="card bg-light">
-                        <div class="card-body">
-                          <h6 class="card-title text-center">Всего ошибок</h6>
-                          <p class="card-text display-4 text-center text-primary">{{ errorStats.totalErrors }}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="row">
-                    <div class="col-md-6">
-                      <div class="card">
-                        <div class="card-header bg-white">
-                          <h6 class="mb-0">Распределение по уровням</h6>
-                        </div>
-                        <div class="card-body">
-                          <div class="chart-container" style="height: 250px;">
-                            <canvas ref="levelChart"></canvas>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-6">
-                      <div class="card">
-                        <div class="card-header bg-white">
-                          <h6 class="mb-0">Частые ошибки</h6>
-                        </div>
-                        <div class="card-body">
-                          <ul class="list-group">
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                              Самая частая ошибка
-                              <span class="badge bg-primary rounded-pill">{{ errorStats.mostCommonErrorMessage }}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                              Самый проблемный endpoint
-                              <span class="badge bg-primary rounded-pill">{{ errorStats.mostFrequentEndpoint }}</span>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          <!-- Таб настроек -->
+          <div class="tab-pane fade" id="settings" role="tabpanel">
+            <div class="card shadow-sm border-0">
+              <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Финансовая статистика по подобъектам</h5>
+                <button @click="fetchFinancialStats" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-arrow-clockwise"></i> Обновить
+                </button>
               </div>
-            </div>
-
-            <!-- Таб настроек -->
-            <div class="tab-pane fade" id="settings" role="tabpanel">
-              <div class="card shadow-sm border-0">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                  <h5 class="mb-0">Финансовая статистика по подобъектам</h5>
-                  <button @click="fetchFinancialStats" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-arrow-clockwise"></i> Обновить
-                  </button>
-                </div>
-                <div class="card-body p-0">
-                  <div class="table-responsive" style="max-height: 30vh;">
-                    <table class="table table-hover mb-0">
-                      <thead class="sticky-top" style="background-color: #002d72;">
-                      <tr>
-                        <th class="text-white fw-normal" style="width: 10%; background-color: #000000;">Подобъект</th>
-                        <th class="text-white fw-normal" style="width: 30%; background-color: #000000;">Выполнение</th>
-                        <th class="text-center text-white fw-normal" style="width: 20%; background-color: #000000;">Процент</th>
-                        <th class="text-center text-white fw-normal" style="width: 40%; background-color: #000000;">Сумма/Всего</th>
-                      </tr>
-                      </thead>
-                      <tbody>
-                      <tr v-for="(stats, key) in financialStats" :key="key" class="table-light">
-                        <td class="align-middle">{{ key }}</td>
-                        <td class="align-middle">
-                          <div class="progress" style="height: 20px;">
-                            <div
-                                class="progress-bar"
-                                role="progressbar"
-                                :style="{ width: stats.percentage + '%' }"
-                                :class="{
+              <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 30vh;">
+                  <table class="table table-hover mb-0">
+                    <thead class="sticky-top" style="background-color: #002d72;">
+                    <tr>
+                      <th class="text-white fw-normal" style="width: 10%; background-color: #000000;">Подобъект</th>
+                      <th class="text-white fw-normal" style="width: 30%; background-color: #000000;">Выполнение</th>
+                      <th class="text-center text-white fw-normal" style="width: 20%; background-color: #000000;">
+                        Процент
+                      </th>
+                      <th class="text-center text-white fw-normal" style="width: 40%; background-color: #000000;">
+                        Сумма/Всего
+                      </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="(stats, key) in financialStats" :key="key" class="table-light">
+                      <td class="align-middle">{{ key }}</td>
+                      <td class="align-middle">
+                        <div class="progress" style="height: 20px;">
+                          <div
+                              class="progress-bar"
+                              role="progressbar"
+                              :style="{ width: stats.percentage + '%' }"
+                              :class="{
                       'bg-success': stats.percentage >= 75,
                       'bg-warning': stats.percentage >= 25 && stats.percentage < 75,
                       'bg-danger': stats.percentage < 25
                     }"
-                                :aria-valuenow="stats.percentage"
-                                aria-valuemin="0"
-                                aria-valuemax="100"
-                            ></div>
-                          </div>
-                        </td>
-                        <td class="text-center align-middle">{{ stats.percentage.toFixed(1) }}%</td>
-                        <td class="text-center align-middle">{{ stats.doneAmount.toFixed(2) }}/{{ stats.totalAmount.toFixed(2) }}</td>
-                      </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <!-- График финансовой статистики -->
-                  <div class="mt-4 p-3">
-                    <div class="card">
-                      <div class="card-header bg-white">
-                        <h6 class="mb-0">Финансовое выполнение работ</h6>
-                      </div>
-                      <div class="card-body">
-                        <div class="chart-container" style="height: 250px;">
-                          <canvas ref="financialStatsChart"></canvas>
+                              :aria-valuenow="stats.percentage"
+                              aria-valuemin="0"
+                              aria-valuemax="100"
+                          ></div>
                         </div>
+                      </td>
+                      <td class="text-center align-middle">{{ stats.percentage.toFixed(1) }}%</td>
+                      <td class="text-center align-middle">{{
+                          stats.doneAmount.toFixed(2)
+                        }}/{{ stats.totalAmount.toFixed(2) }}
+                      </td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- График финансовой статистики -->
+                <div class="mt-4 p-3">
+                  <div class="card">
+                    <div class="card-header bg-white">
+                      <h6 class="mb-0">Финансовое выполнение работ</h6>
+                    </div>
+                    <div class="card-body">
+                      <div class="chart-container" style="height: 250px;">
+                        <canvas ref="financialStatsChart"></canvas>
                       </div>
                     </div>
                   </div>
@@ -344,7 +357,7 @@
         </div>
       </div>
     </div>
-  </main>
+  </div>
 </template>
 
 <script setup>
@@ -697,7 +710,7 @@ const updateActStatsChart = () => {
         plugins: {
           tooltip: {
             callbacks: {
-              label: function(context) {
+              label: function (context) {
                 const stats = actStats.value[sortedLabels[context.dataIndex]];
                 return [
                   `Процент: ${context.raw.toFixed(1)}%`,
@@ -715,27 +728,27 @@ const updateActStatsChart = () => {
 
 // Вспомогательная функция для затемнения цвета
 const shadeColor = (color, percent) => {
-  let R = parseInt(color.substring(1,3), 16);
-  let G = parseInt(color.substring(3,5), 16);
-  let B = parseInt(color.substring(5,7), 16);
+  let R = parseInt(color.substring(1, 3), 16);
+  let G = parseInt(color.substring(3, 5), 16);
+  let B = parseInt(color.substring(5, 7), 16);
 
   R = parseInt(R * (100 + percent) / 100);
   G = parseInt(G * (100 + percent) / 100);
   B = parseInt(B * (100 + percent) / 100);
 
-  R = (R<255)?R:255;
-  G = (G<255)?G:255;
-  B = (B<255)?B:255;
+  R = (R < 255) ? R : 255;
+  G = (G < 255) ? G : 255;
+  B = (B < 255) ? B : 255;
 
   R = Math.round(R);
   G = Math.round(G);
   B = Math.round(B);
 
-  const RR = ((R.toString(16).length===1)?"0"+R.toString(16):R.toString(16));
-  const GG = ((G.toString(16).length===1)?"0"+G.toString(16):G.toString(16));
-  const BB = ((B.toString(16).length===1)?"0"+B.toString(16):B.toString(16));
+  const RR = ((R.toString(16).length === 1) ? "0" + R.toString(16) : R.toString(16));
+  const GG = ((G.toString(16).length === 1) ? "0" + G.toString(16) : G.toString(16));
+  const BB = ((B.toString(16).length === 1) ? "0" + B.toString(16) : B.toString(16));
 
-  return "#"+RR+GG+BB;
+  return "#" + RR + GG + BB;
 };
 
 const fetchFinancialStats = async () => {
@@ -826,7 +839,7 @@ const updateFinancialStatsChart = () => {
         plugins: {
           tooltip: {
             callbacks: {
-              label: function(context) {
+              label: function (context) {
                 const stats = financialStats.value[sortedLabels[context.dataIndex]];
                 return [
                   `Процент: ${context.raw.toFixed(1)}%`,
@@ -871,7 +884,7 @@ const fetchTotalFinancialStats = async () => {
   } catch (err) {
     console.error('Ошибка загрузки финансовых данных:', err)
     // Сбросить значения при ошибке
-    totalFinancialStats.value = { totalDone: 0, totalAmount: 0, percentage: 0 }
+    totalFinancialStats.value = {totalDone: 0, totalAmount: 0, percentage: 0}
   }
 };
 

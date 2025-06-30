@@ -12,7 +12,7 @@ import Navbar from "@/components/Navbar.vue";
           <h2 v-if="act.executiveSchemaId != null">Исполнительная схема добавлена.</h2>
           <div v-if="act.executiveSchemaId == null" class="mb-3 ">
             <label for="formFile" class="form-label">Добавьте схему</label>
-            <input  @change="updateAct" class="form-control border border-primary" type="file" id="formFile">
+            <input @change="updateAct" class="form-control border border-primary" type="file" id="formFile">
           </div>
           <div class="row">
             <div class="col-md-12 form-group" style="width: 50%">

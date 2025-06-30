@@ -1,61 +1,58 @@
 <template>
-  <main :style="{'background-image': 'url(/09-12-2016_yuzhno-russkoe_2.jpg)', 'min-height': '100vh'}">
+  <Navbar/>
+  <div class="container py-4">
+    <div class="row justify-content-center">
+      <div class="col-12 mt-5">
+        <h1 class="text-center mb-4 text-light">Общий журнал работ. Раздел 3</h1>
 
-    <Navbar/>
-    <div class="container py-4">
-      <div class="row justify-content-center">
-        <div class="col-12 mt-5">
-          <h1 class="text-center mb-4 text-light">Общий журнал работ. Раздел 3</h1>
+        <!-- Action buttons -->
+        <div class="d-flex justify-content-start mb-4">
+          <button @click="fillInTheLog" class="btn btn-success mx-2 shadow-sm rounded-pill" :disabled="isLoading">
+            <i class="bi bi-file-earmark-plus me-2"></i>Сформировать ОЖР
+          </button>
+          <button @click.prevent="generatePdf" class="btn btn-info mx-2 shadow-sm rounded-pill" :disabled="isLoading">
+            <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить в PDF
+          </button>
+        </div>
 
-          <!-- Action buttons -->
-          <div class="d-flex justify-content-start mb-4">
-            <button @click="fillInTheLog" class="btn btn-success mx-2 shadow-sm rounded-pill" :disabled="isLoading">
-              <i class="bi bi-file-earmark-plus me-2"></i>Сформировать ОЖР
-            </button>
-            <button @click.prevent="generatePdf" class="btn btn-info mx-2 shadow-sm rounded-pill" :disabled="isLoading">
-              <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить в PDF
-            </button>
-          </div>
+        <!-- Error message -->
+        <div v-if="error" class="alert alert-danger mb-4">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+        </div>
 
-          <!-- Error message -->
-          <div v-if="error" class="alert alert-danger mb-4">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
-          </div>
-
-          <!-- Table -->
-          <div class="card shadow-sm border-0">
-            <div class="card-body p-0">
-              <div class="table-responsive" style="max-height: 75vh;">
-                <table class="table table-hover mb-0">
-                  <thead class="sticky-top" style="background-color: #002d72;">
-                  <tr>
-                    <th class="text-center text-white fw-normal" style="width: 6%; background-color: #000000;">№</th>
-                    <th class="text-center text-white fw-normal" style="width: 7%; background-color: #000000;">Дата</th>
-                    <th class="text-center text-white fw-normal" style="width: 50%; background-color: #000000;">
-                      Наименование работ
-                    </th>
-                    <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">
-                      Ответственный
-                    </th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  <tr v-for="(workLog, index) in workLogs" :key="index"
-                      :class="{'table-light': index % 2 === 0}">
-                    <td class="text-center align-middle">{{ workLog.workLogNumber }}</td>
-                    <td class="text-center align-middle">{{ formatDate(workLog.workDate) }}</td>
-                    <td class="align-middle">{{ workLog.name }}</td>
-                    <td class="text-center align-middle">Руководитель работ Трифонов А.Е.</td>
-                  </tr>
-                  </tbody>
-                </table>
-              </div>
+        <!-- Table -->
+        <div class="card shadow-sm border-0">
+          <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 75vh;">
+              <table class="table table-hover mb-0">
+                <thead class="sticky-top" style="background-color: #002d72;">
+                <tr>
+                  <th class="text-center text-white fw-normal" style="width: 6%; background-color: #000000;">№</th>
+                  <th class="text-center text-white fw-normal" style="width: 7%; background-color: #000000;">Дата</th>
+                  <th class="text-center text-white fw-normal" style="width: 50%; background-color: #000000;">
+                    Наименование работ
+                  </th>
+                  <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">
+                    Ответственный
+                  </th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="(workLog, index) in workLogs" :key="index"
+                    :class="{'table-light': index % 2 === 0}">
+                  <td class="text-center align-middle">{{ workLog.workLogNumber }}</td>
+                  <td class="text-center align-middle">{{ formatDate(workLog.workDate) }}</td>
+                  <td class="align-middle">{{ workLog.name }}</td>
+                  <td class="text-center align-middle">Руководитель работ Трифонов А.Е.</td>
+                </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </main>
+  </div>
 </template>
 
 <script setup>

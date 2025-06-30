@@ -1,89 +1,87 @@
 <template>
-  <main class="bg-light min-vh-100">
-    <Navbar />
+  <Navbar/>
 
-    <div class="container py-5">
-      <div class="card shadow-sm border-0 mx-auto" style="max-width: 600px;">
-        <div class="card-header bg-white py-4">
-          <h2 class="h4 mb-0 text-center text-primary">Редактирование пользователя</h2>
-        </div>
+  <div class="container py-5">
+    <div class="card shadow-sm border-0 mx-auto" style="max-width: 600px;">
+      <div class="card-header bg-white py-4">
+        <h2 class="h4 mb-0 text-center text-primary">Редактирование пользователя</h2>
+      </div>
 
-        <div class="card-body">
-          <form autocomplete="off" @submit.prevent="updateUser">
-            <!-- Имя пользователя -->
-            <div class="mb-4">
-              <label for="username" class="form-label fw-semibold">
-                <i class="bi bi-person-badge me-2"></i>Имя пользователя
+      <div class="card-body">
+        <form autocomplete="off" @submit.prevent="updateUser">
+          <!-- Имя пользователя -->
+          <div class="mb-4">
+            <label for="username" class="form-label fw-semibold">
+              <i class="bi bi-person-badge me-2"></i>Имя пользователя
+            </label>
+            <input id="username" type="text" class="form-control"
+                   placeholder="Введите имя пользователя"
+                   required v-model="user.username">
+          </div>
+
+          <!-- Email -->
+          <div class="mb-4">
+            <label for="email" class="form-label fw-semibold">
+              <i class="bi bi-envelope me-2"></i>Email
+            </label>
+            <input id="email" type="email" class="form-control"
+                   placeholder="Введите email"
+                   required v-model="user.email">
+          </div>
+
+          <!-- Выбор роли -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold d-block mb-3">
+              <i class="bi bi-shield me-2"></i>Роль пользователя
+            </label>
+            <div class="btn-group w-100" role="group">
+              <input type="radio" class="btn-check" name="role"
+                     id="roleUser" autocomplete="off"
+                     value="ROLE_USER" v-model="user.role">
+              <label class="btn btn-outline-primary" for="roleUser">
+                <i class="bi bi-person me-2"></i>Обычный пользователь
               </label>
-              <input id="username" type="text" class="form-control"
-                     placeholder="Введите имя пользователя"
-                     required v-model="user.username">
-            </div>
 
-            <!-- Email -->
-            <div class="mb-4">
-              <label for="email" class="form-label fw-semibold">
-                <i class="bi bi-envelope me-2"></i>Email
+              <input type="radio" class="btn-check" name="role"
+                     id="roleAdmin" autocomplete="off"
+                     value="ROLE_ADMIN" v-model="user.role">
+              <label class="btn btn-outline-primary" for="roleAdmin">
+                <i class="bi bi-shield-lock me-2"></i>Администратор
               </label>
-              <input id="email" type="email" class="form-control"
-                     placeholder="Введите email"
-                     required v-model="user.email">
             </div>
+          </div>
 
-            <!-- Выбор роли -->
-            <div class="mb-4">
-              <label class="form-label fw-semibold d-block mb-3">
-                <i class="bi bi-shield me-2"></i>Роль пользователя
-              </label>
-              <div class="btn-group w-100" role="group">
-                <input type="radio" class="btn-check" name="role"
-                       id="roleUser" autocomplete="off"
-                       value="ROLE_USER" v-model="user.role">
-                <label class="btn btn-outline-primary" for="roleUser">
-                  <i class="bi bi-person me-2"></i>Обычный пользователь
-                </label>
+          <!-- Ошибка -->
+          <div v-if="error" class="alert alert-danger mb-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+          </div>
 
-                <input type="radio" class="btn-check" name="role"
-                       id="roleAdmin" autocomplete="off"
-                       value="ROLE_ADMIN" v-model="user.role">
-                <label class="btn btn-outline-primary" for="roleAdmin">
-                  <i class="bi bi-shield-lock me-2"></i>Администратор
-                </label>
-              </div>
-            </div>
+          <!-- Кнопки -->
+          <div class="d-flex gap-3">
+            <router-link to="/dashboard" class="btn btn-outline-secondary flex-grow-1 py-2">
+              <i class="bi bi-arrow-left me-2"></i>Назад
+            </router-link>
 
-            <!-- Ошибка -->
-            <div v-if="error" class="alert alert-danger mb-4">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
-            </div>
-
-            <!-- Кнопки -->
-            <div class="d-flex gap-3">
-              <router-link to="/dashboard" class="btn btn-outline-secondary flex-grow-1 py-2">
-                <i class="bi bi-arrow-left me-2"></i>Назад
-              </router-link>
-
-              <button type="submit" class="btn btn-primary flex-grow-1 py-2"
-                      :disabled="isLoading">
-                <template v-if="isLoading">
-                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Сохранение...
-                </template>
-                <template v-else>
-                  <i class="bi bi-save me-2"></i>Сохранить
-                </template>
-              </button>
-            </div>
-          </form>
-        </div>
+            <button type="submit" class="btn btn-primary flex-grow-1 py-2"
+                    :disabled="isLoading">
+              <template v-if="isLoading">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Сохранение...
+              </template>
+              <template v-else>
+                <i class="bi bi-save me-2"></i>Сохранить
+              </template>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
-  </main>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import {ref, onMounted} from 'vue'
+import {useRouter, useRoute} from 'vue-router'
 import Navbar from '../../components/Navbar.vue'
 import Swal from 'sweetalert2'
 

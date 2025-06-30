@@ -1,56 +1,58 @@
 <template>
-  <main class="bg-light min-vh-100" style="overflow-y: hidden;">
-    <Navbar />
+  <Navbar/>
+  <div class="container-fluid px-5 py-4">
+    <div class="card shadow-sm border-0">
+      <div class="card-header text-primary py-3 mt-3">
+        <h1 class="mb-0 text-center">Входной контроль</h1>
+      </div>
 
-    <div class="container-fluid px-5 py-4">
-      <div class="card shadow-sm border-0">
-        <div class="card-header text-primary py-3 mt-3">
-          <h1 class="mb-0 text-center">Входной контроль</h1>
+      <div class="card-body p-0">
+        <!-- Кнопка выгрузки -->
+        <div class="d-flex justify-content-start px-4 py-3">
+          <button @click="generateLogPdf" class="btn btn-primary rounded-pill px-4" :disabled="isLoading">
+            <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить журнал в PDF
+          </button>
         </div>
 
-        <div class="card-body p-0">
-          <!-- Кнопка выгрузки -->
-          <div class="d-flex justify-content-start px-4 py-3">
-            <button @click="generateLogPdf" class="btn btn-primary rounded-pill px-4" :disabled="isLoading">
-              <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить журнал в PDF
-            </button>
-          </div>
-
-          <!-- Таблица -->
-          <div class="table-responsive" style="height: calc(100vh - 220px); overflow-y: auto;">
-            <table class="table table-hover align-middle mb-0">
-              <thead class="sticky-top bg-dark">
-              <tr>
-                <th style="width: 5%; background-color: #000000; color: white;">№</th>
-                <th style="width: 7%; background-color: #000000; color: white;">Дата</th>
-                <th class="text-white fw-normal" style="width: 20%; background-color: #000000; color: white;">Материалы</th>
-                <th class="text-white fw-normal" style="width: 30%; background-color: #000000; color: white;">Документы</th>
-                <th class="text-white fw-normal" style="width: 10%; background-color: #000000; color: white;">Автор серта</th>
-                <th class="text-white fw-normal" style="width: 15%; background-color: #000000; color: white;">ГОСТ, ТУ</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr v-for="control in controls" :key="control.id">
-                <td>{{ control.controlNumber }}</td>
-                <td>{{ control.date }}</td>
-                <td>
-                    {{ control.materials }}
-                </td>
-                <td>{{ control.documents }}</td>
-                <td>{{ control.author }}</td>
-                <td>{{ control.standard }}</td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
+        <!-- Таблица -->
+        <div class="table-responsive" style="height: calc(100vh - 220px); overflow-y: auto;">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="sticky-top bg-dark">
+            <tr>
+              <th style="width: 5%; background-color: #000000; color: white;">№</th>
+              <th style="width: 7%; background-color: #000000; color: white;">Дата</th>
+              <th class="text-white fw-normal" style="width: 20%; background-color: #000000; color: white;">Материалы
+              </th>
+              <th class="text-white fw-normal" style="width: 30%; background-color: #000000; color: white;">Документы
+              </th>
+              <th class="text-white fw-normal" style="width: 10%; background-color: #000000; color: white;">Автор
+                серта
+              </th>
+              <th class="text-white fw-normal" style="width: 15%; background-color: #000000; color: white;">ГОСТ, ТУ
+              </th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="control in controls" :key="control.id">
+              <td>{{ control.controlNumber }}</td>
+              <td>{{ control.date }}</td>
+              <td>
+                {{ control.materials }}
+              </td>
+              <td>{{ control.documents }}</td>
+              <td>{{ control.author }}</td>
+              <td>{{ control.standard }}</td>
+            </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
-  </main>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import {ref, onMounted} from 'vue'
 import Navbar from '../../components/Navbar.vue'
 
 const controls = ref([])

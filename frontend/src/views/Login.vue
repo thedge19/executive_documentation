@@ -1,70 +1,68 @@
 <template>
-  <main class="min-vh-100 d-flex align-items-center" :style="{'background-image':'url(/09-12-2016_yuzhno-russkoe_2.jpg)'}">
-    <div class="container py-5">
-      <div class="card shadow-sm border-0 mx-auto" style="max-width: 500px; background-color: rgba(255, 255, 255, 0.9);">
-        <div class="card-header bg-white py-4">
-          <h2 class="h4 mb-0 text-center text-primary">Вход в систему</h2>
-        </div>
+  <div class="container py-5">
+    <div class="card shadow-sm border-0 mx-auto" style="max-width: 500px; background-color: rgba(255, 255, 255, 0.9);">
+      <div class="card-header bg-white py-4">
+        <h2 class="h4 mb-0 text-center text-primary">Вход в систему</h2>
+      </div>
 
-        <div class="card-body">
-          <form @submit.prevent="handleLogin">
-            <!-- Поле для логина -->
-            <div class="mb-4">
-              <label for="email" class="form-label fw-semibold">
-                <i class="bi bi-envelope me-2"></i>Email
-              </label>
-              <input
-                  id="email"
-                  type="email"
-                  class="form-control"
-                  placeholder="Введите ваш email"
-                  required
-                  v-model="email"
-              >
-            </div>
+      <div class="card-body">
+        <form @submit.prevent="handleLogin">
+          <!-- Поле для логина -->
+          <div class="mb-4">
+            <label for="email" class="form-label fw-semibold">
+              <i class="bi bi-envelope me-2"></i>Email
+            </label>
+            <input
+                id="email"
+                type="email"
+                class="form-control"
+                placeholder="Введите ваш email"
+                required
+                v-model="email"
+            >
+          </div>
 
-            <!-- Поле для пароля -->
-            <div class="mb-4">
-              <label for="password" class="form-label fw-semibold">
-                <i class="bi bi-lock me-2"></i>Пароль
-              </label>
-              <input
-                  id="password"
-                  type="password"
-                  class="form-control"
-                  placeholder="Введите ваш пароль"
-                  required
-                  v-model="password"
-              >
-            </div>
+          <!-- Поле для пароля -->
+          <div class="mb-4">
+            <label for="password" class="form-label fw-semibold">
+              <i class="bi bi-lock me-2"></i>Пароль
+            </label>
+            <input
+                id="password"
+                type="password"
+                class="form-control"
+                placeholder="Введите ваш пароль"
+                required
+                v-model="password"
+            >
+          </div>
 
-            <!-- Сообщение об ошибке -->
-            <div v-if="error" class="alert alert-danger mb-4">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
-            </div>
+          <!-- Сообщение об ошибке -->
+          <div v-if="error" class="alert alert-danger mb-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+          </div>
 
-            <!-- Кнопка входа -->
-            <div class="d-grid">
-              <button type="submit" class="btn btn-primary py-2" :disabled="loading">
-                <template v-if="loading">
-                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Вход...
-                </template>
-                <template v-else>
-                  <i class="bi bi-box-arrow-in-right me-2"></i>Войти
-                </template>
-              </button>
-            </div>
-          </form>
-        </div>
+          <!-- Кнопка входа -->
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary py-2" :disabled="loading">
+              <template v-if="loading">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Вход...
+              </template>
+              <template v-else>
+                <i class="bi bi-box-arrow-in-right me-2"></i>Войти
+              </template>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
-  </main>
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import {ref} from 'vue'
+import {useRouter} from 'vue-router'
 
 const router = useRouter()
 const email = ref('')
@@ -162,7 +160,11 @@ main {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>

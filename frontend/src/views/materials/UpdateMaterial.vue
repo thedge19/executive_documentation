@@ -1,84 +1,82 @@
 <template>
-  <main class="bg-light min-vh-100">
-    <Navbar />
+  <Navbar/>
 
-    <div class="container py-5">
-      <div class="card shadow-sm border-0 mx-auto" style="max-width: 600px;">
-        <div class="card-header bg-white py-4">
-          <h2 class="h4 mb-0 text-center text-primary">
-            <i class="bi bi-pencil-square me-2"></i>
-            Редактирование материала: {{ material.name }}
-          </h2>
-        </div>
+  <div class="container py-5">
+    <div class="card shadow-sm border-0 mx-auto" style="max-width: 600px;">
+      <div class="card-header bg-white py-4">
+        <h2 class="h4 mb-0 text-center text-primary">
+          <i class="bi bi-pencil-square me-2"></i>
+          Редактирование материала: {{ material.name }}
+        </h2>
+      </div>
 
-        <div class="card-body">
-          <form @submit.prevent="updateMaterial">
-            <!-- Статус сертификата -->
-            <div v-if="material.certificateUrl" class="alert alert-success mb-4">
-              <i class="bi bi-check-circle-fill me-2"></i>
-              Сертификат уже загружен
-              <a :href="material.certificateUrl" target="_blank" class="ms-2">
-                <i class="bi bi-download"></i> Скачать
-              </a>
-            </div>
+      <div class="card-body">
+        <form @submit.prevent="updateMaterial">
+          <!-- Статус сертификата -->
+          <div v-if="material.certificateUrl" class="alert alert-success mb-4">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            Сертификат уже загружен
+            <a :href="material.certificateUrl" target="_blank" class="ms-2">
+              <i class="bi bi-download"></i> Скачать
+            </a>
+          </div>
 
-            <!-- Загрузка файла -->
-            <div v-if="!material.certificateUrl" class="mb-4">
-              <label for="formFile" class="form-label fw-semibold">
-                <i class="bi bi-file-earmark-pdf me-2"></i>
-                Добавить сертификат (PDF)
-              </label>
-              <input @change="handleFileChange"
-                     class="form-control"
-                     type="file"
-                     id="formFile"
-                     accept=".pdf">
-              <div class="form-text">Загрузите файл сертификата в формате PDF</div>
-            </div>
+          <!-- Загрузка файла -->
+          <div v-if="!material.certificateUrl" class="mb-4">
+            <label for="formFile" class="form-label fw-semibold">
+              <i class="bi bi-file-earmark-pdf me-2"></i>
+              Добавить сертификат (PDF)
+            </label>
+            <input @change="handleFileChange"
+                   class="form-control"
+                   type="file"
+                   id="formFile"
+                   accept=".pdf">
+            <div class="form-text">Загрузите файл сертификата в формате PDF</div>
+          </div>
 
-            <!-- Информация о материале -->
-            <div class="mb-4">
-              <h5 class="fw-semibold mb-3">
-                <i class="bi bi-info-circle me-2"></i>
-                Информация о материале
-              </h5>
-              <div class="list-group">
-                <div class="list-group-item">
-                  <strong>Единицы измерения:</strong> {{ material.units }}
-                </div>
-                <div class="list-group-item">
-                  <strong>Документы:</strong> {{ material.documents }}
-                </div>
-                <div class="list-group-item">
-                  <strong>Стандарт:</strong> {{ material.standard }}
-                </div>
-                <div class="list-group-item">
-                  <strong>Автор:</strong> {{ material.author }}
-                </div>
-                <div class="list-group-item">
-                  <strong>Страниц:</strong> {{ material.numberOfPages }}
-                </div>
+          <!-- Информация о материале -->
+          <div class="mb-4">
+            <h5 class="fw-semibold mb-3">
+              <i class="bi bi-info-circle me-2"></i>
+              Информация о материале
+            </h5>
+            <div class="list-group">
+              <div class="list-group-item">
+                <strong>Единицы измерения:</strong> {{ material.units }}
+              </div>
+              <div class="list-group-item">
+                <strong>Документы:</strong> {{ material.documents }}
+              </div>
+              <div class="list-group-item">
+                <strong>Стандарт:</strong> {{ material.standard }}
+              </div>
+              <div class="list-group-item">
+                <strong>Автор:</strong> {{ material.author }}
+              </div>
+              <div class="list-group-item">
+                <strong>Страниц:</strong> {{ material.numberOfPages }}
               </div>
             </div>
+          </div>
 
-            <!-- Кнопки -->
-            <div class="d-flex gap-3">
-              <button type="button" @click="$router.push('/materials')"
-                      class="btn btn-outline-secondary flex-grow-1 py-2">
-                <i class="bi bi-arrow-left me-2"></i>Назад
-              </button>
+          <!-- Кнопки -->
+          <div class="d-flex gap-3">
+            <button type="button" @click="$router.push('/materials')"
+                    class="btn btn-outline-secondary flex-grow-1 py-2">
+              <i class="bi bi-arrow-left me-2"></i>Назад
+            </button>
 
-              <button type="submit" class="btn btn-primary flex-grow-1 py-2"
-                      :disabled="!selectedFile && !material.certificateUrl">
-                <i class="bi bi-upload me-2"></i>
-                {{ material.certificateUrl ? 'Заменить сертификат' : 'Загрузить сертификат' }}
-              </button>
-            </div>
-          </form>
-        </div>
+            <button type="submit" class="btn btn-primary flex-grow-1 py-2"
+                    :disabled="!selectedFile && !material.certificateUrl">
+              <i class="bi bi-upload me-2"></i>
+              {{ material.certificateUrl ? 'Заменить сертификат' : 'Загрузить сертификат' }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
-  </main>
+  </div>
 </template>
 
 <script>

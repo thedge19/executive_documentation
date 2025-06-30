@@ -1,234 +1,231 @@
 <template>
-  <main class="bg-light min-vh-100">
-    <Navbar/>
+  <Navbar/>
+  <div class="container py-5">
+    <div class="card shadow-sm border-0 mx-auto" style="max-width: 800px;">
+      <div class="card-header bg-white py-4">
+        <h2 class="h4 mb-0 text-center text-primary">Добавить акт выполненных работ</h2>
+      </div>
 
-    <div class="container py-5">
-      <div class="card shadow-sm border-0 mx-auto" style="max-width: 800px;">
-        <div class="card-header bg-white py-4">
-          <h2 class="h4 mb-0 text-center text-primary">Добавить акт выполненных работ</h2>
-        </div>
+      <div class="card-body">
+        <form @submit.prevent="checkForm">
+          <!-- Ошибки -->
+          <div v-if="errors.length" class="alert alert-danger mb-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Исправьте следующие ошибки:</strong>
+            <ul class="mb-0 mt-2">
+              <li v-for="error in errors">{{ error }}</li>
+            </ul>
+          </div>
 
-        <div class="card-body">
-          <form @submit.prevent="checkForm">
-            <!-- Ошибки -->
-            <div v-if="errors.length" class="alert alert-danger mb-4">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i>
-              <strong>Исправьте следующие ошибки:</strong>
-              <ul class="mb-0 mt-2">
-                <li v-for="error in errors">{{ error }}</li>
-              </ul>
-            </div>
-
-            <!-- Выбор объекта -->
-            <div class="mb-4">
-              <label class="form-label fw-semibold d-block mb-3">
-                <i class="bi bi-building me-2"></i>Объект
+          <!-- Выбор объекта -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold d-block mb-3">
+              <i class="bi bi-building me-2"></i>Объект
+            </label>
+            <div class="btn-group w-100" role="group">
+              <input type="radio" class="btn-check" name="project"
+                     id="project1" autocomplete="off"
+                     :value="4" v-model="projectId" @change="onChangeProject">
+              <label class="btn btn-outline-primary" for="project1">
+                <i class="bi bi-tree me-2"></i>Грушовая
               </label>
-              <div class="btn-group w-100" role="group">
-                <input type="radio" class="btn-check" name="project"
-                       id="project1" autocomplete="off"
-                       :value="4" v-model="projectId" @change="onChangeProject">
-                <label class="btn btn-outline-primary" for="project1">
-                  <i class="bi bi-tree me-2"></i>Грушовая
-                </label>
 
-                <input type="radio" class="btn-check" name="project"
-                       id="project2" autocomplete="off"
-                       :value="5" v-model="projectId" @change="onChangeProject">
-                <label class="btn btn-outline-primary" for="project2">
-                  <i class="bi bi-building me-2"></i>Шесхарис
-                </label>
-              </div>
-            </div>
-
-            <!-- Выбор подобъекта -->
-            <div class="mb-4">
-              <label for="subObjectSelect" class="form-label fw-semibold">
-                <i class="bi bi-diagram-3 me-2"></i>Подобъект
+              <input type="radio" class="btn-check" name="project"
+                     id="project2" autocomplete="off"
+                     :value="5" v-model="projectId" @change="onChangeProject">
+              <label class="btn btn-outline-primary" for="project2">
+                <i class="bi bi-building me-2"></i>Шесхарис
               </label>
-              <div class="input-group">
+            </div>
+          </div>
+
+          <!-- Выбор подобъекта -->
+          <div class="mb-4">
+            <label for="subObjectSelect" class="form-label fw-semibold">
+              <i class="bi bi-diagram-3 me-2"></i>Подобъект
+            </label>
+            <div class="input-group">
                 <span class="input-group-text bg-light">
                   <i class="bi bi-list-ul"></i>
                 </span>
-                <select class="form-select" id="subObjectSelect"
-                        @change="onChangeSubObject" v-model="subObjectId">
-                  <option selected disabled value="">Выберите подобъект...</option>
-                  <option v-for="subObject in subObjects" :value="subObject.id">
-                    {{ subObject.name }}
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Выбор работ -->
-            <div class="mb-4">
-              <div class="row align-items-end mb-2">
-                <!-- Заголовок для select -->
-                <div class="col-md-8">
-                  <label class="form-label fw-semibold">
-                    <i class="bi bi-hammer me-2"></i>Работы
-                  </label>
-                </div>
-
-                <!-- Заголовок для input -->
-                <div class="col-md-4">
-                  <label class="form-label fw-semibold">
-                    <i class="bi bi-123 me-2"></i>Выполненный объём
-                  </label>
-                </div>
-              </div>
-
-              <div class="row align-items-center">
-                <!-- Select для работ (широкий) -->
-                <div class="col-md-8 mb-2 mb-md-0">
-                  <select class="form-select" id="workSelect"
-                          v-model="workId" @change="onChangeWork">
-                    <option selected disabled value="">Выберите работу...</option>
-                    <option v-for="work in works" :value="work.id">
-                      {{ work.name }}
-                    </option>
-                  </select>
-                </div>
-
-                <!-- Input для объема (узкий) + единицы измерения -->
-                <div class="col-md-4 d-flex align-items-center gap-2">
-                  <input class="form-control" type="number" step="0.001"
-                         v-model="workDone"
-                         :placeholder="currentWork?.finalQuantity || 'Введите количество'"
-                         style="flex: 1;">
-                  <span class="badge bg-light text-dark" style="white-space: nowrap;">
-        {{ currentWork?.units || '' }}
-      </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Даты -->
-            <div class="mb-4">
-              <label class="form-label fw-semibold">
-                <i class="bi bi-calendar-range me-2"></i>Даты работ
-              </label>
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">Начало работ</label>
-                  <VDatePicker class="form-control"
-                               :attributes="attributes"
-                               v-model="startDate"
-                               mode="date"/>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Окончание работ</label>
-                  <VDatePicker class="form-control"
-                               :attributes="attributes"
-                               v-model="endDate"
-                               :model-value="setFirstEndDate"
-                               mode="date"/>
-                </div>
-              </div>
-            </div>
-
-            <!-- Материалы -->
-            <div class="mb-4">
-              <label class="form-label fw-semibold">
-                <i class="bi bi-box-seam me-2"></i>Материалы
-              </label>
-              <div class="mb-3">
-                <label class="form-label">Количество применённых материалов</label>
-                <div class="btn-group w-100" role="group">
-                  <input type="radio" class="btn-check" id="mat0" value="0" v-model="materialQuantity">
-                  <label class="btn btn-outline-secondary" for="mat0">0</label>
-
-                  <input type="radio" class="btn-check" id="mat1" value="1" v-model="materialQuantity">
-                  <label class="btn btn-outline-secondary" for="mat1">1</label>
-
-                  <input type="radio" class="btn-check" id="mat2" value="2" v-model="materialQuantity">
-                  <label class="btn btn-outline-secondary" for="mat2">2</label>
-
-                  <input type="radio" class="btn-check" id="mat3" value="3" v-model="materialQuantity">
-                  <label class="btn btn-outline-secondary" for="mat3">3</label>
-
-                  <input type="radio" class="btn-check" id="mat4" value="4" v-model="materialQuantity">
-                  <label class="btn btn-outline-secondary" for="mat4">4</label>
-
-                  <input type="radio" class="btn-check" id="mat5" value="5" v-model="materialQuantity">
-                  <label class="btn btn-outline-secondary" for="mat5">5</label>
-                </div>
-              </div>
-
-              <div v-if="materialQuantity > 0" class="mb-3">
-                <div class="alert alert-info">
-                  <i class="bi bi-info-circle me-2"></i>
-                  Дата входного контроля: {{ setControlDate.toLocaleDateString() }}
-                </div>
-              </div>
-
-              <!-- Динамические поля для материалов -->
-              <div v-for="n in parseInt(materialQuantity)" :key="n" class="mb-3">
-                <div class="d-flex gap-3 align-items-center">
-                  <select class="form-select" v-model="materialInputs[n-1].id"
-                          @change="onChangeMaterial(n-1)">
-                    <option selected disabled value="">Выберите материал...</option>
-                    <option v-for="material in materials" :value="material.id">
-                      {{ material.name }}
-                    </option>
-                  </select>
-                  <span class="badge bg-light text-dark">{{ materialInputs[n - 1].units }}</span>
-                  <input class="form-control" type="number" step="0.001"
-                         v-model="materialInputs[n-1].quantity" placeholder="Количество">
-                </div>
-              </div>
-            </div>
-
-            <!-- Исполнительная схема -->
-            <div class="mb-4">
-              <label class="form-label fw-semibold">
-                <i class="bi bi-file-earmark-pdf me-2"></i>Исполнительная схема
-              </label>
-              <div class="btn-group w-100 mb-3" role="group">
-                <input type="radio" class="btn-check" id="schemaNo" value="Нет" v-model="executiveSchema">
-                <label class="btn btn-outline-secondary" for="schemaNo">Нет</label>
-
-                <input type="radio" class="btn-check" id="schemaYes" value="Есть" v-model="executiveSchema">
-                <label class="btn btn-outline-secondary" for="schemaYes">Есть</label>
-              </div>
-
-              <div v-if="executiveSchema === 'Есть'">
-                <label class="form-label">Загрузить PDF</label>
-                <input type="file" class="form-control" accept=".pdf"
-                       @change="handleFileUpload" ref="fileInput">
-              </div>
-            </div>
-
-            <!-- Следующие работы -->
-            <div class="mb-4">
-              <label for="nextWorkSelect" class="form-label fw-semibold">
-                <i class="bi bi-arrow-right-circle me-2"></i>Следующие работы
-              </label>
-              <select class="form-select" id="nextWorkSelect" v-model="nextWorkId">
-                <option selected disabled value="">Выберите следующую работу...</option>
-                <option v-for="work in works" :value="work.id">
-                  {{ work.name }}
+              <select class="form-select" id="subObjectSelect"
+                      @change="onChangeSubObject" v-model="subObjectId">
+                <option selected disabled value="">Выберите подобъект...</option>
+                <option v-for="subObject in subObjects" :value="subObject.id">
+                  {{ subObject.name }}
                 </option>
               </select>
             </div>
+          </div>
 
-            <!-- Кнопки -->
-            <div class="d-flex gap-3 mt-4">
-              <button type="submit" class="btn btn-primary flex-grow-1 py-2" :disabled="isLoading">
-                <template v-if="isLoading">
-                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Сохранение...
-                </template>
-                <template v-else>
-                  <i class="bi bi-check-circle me-2"></i>Сохранить акт
-                </template>
-              </button>
+          <!-- Выбор работ -->
+          <div class="mb-4">
+            <div class="row align-items-end mb-2">
+              <!-- Заголовок для select -->
+              <div class="col-md-8">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-hammer me-2"></i>Работы
+                </label>
+              </div>
+
+              <!-- Заголовок для input -->
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-123 me-2"></i>Выполненный объём
+                </label>
+              </div>
             </div>
-          </form>
-        </div>
+
+            <div class="row align-items-center">
+              <!-- Select для работ (широкий) -->
+              <div class="col-md-8 mb-2 mb-md-0">
+                <select class="form-select" id="workSelect"
+                        v-model="workId" @change="onChangeWork">
+                  <option selected disabled value="">Выберите работу...</option>
+                  <option v-for="work in works" :value="work.id">
+                    {{ work.name }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Input для объема (узкий) + единицы измерения -->
+              <div class="col-md-4 d-flex align-items-center gap-2">
+                <input class="form-control" type="number" step="0.001"
+                       v-model="workDone"
+                       :placeholder="currentWork?.finalQuantity || 'Введите количество'"
+                       style="flex: 1;">
+                <span class="badge bg-light text-dark" style="white-space: nowrap;">
+        {{ currentWork?.units || '' }}
+      </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Даты -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-calendar-range me-2"></i>Даты работ
+            </label>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Начало работ</label>
+                <VDatePicker class="form-control"
+                             :attributes="attributes"
+                             v-model="startDate"
+                             mode="date"/>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Окончание работ</label>
+                <VDatePicker class="form-control"
+                             :attributes="attributes"
+                             v-model="endDate"
+                             :model-value="setFirstEndDate"
+                             mode="date"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- Материалы -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-box-seam me-2"></i>Материалы
+            </label>
+            <div class="mb-3">
+              <label class="form-label">Количество применённых материалов</label>
+              <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" id="mat0" value="0" v-model="materialQuantity">
+                <label class="btn btn-outline-secondary" for="mat0">0</label>
+
+                <input type="radio" class="btn-check" id="mat1" value="1" v-model="materialQuantity">
+                <label class="btn btn-outline-secondary" for="mat1">1</label>
+
+                <input type="radio" class="btn-check" id="mat2" value="2" v-model="materialQuantity">
+                <label class="btn btn-outline-secondary" for="mat2">2</label>
+
+                <input type="radio" class="btn-check" id="mat3" value="3" v-model="materialQuantity">
+                <label class="btn btn-outline-secondary" for="mat3">3</label>
+
+                <input type="radio" class="btn-check" id="mat4" value="4" v-model="materialQuantity">
+                <label class="btn btn-outline-secondary" for="mat4">4</label>
+
+                <input type="radio" class="btn-check" id="mat5" value="5" v-model="materialQuantity">
+                <label class="btn btn-outline-secondary" for="mat5">5</label>
+              </div>
+            </div>
+
+            <div v-if="materialQuantity > 0" class="mb-3">
+              <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                Дата входного контроля: {{ setControlDate.toLocaleDateString() }}
+              </div>
+            </div>
+
+            <!-- Динамические поля для материалов -->
+            <div v-for="n in parseInt(materialQuantity)" :key="n" class="mb-3">
+              <div class="d-flex gap-3 align-items-center">
+                <select class="form-select" v-model="materialInputs[n-1].id"
+                        @change="onChangeMaterial(n-1)">
+                  <option selected disabled value="">Выберите материал...</option>
+                  <option v-for="material in materials" :value="material.id">
+                    {{ material.name }}
+                  </option>
+                </select>
+                <span class="badge bg-light text-dark">{{ materialInputs[n - 1].units }}</span>
+                <input class="form-control" type="number" step="0.001"
+                       v-model="materialInputs[n-1].quantity" placeholder="Количество">
+              </div>
+            </div>
+          </div>
+
+          <!-- Исполнительная схема -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-file-earmark-pdf me-2"></i>Исполнительная схема
+            </label>
+            <div class="btn-group w-100 mb-3" role="group">
+              <input type="radio" class="btn-check" id="schemaNo" value="Нет" v-model="executiveSchema">
+              <label class="btn btn-outline-secondary" for="schemaNo">Нет</label>
+
+              <input type="radio" class="btn-check" id="schemaYes" value="Есть" v-model="executiveSchema">
+              <label class="btn btn-outline-secondary" for="schemaYes">Есть</label>
+            </div>
+
+            <div v-if="executiveSchema === 'Есть'">
+              <label class="form-label">Загрузить PDF</label>
+              <input type="file" class="form-control" accept=".pdf"
+                     @change="handleFileUpload" ref="fileInput">
+            </div>
+          </div>
+
+          <!-- Следующие работы -->
+          <div class="mb-4">
+            <label for="nextWorkSelect" class="form-label fw-semibold">
+              <i class="bi bi-arrow-right-circle me-2"></i>Следующие работы
+            </label>
+            <select class="form-select" id="nextWorkSelect" v-model="nextWorkId">
+              <option selected disabled value="">Выберите следующую работу...</option>
+              <option v-for="work in works" :value="work.id">
+                {{ work.name }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Кнопки -->
+          <div class="d-flex gap-3 mt-4">
+            <button type="submit" class="btn btn-primary flex-grow-1 py-2" :disabled="isLoading">
+              <template v-if="isLoading">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Сохранение...
+              </template>
+              <template v-else>
+                <i class="bi bi-check-circle me-2"></i>Сохранить акт
+              </template>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
-  </main>
+  </div>
 </template>
 
 <script setup>
