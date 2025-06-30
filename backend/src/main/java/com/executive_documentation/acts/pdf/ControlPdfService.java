@@ -1,22 +1,20 @@
 package com.executive_documentation.acts.pdf;
 
 import com.executive_documentation.acts.model.EntranceControl;
-import com.executive_documentation.acts.repository.EntranceControlRepository;
-import com.executive_documentation.fileStorage.service.FileStorageService;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Font;
-import com.itextpdf.text.pdf.*;
+import com.itextpdf.text.pdf.BaseFont;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
 import jakarta.annotation.PostConstruct;
-import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
-import java.net.URI;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -24,23 +22,16 @@ import java.util.stream.IntStream;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ControlPdfService {
 
     private static final String FONT_PATH = "/fonts/times.ttf"; // Путь в ресурсах
 
-    private final EntranceControlRepository entranceControlRepository;
-    private final FileStorageService fileStorageService;
     private final PdfCellCreator creator;
 
     private Font f1;
     private Font fontToFillInControl;
     private Font subscript;
-
-    public ControlPdfService(EntranceControlRepository entranceControlRepository, FileStorageService fileStorageService, PdfCellCreator creator) {
-        this.entranceControlRepository = entranceControlRepository;
-        this.fileStorageService = fileStorageService;
-        this.creator = creator;
-    }
 
     @PostConstruct
     public void initFonts() {
@@ -89,75 +80,6 @@ public class ControlPdfService {
         }
     }
 
-    public void exportControlToPdf(long id, HttpServletResponse response) throws IOException, DocumentException {
-
-        EntranceControl control = entranceControlRepository.findById(id).orElse(null);
-
-        assert control != null;
-        String fileName = "АктВК_" + control.getControlNumber().replace("/", "_") + ".pdf";
-        response.setContentType("application/pdf");
-        response.setHeader("Content-Disposition",
-                "inline; filename=\"" + URLEncoder.encode(fileName, StandardCharsets.UTF_8) + "\"");
-
-        ByteArrayOutputStream controlPdfStream = new ByteArrayOutputStream();
-        Document controlDocument = new Document();
-
-        try {
-            PdfWriter.getInstance(controlDocument, controlPdfStream);
-            controlDocument.open();
-
-            PdfPTable controlTable = new PdfPTable(9);
-            controlTable.setWidthPercentage(105);
-            float[] controlWidths = new float[]{48.76f, 89.25f, 48.76f, 60.33f, 57.03f, 48.76f, 42.17f, 71.90f, 33.03f};
-            controlTable.setTotalWidth(500f);
-            controlTable.setWidths(controlWidths);
-
-            addControlTableData(controlTable, control);
-            controlDocument.add(controlTable);
-        } finally {
-            if (controlDocument.isOpen()) {
-                controlDocument.close();
-            }
-        }
-
-        // 3. Объединяем PDF через HTTP
-        ByteArrayOutputStream mergedPdf = new ByteArrayOutputStream();
-        Document mergedDoc = new Document();
-        PdfCopy copy = null;
-        PdfReader controlReader = null;
-        PdfReader certificateReader = null;
-
-        try {
-            copy = new PdfCopy(mergedDoc, mergedPdf);
-            mergedDoc.open();
-
-            // Добавляем акт
-            controlReader = new PdfReader(new ByteArrayInputStream(controlPdfStream.toByteArray()));
-            copy.addDocument(controlReader);
-
-            // Добавляем сертификат через HTTP
-            URL certificateUrl = new URI(fileStorageService.getStorageBaseUrl(control.getMaterial().getCertificate().getPath())).toURL();
-//            URL certificateUrl = new URL(fileStorageService.getFilePublicUrl(control.getMaterial().getCertificate().getPath()));
-            certificateReader = new PdfReader(certificateUrl);
-            copy.addDocument(certificateReader);
-            mergedDoc.close();
-
-            response.getOutputStream().write(mergedPdf.toByteArray());
-            log.info("Объединенный PDF акта входного контроля {} и сертификата сгенерирован", control.getControlNumber());
-            return;
-        } catch (Exception e) {
-            log.error("Ошибка при объединении с сертификатом: {}", e.getMessage());
-            response.getOutputStream().write(controlPdfStream.toByteArray());
-        } finally {
-            // Закрываем все ресурсы в правильном порядке
-            if (certificateReader != null) certificateReader.close();
-            if (controlReader != null) controlReader.close();
-            if (copy != null) copy.close();
-            if (mergedDoc.isOpen()) mergedDoc.close();
-        }
-        log.info("Акт входного контроля {} создан", control.getControlNumber());
-    }
-
     public ByteArrayOutputStream generateControlPdf(EntranceControl control) throws DocumentException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Document document = new Document();
@@ -183,7 +105,6 @@ public class ControlPdfService {
     }
 
 // entrance control acts
-
     private void addControlTableData(PdfPTable controlTable, EntranceControl control) {
         String controlDate = control.getDate().toString();
         String[] controlDateList = controlDate.split("-");

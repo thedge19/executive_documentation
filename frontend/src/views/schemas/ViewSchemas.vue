@@ -1,89 +1,87 @@
 <template>
-  <main class="bg-light min-vh-100">
-    <Navbar/>
+  <Navbar/>
 
-    <div class="container py-4">
-      <div class="card shadow-lg border-0">
-        <div class="card-header text-white py-3 mt-5">
-          <h1 class="mb-0 fw-semibold text-primary text-center">Исполнительные схемы</h1>
-        </div>
-        <div class="card-body p-0">
-          <div class="table-responsive" style="max-height: 70vh;">
-            <table class="table table-hover align-middle mb-0">
-              <thead class="sticky-top" style="background-color: #002d72;">
-              <tr>
-                <th scope="col" class="text-center text-black fw-normal">№</th>
-                <th scope="col" class="text-center text-black fw-normal">
-                  <div class="d-flex justify-content-center align-items-center">
-                    <span>Номер схемы</span>
-                    <div class="btn-group ms-2" role="group">
-                      <button @click="sortAsc" class="btn btn-sm btn-outline-dark p-1 border-0">
-                        <i class="bi bi-arrow-up"></i>
-                      </button>
-                      <button @click="sortDesc" class="btn btn-sm btn-outline-dark p-1 border-0">
-                        <i class="bi bi-arrow-down"></i>
-                      </button>
-                    </div>
+  <div class="container py-4">
+    <div class="card shadow-lg border-0">
+      <div class="card-header text-white py-3 mt-5">
+        <h1 class="mb-0 fw-semibold text-primary text-center">Исполнительные схемы</h1>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive" style="max-height: 70vh;">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="sticky-top" style="background-color: #002d72;">
+            <tr>
+              <th scope="col" class="text-center text-black fw-normal">№</th>
+              <th scope="col" class="text-center text-black fw-normal">
+                <div class="d-flex justify-content-center align-items-center">
+                  <span>Номер схемы</span>
+                  <div class="btn-group ms-2" role="group">
+                    <button @click="sortAsc" class="btn btn-sm btn-outline-dark p-1 border-0">
+                      <i class="bi bi-arrow-up"></i>
+                    </button>
+                    <button @click="sortDesc" class="btn btn-sm btn-outline-dark p-1 border-0">
+                      <i class="bi bi-arrow-down"></i>
+                    </button>
                   </div>
-                </th>
-                <th scope="col" class="text-center text-black fw-normal">Действие</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr v-for="(schema, index) in schemas" :key="schema.id" :class="{'table-light': index % 2 === 0}">
-                <td class="text-center fw-semibold">{{ index + 1 }}</td>
-                <td class="text-center">
-                  <span v-if="!schema.schemaPath" class="text-muted">{{ schema.schemasActNumber }}</span>
-                  <a v-else
-                     :href="schema.schemaPath"
-                     target="_blank"
-                     class="text-decoration-none text-primary fw-medium"
-                     :title="schema.schemasActNumber">
-                    {{ schema.schemasActNumber || 'Скачать схему' }}
-                    <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>
-                  </a>
-                </td>
-                <td class="text-center">
-                  <button @click="confirmDelete(schema)" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1">
-                    <i class="bi bi-trash3 me-1"></i>Удалить
-                  </button>
-                </td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
+                </div>
+              </th>
+              <th scope="col" class="text-center text-black fw-normal">Действие</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="(schema, index) in schemas" :key="schema.id" :class="{'table-light': index % 2 === 0}">
+              <td class="text-center fw-semibold">{{ index + 1 }}</td>
+              <td class="text-center">
+                <span v-if="!schema.schemaPath" class="text-muted">{{ schema.schemasActNumber }}</span>
+                <a v-else
+                   :href="schema.schemaPath"
+                   target="_blank"
+                   class="text-decoration-none text-primary fw-medium"
+                   :title="schema.schemasActNumber">
+                  {{ schema.schemasActNumber || 'Скачать схему' }}
+                  <i class="bi bi-file-earmark-pdf ms-1 text-danger"></i>
+                </a>
+              </td>
+              <td class="text-center">
+                <button @click="confirmDelete(schema)" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1">
+                  <i class="bi bi-trash3 me-1"></i>Удалить
+                </button>
+              </td>
+            </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Модальное окно подтверждения -->
-    <div v-if="showDeleteModal" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5)">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-          <div class="modal-header border-0 bg-primary text-white">
-            <h5 class="modal-title">Подтверждение удаления</h5>
-            <button type="button" class="btn-close btn-close-white" @click="showDeleteModal = false"></button>
-          </div>
-          <div class="modal-body py-4">
-            <p class="lead">Вы уверены, что хотите удалить эту схему?</p>
-            <p class="text-muted small">Это действие нельзя будет отменить.</p>
-          </div>
-          <div class="modal-footer border-0">
-            <button type="button" class="btn btn-outline-secondary rounded-pill px-4" @click="showDeleteModal = false">
-              Отмена
-            </button>
-            <button type="button" class="btn btn-danger rounded-pill px-4" @click="executeDelete">
-              <i class="bi bi-trash3 me-1"></i>Удалить
-            </button>
-          </div>
+  <!-- Модальное окно подтверждения -->
+  <div v-if="showDeleteModal" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header border-0 bg-primary text-white">
+          <h5 class="modal-title">Подтверждение удаления</h5>
+          <button type="button" class="btn-close btn-close-white" @click="showDeleteModal = false"></button>
+        </div>
+        <div class="modal-body py-4">
+          <p class="lead">Вы уверены, что хотите удалить эту схему?</p>
+          <p class="text-muted small">Это действие нельзя будет отменить.</p>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-outline-secondary rounded-pill px-4" @click="showDeleteModal = false">
+            Отмена
+          </button>
+          <button type="button" class="btn btn-danger rounded-pill px-4" @click="executeDelete">
+            <i class="bi bi-trash3 me-1"></i>Удалить
+          </button>
         </div>
       </div>
     </div>
-  </main>
+  </div>
 </template>
 
 <script setup>
-import { ref, onBeforeMount } from 'vue'
+import {ref, onBeforeMount} from 'vue'
 import Navbar from '../../components/Navbar.vue'
 
 const schemas = ref([])

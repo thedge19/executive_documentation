@@ -9,6 +9,7 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -22,22 +23,19 @@ import java.util.List;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ControlLogPdfService {
     private static final String FONT_PATH = "/fonts/times.ttf"; // Путь в ресурсах
 
     private final EntranceControlRepository entranceControlRepository;
     private final PdfCellCreator creator;
+    private final EntranceControlMapper entranceControlMapper;
 
     private Font f1;
     private Font f3;
     private Font f7;
     private Font f8;
     private Font f9;
-
-    public ControlLogPdfService(EntranceControlRepository entranceControlRepository, PdfCellCreator creator) {
-        this.entranceControlRepository = entranceControlRepository;
-        this.creator = creator;
-    }
 
     @PostConstruct
     public void initFonts() {
@@ -92,7 +90,7 @@ public class ControlLogPdfService {
         List<EntranceControlExportDto> controls = entranceControlRepository
                 .findAllByOrderByDateAsc()
                 .stream()
-                .map(EntranceControlMapper::toExportDto).toList();
+                .map(entranceControlMapper::toExportDto).toList();
 
         String fileName = "Журнал_входного_контроля.pdf";
         response.setContentType("application/pdf");
@@ -126,13 +124,13 @@ public class ControlLogPdfService {
         log.info("PDF ЖВК сгенерирован");
     }
 
-    public ByteArrayOutputStream generateControlLogPdf() throws DocumentException, IOException {
+    public ByteArrayOutputStream generateControlLogPdf() throws DocumentException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4.rotate());
         List<EntranceControlExportDto> controls = entranceControlRepository
                 .findAllByOrderByDateAsc()
                 .stream()
-                .map(EntranceControlMapper::toExportDto).toList();
+                .map(entranceControlMapper::toExportDto).toList();
 
         try {
             PdfWriter writer = PdfWriter.getInstance(document, output);

@@ -11,7 +11,9 @@ import com.executive_documentation.acts.pdf.PdfCellCreator;
 import com.executive_documentation.acts.repository.ActRepository;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.executive_documentation.fileStorage.service.FileStorageService;
+import com.executive_documentation.materials.model.Certificate;
 import com.executive_documentation.materials.model.Material;
+import com.executive_documentation.materials.repository.CertificateRepository;
 import com.executive_documentation.registries.dto.RegistryPeriodDto;
 import com.executive_documentation.registries.model.Registry;
 import com.executive_documentation.worklogs.pdf.WorkLogPdfService;
@@ -53,6 +55,7 @@ public class RegistryPdfService {
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private final WorkLogPdfService workLogPdfService;
     private final ControlLogPdfService controlLogPdfService;
+    private final CertificateRepository certificateRepository;
 
     private final static String ENERGY = "ООО «Энергомонтаж»";
     private final Path fileStorageLocation;
@@ -68,11 +71,12 @@ public class RegistryPdfService {
                               ControlPdfService controlPdfService,
                               ActMapper actMapper,
                               FileStorageService fileStorageService,
-                              @Value("${file.upload-dir}") String uploadDir, PdfCellCreator creator, WorkLogPdfService workLogPdfService, ControlLogPdfService controlLogPdfService, Path fileStorageLocation) {
+                              @Value("${file.upload-dir}") String uploadDir, PdfCellCreator creator, WorkLogPdfService workLogPdfService, ControlLogPdfService controlLogPdfService, CertificateRepository certificateRepository, Path fileStorageLocation) {
         this.actRepository = actRepository;
         this.creator = creator;
         this.workLogPdfService = workLogPdfService;
         this.controlLogPdfService = controlLogPdfService;
+        this.certificateRepository = certificateRepository;
         this.fileStorageLocation = fileStorageLocation;
         this.entranceControlRepository = entranceControlRepository;
         this.actPdfService = actPdfService;
@@ -209,15 +213,16 @@ public class RegistryPdfService {
                     controlRegistry.setNumberOfSheets(controlPages);
 
                     // Обработка сертификатов
-                    if (control.getMaterial() != null && control.getMaterial().getCertificate() != null) {
-                        Registry certRegistry = createCertificateRegistryEntry(control);
-                        try {
-                            int certPages = addRemoteDocumentToMerge(copy,
-                                    fileStorageService.getStorageBaseUrl(
-                                            control.getMaterial().getCertificate().getPath()));
-                            certRegistry.setNumberOfSheets(certPages);
-                        } catch (Exception e) {
-                            log.warn("Не удалось добавить сертификат: {}", e.getMessage());
+
+                    for (Certificate certificate : getCertificates(control.getMaterial())) {
+                        if (control.getMaterial() != null) {
+                            Registry certRegistry = createCertificateRegistryEntry(control);
+                            try {
+                                int certPages = addRemoteDocumentToMerge(copy, fileStorageService.getStorageBaseUrl(certificate.getPath()));
+                                certRegistry.setNumberOfSheets(certPages);
+                            } catch (Exception e) {
+                                log.warn("Не удалось добавить сертификат: {}", e.getMessage());
+                            }
                         }
                     }
                 }
@@ -321,7 +326,7 @@ public class RegistryPdfService {
 
             // 7. Добавляем в итоговый документ
             document.add(table);
-            if(registryPages % 2 != 0) {
+            if (registryPages % 2 != 0) {
                 document.newPage();
                 document.add(new Paragraph(" "));
             }
@@ -437,9 +442,12 @@ public class RegistryPdfService {
                 registries.add(controlRegistry);
 
                 // Добавляем сертификаты (если есть)
-                if (control.getMaterial() != null && control.getMaterial().getCertificate() != null) {
-                    Registry certRegistry = createCertificateRegistryEntry(control);
-                    registries.add(certRegistry);
+
+                for (Certificate certificate : getCertificates(control.getMaterial())) {
+                    if (control.getMaterial() != null && certificate.getPath() != null) {
+                        Registry certRegistry = createCertificateRegistryEntry(control);
+                        registries.add(certRegistry);
+                    }
                 }
             }
         }
@@ -499,18 +507,17 @@ public class RegistryPdfService {
 
     private Registry createCertificateRegistryEntry(EntranceControl control) {
         Material material = control.getMaterial();
-
+        Certificate certificate = certificateRepository.findCertificateByMaterial(material);
         Registry registry = new Registry();
 
-        String certificateType = material.getDocuments().split("№")[0];
-        String certificateNumber = material.getDocuments().split("№")[1];
+        String certificateType = certificate.getName().split("№")[0];
+        String certificateNumber = certificate.getName().split("№")[1];
         registry.setDocumentName(certificateType.trim() + " на " + (material.getName() != null ? material.getName() : "материал"));
-        registry.setDocumentNumber(material.getDocuments() != null ? certificateNumber : "б/н");
-        registry.setDocumentAuthor(material.getAuthor() != null ?
-                material.getAuthor() : "Производитель не указан");
+        registry.setDocumentNumber(certificateNumber != null ? certificateNumber : "б/н");
+        registry.setDocumentAuthor(certificate.getAuthor() != null ? certificate.getAuthor() : "Производитель не указан");
         registry.setDocumentDate(LocalDate.now());
 
-        registry.setNumberOfSheets(material.getNumberOfPages());
+        registry.setNumberOfSheets(certificate.getNumberOfPages());
         registry.setAddingTime(LocalDateTime.now());
         registry.setCurrentActId(control.getAct().getId());
         return registry;
@@ -525,14 +532,13 @@ public class RegistryPdfService {
                 ByteArrayOutputStream pdfStream;
 
                 // Выбираем нужный генератор PDF в зависимости от типа журнала
-                if ("Общий журнал работ (раздел 3)".equals(journalName)) {
-                    pdfStream = workLogPdfService.generateWorkLog3Pdf();
-                } else if ("Общий журнал работ (раздел 6)".equals(journalName)) {
-                    pdfStream = workLogPdfService.generateWorkLog6Pdf();
-                } else if ("Журнал входного контроля".equals(journalName)) {
-                    pdfStream = controlLogPdfService.generateControlLogPdf();
-                } else {
-                    continue; // Пропускаем неизвестные типы журналов
+                switch (journalName) {
+                    case "Общий журнал работ (раздел 3)" -> pdfStream = workLogPdfService.generateWorkLog3Pdf();
+                    case "Общий журнал работ (раздел 6)" -> pdfStream = workLogPdfService.generateWorkLog6Pdf();
+                    case "Журнал входного контроля" -> pdfStream = controlLogPdfService.generateControlLogPdf();
+                    case null, default -> {
+                        continue; // Пропускаем неизвестные типы журналов
+                    }
                 }
 
                 // Добавляем PDF и получаем количество страниц
@@ -580,6 +586,10 @@ public class RegistryPdfService {
         journals.add(controlLog);
 
         return journals;
+    }
+
+    private List<Certificate> getCertificates(Material material) {
+        return certificateRepository.findAllByMaterial(material);
     }
 
     /**

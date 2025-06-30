@@ -1,56 +1,54 @@
 <template>
   <!-- Шаблон остается без изменений -->
-  <main class="bg-light min-vh-100">
-    <Navbar />
+  <Navbar/>
 
-    <div class="container py-5">
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3">
-          <h1 class="text-center mb-0 fw-semibold text-primary">СП</h1>
-          <a href="/addStandard" class="btn btn-primary rounded-pill px-4">
-            <i class="bi bi-plus-lg me-2"></i>Добавить СП
-          </a>
-        </div>
+  <div class="container py-5">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white py-3">
+        <h1 class="text-center mb-0 fw-semibold text-primary">СП</h1>
+        <a href="/addStandard" class="btn btn-primary rounded-pill px-4">
+          <i class="bi bi-plus-lg me-2"></i>Добавить СП
+        </a>
+      </div>
 
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 w-100">
-              <thead class="table-dark">
-              <tr>
-                <th class="ps-4" style="width: 15%">ID</th>
-                <th style="width: 55%">Наименование</th>
-                <th class="text-end pe-4" style="width: 30%">Действие</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr v-for="(standard, index) in standards" :key="standard.id"
-                  :class="{'table-light': index % 2 === 0}" class="border-top">
-                <td class="ps-4 fw-semibold text-muted">{{ standard.id }}</td>
-                <td class="fw-medium">{{ standard.name }}</td>
-                <td class="text-end pe-4">
-                  <a :href="`/editStandard/${standard.id}`"
-                     class="btn btn-sm btn-outline-primary rounded-pill px-3 me-2">
-                    <i class="bi bi-pencil-square me-1"></i>Изменить
-                  </a>
-                  <button @click="deleteStandard(standard.id)"
-                          class="btn btn-sm btn-outline-danger rounded-pill px-3">
-                    <i class="bi bi-trash3 me-1"></i>Удалить
-                  </button>
-                </td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 w-100">
+            <thead class="table-dark">
+            <tr>
+              <th class="ps-4" style="width: 15%">ID</th>
+              <th style="width: 55%">Наименование</th>
+              <th class="text-end pe-4" style="width: 30%">Действие</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="(standard, index) in standards" :key="standard.id"
+                :class="{'table-light': index % 2 === 0}" class="border-top">
+              <td class="ps-4 fw-semibold text-muted">{{ standard.id }}</td>
+              <td class="fw-medium">{{ standard.name }}</td>
+              <td class="text-end pe-4">
+                <a :href="`/editStandard/${standard.id}`"
+                   class="btn btn-sm btn-outline-primary rounded-pill px-3 me-2">
+                  <i class="bi bi-pencil-square me-1"></i>Изменить
+                </a>
+                <button @click="deleteStandard(standard.id)"
+                        class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                  <i class="bi bi-trash3 me-1"></i>Удалить
+                </button>
+              </td>
+            </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
-  </main>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import {ref, onMounted} from 'vue'
 import Navbar from '../../components/Navbar.vue'
-import { useRouter } from 'vue-router'
+import {useRouter} from 'vue-router'
 
 const router = useRouter()
 const standards = ref([])
@@ -179,8 +177,14 @@ onMounted(() => {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .table tbody tr {

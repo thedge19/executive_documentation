@@ -1,142 +1,138 @@
 <template>
-  <!-- Шаблон остается без изменений -->
-  <main class="bg-light min-vh-100">
-    <Navbar/>
+  <Navbar/>
+  <div class="container py-4">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-primary text-white py-3 mt-3">
+        <h1 class="h3 mb-0 text-center">Учет выполненных работ</h1>
+      </div>
 
-    <div class="container py-4">
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-primary text-white py-3 mt-3">
-          <h1 class="h3 mb-0 text-center">Учет выполненных работ</h1>
+      <div class="card-body">
+        <!-- Controls -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-1 gap-3">
+          <div class="d-flex justify-content-start">
+            <a :href="`/addWork/${subObjectId}?page=${works.totalPages - 1}`"
+               class="btn btn-primary rounded-pill my-2">
+              <i class="bi bi-plus-circle me-2"></i>Добавить работу
+            </a>
+            <router-link
+                v-if="works.content && works.content.length > 0"
+                :to="`/subObjects/${works.content[0].projectId}`"
+                class="btn btn-outline-secondary rounded-pill m-lg-2">
+              <i class="bi bi-arrow-left me-2"></i>В подобъекты
+            </router-link>
+          </div>
+
+          <div class="flex-grow-1 mx-md-3" style="max-width: 500px;">
+            <div class="input-group">
+              <label class="input-group-text bg-white"><i class="bi bi-building"></i></label>
+              <select class="form-select" v-model="subObjectId" @change="onChangeSubObject()">
+                <option value="" disabled selected>Выберите подобъект...</option>
+                <option v-for="subObject in subObjects" :value="subObject.id">
+                  {{ subObject.name }}
+                </option>
+              </select>
+            </div>
+          </div>
         </div>
 
-        <div class="card-body">
-          <!-- Controls -->
-          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-1 gap-3">
-            <div class="d-flex justify-content-start">
-              <a :href="`/addWork/${subObjectId}?page=${works.totalPages - 1}`"
-                 class="btn btn-primary rounded-pill my-2">
-                <i class="bi bi-plus-circle me-2"></i>Добавить работу
-              </a>
-              <router-link
-                  v-if="works.content && works.content.length > 0"
-                  :to="`/subObjects/${works.content[0].projectId}`"
-                  class="btn btn-outline-secondary rounded-pill m-lg-2">
-                <i class="bi bi-arrow-left me-2"></i>В подобъекты
-              </router-link>
-            </div>
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-dark">
+            <tr>
+              <th scope="col" class="text-nowrap">ID</th>
+              <th scope="col" class="text-nowrap">Наименование</th>
+              <th scope="col" class="text-nowrap">Ед. изм.</th>
+              <th scope="col" class="text-nowrap">Количество</th>
+              <th scope="col" class="text-nowrap">Выполнено</th>
+              <th scope="col" class="text-nowrap">Закрыто, руб.</th>
+              <th scope="col" class="text-nowrap">Осталось</th>
+              <th scope="col" class="text-nowrap">Не закрыто, руб.</th>
+              <th scope="col" class="text-nowrap">Всего, руб.</th>
+              <th scope="col" class="text-nowrap text-end" style="width:15%">Действие</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-if="works.content && works.content.length > 0" v-for="work in works.content" :key="work.id">
+              <th scope="row" class="fw-semibold">{{ work.id }}</th>
+              <td :class="{ 'fw-bold': work.unitPrice > 0 }">{{ work.name }}</td>
+              <td class="text-center">{{ work.units }}</td>
+              <td class="text-center">{{ work.quantity }}</td>
+              <td class="text-center">{{ work.done }}</td>
+              <td class="text-center">{{ work.doneAmount.toFixed(2) }}</td>
+              <td class="text-center">{{ work.finalQuantity }}</td>
+              <td class="text-center">{{ work.remainingAmount.toFixed(2) }}</td>
+              <td class="text-center">{{ work.totalAmount.toFixed(2) }}</td>
+              <td class="text-end">
+                <div class="d-flex justify-content-end gap-2">
+                  <a class="btn btn-sm btn-outline-primary"
+                     :href="`/editWork/${work.id}?page=${works.number}&subObjectId=${subObjectId}`">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <button class="btn btn-sm btn-outline-danger" @click="deleteWork(work.id)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr v-else>
+              <td colspan="7" class="text-center py-4 text-muted">
+                <i class="bi bi-exclamation-circle fs-4 d-block mb-2"></i>
+                Нет данных для отображения
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
 
-            <div class="flex-grow-1 mx-md-3" style="max-width: 500px;">
-              <div class="input-group">
-                <label class="input-group-text bg-white"><i class="bi bi-building"></i></label>
-                <select class="form-select" v-model="subObjectId" @change="onChangeSubObject()">
-                  <option value="" disabled selected>Выберите подобъект...</option>
-                  <option v-for="subObject in subObjects" :value="subObject.id">
-                    {{ subObject.name }}
-                  </option>
-                </select>
-              </div>
-            </div>
+        <!-- Pagination -->
+        <div class="d-flex flex-column align-items-center mt-4">
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm">
+              <li class="page-item" :class="{ disabled: works.first }">
+                <button class="page-link" @click="changePage(0)">
+                  <i class="bi bi-chevron-double-left"></i>
+                </button>
+              </li>
+              <li class="page-item" :class="{ disabled: works.first }">
+                <button class="page-link" @click="changePage(works.number - 1)">
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+              </li>
+
+              <li class="page-item" v-for="page in pageNumbers" :key="page"
+                  :class="{ active: works.number === page }">
+                <button class="page-link" @click="changePage(page)">{{ page + 1 }}</button>
+              </li>
+
+              <li class="page-item" :class="{ disabled: works.last }">
+                <button class="page-link" @click="changePage(works.number + 1)">
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+              </li>
+              <li class="page-item" :class="{ disabled: works.last }">
+                <button class="page-link" @click="changePage(works.totalPages - 1)">
+                  <i class="bi bi-chevron-double-right"></i>
+                </button>
+              </li>
+            </ul>
+          </nav>
+
+          <div v-if="works.totalElements > 0" class="text-muted small mt-2">
+            Показано {{ works.numberOfElements }} из {{ works.totalElements }} работ
+            (Страница {{ works.number + 1 }} из {{ works.totalPages }})
           </div>
-
-          <!-- Table -->
-          <div class="table-responsive">
-            <table class="table table-hover align-middle">
-              <thead class="table-dark">
-              <tr>
-                <th scope="col" class="text-nowrap">ID</th>
-                <th scope="col" class="text-nowrap">Наименование</th>
-                <th scope="col" class="text-nowrap">Ед. изм.</th>
-                <th scope="col" class="text-nowrap">Количество</th>
-                <th scope="col" class="text-nowrap">Выполнено</th>
-                <th scope="col" class="text-nowrap">Закрыто, руб.</th>
-                <th scope="col" class="text-nowrap">Осталось</th>
-                <th scope="col" class="text-nowrap">Не закрыто, руб.</th>
-                <th scope="col" class="text-nowrap">Всего, руб.</th>
-                <th scope="col" class="text-nowrap text-end" style="width:15%">Действие</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr v-if="works.content && works.content.length > 0" v-for="work in works.content" :key="work.id">
-                <th scope="row" class="fw-semibold">{{ work.id }}</th>
-                <td :class="{ 'fw-bold': work.unitPrice > 0 }">{{ work.name }}</td>
-                <td class="text-center">{{ work.units }}</td>
-                <td class="text-center">{{ work.quantity }}</td>
-                <td class="text-center">{{ work.done }}</td>
-                <td class="text-center">{{ work.doneAmount.toFixed(2) }}</td>
-                <td class="text-center">{{ work.finalQuantity }}</td>
-                <td class="text-center">{{ work.remainingAmount.toFixed(2) }}</td>
-                <td class="text-center">{{ work.totalAmount.toFixed(2) }}</td>
-                <td class="text-end">
-                  <div class="d-flex justify-content-end gap-2">
-                    <a class="btn btn-sm btn-outline-primary"
-                       :href="`/editWork/${work.id}?page=${works.number}&subObjectId=${subObjectId}`">
-                      <i class="bi bi-pencil"></i>
-                    </a>
-                    <button class="btn btn-sm btn-outline-danger" @click="deleteWork(work.id)">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr v-else>
-                <td colspan="7" class="text-center py-4 text-muted">
-                  <i class="bi bi-exclamation-circle fs-4 d-block mb-2"></i>
-                  Нет данных для отображения
-                </td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Pagination -->
-          <div class="d-flex flex-column align-items-center mt-4">
-            <nav aria-label="Page navigation">
-              <ul class="pagination pagination-sm">
-                <li class="page-item" :class="{ disabled: works.first }">
-                  <button class="page-link" @click="changePage(0)">
-                    <i class="bi bi-chevron-double-left"></i>
-                  </button>
-                </li>
-                <li class="page-item" :class="{ disabled: works.first }">
-                  <button class="page-link" @click="changePage(works.number - 1)">
-                    <i class="bi bi-chevron-left"></i>
-                  </button>
-                </li>
-
-                <li class="page-item" v-for="page in pageNumbers" :key="page"
-                    :class="{ active: works.number === page }">
-                  <button class="page-link" @click="changePage(page)">{{ page + 1 }}</button>
-                </li>
-
-                <li class="page-item" :class="{ disabled: works.last }">
-                  <button class="page-link" @click="changePage(works.number + 1)">
-                    <i class="bi bi-chevron-right"></i>
-                  </button>
-                </li>
-                <li class="page-item" :class="{ disabled: works.last }">
-                  <button class="page-link" @click="changePage(works.totalPages - 1)">
-                    <i class="bi bi-chevron-double-right"></i>
-                  </button>
-                </li>
-              </ul>
-            </nav>
-
-            <div v-if="works.totalElements > 0" class="text-muted small mt-2">
-              Показано {{ works.numberOfElements }} из {{ works.totalElements }} работ
-              (Страница {{ works.number + 1 }} из {{ works.totalPages }})
-            </div>
-          </div>
-          <!-- Итоговая сумма -->
-          <div v-if="works.content && works.content.length > 0" class="d-flex justify-content-end mt-3">
-            <div class="alert alert-success mb-0 py-2 px-3">
-              <strong>Итого по подобъекту:</strong>
-              <span class="ms-2">{{ formatCurrency(totalAmountBySubObject) }}</span>
-            </div>
+        </div>
+        <!-- Итоговая сумма -->
+        <div v-if="works.content && works.content.length > 0" class="d-flex justify-content-end mt-3">
+          <div class="alert alert-success mb-0 py-2 px-3">
+            <strong>Итого по подобъекту:</strong>
+            <span class="ms-2">{{ formatCurrency(totalAmountBySubObject) }}</span>
           </div>
         </div>
       </div>
     </div>
-  </main>
+  </div>
 </template>
 
 <script setup>
@@ -215,7 +211,7 @@ const getWorks = async () => {
 
     const response = await fetch(
         `http://localhost:8080/workings/${subObjectId.value}?page=${page}&size=${pageSize.value}`,
-        { headers }
+        {headers}
     )
 
     if (!response.ok) {
@@ -230,7 +226,7 @@ const getWorks = async () => {
 
     // Если в URL не было параметра page - добавляем его
     if (!route.query.page && page !== 0) {
-      await router.replace({ query: { ...route.query, page } })
+      await router.replace({query: {...route.query, page}})
     }
 
   } catch (err) {
@@ -275,7 +271,7 @@ const getSubObjects = async () => {
   try {
     const headers = getAuthHeaders()
 
-    const response = await fetch('http://localhost:8080/subobjects', { headers })
+    const response = await fetch('http://localhost:8080/subobjects', {headers})
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -313,7 +309,7 @@ const fetchTotalAmountBySubObject = async () => {
     const headers = getAuthHeaders();
     const response = await fetch(
         `http://localhost:8080/workings/subobject/${subObjectId.value}/total-sum`,
-        { headers }
+        {headers}
     );
 
     if (!response.ok) {
@@ -337,7 +333,7 @@ const changePage = (pageNumber) => {
   if (pageNumber >= 0 && pageNumber < works.value.totalPages) {
     works.value.number = pageNumber;
     // Обновляем URL с новым параметром page
-    router.push({ query: { ...route.query, page: pageNumber } });
+    router.push({query: {...route.query, page: pageNumber}});
     getWorks();
   }
 };
