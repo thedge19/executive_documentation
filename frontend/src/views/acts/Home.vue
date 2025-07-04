@@ -102,11 +102,13 @@ import Navbar from '../../components/Navbar.vue'
 
 const acts = ref([])
 const path = ref('http://localhost:8080/acts')
+const containerPath = ref('http://localhost:8080/acts/container')
 const startDate = ref(new Date())
 const endDate = ref(new Date())
 const showDates = ref(true)
 const isLoading = ref(false)
 const error = ref(null)
+const container = ref("");
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token')

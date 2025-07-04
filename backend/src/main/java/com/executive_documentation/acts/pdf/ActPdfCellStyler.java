@@ -3,7 +3,9 @@ package com.executive_documentation.acts.pdf;
 import com.itextpdf.text.Element;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfPCell;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ActPdfCellStyler {
     public void createCellStyleHorizontalCenterBorder(PdfPCell pdfPCell) {
         pdfPCell.setVerticalAlignment(Element.ALIGN_MIDDLE);

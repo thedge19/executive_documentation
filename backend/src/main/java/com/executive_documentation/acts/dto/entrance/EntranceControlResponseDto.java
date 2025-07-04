@@ -1,4 +1,4 @@
-package com.executive_documentation.acts.dto;
+package com.executive_documentation.acts.dto.entrance;
 
 import lombok.Builder;
 import lombok.Data;

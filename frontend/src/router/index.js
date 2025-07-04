@@ -173,7 +173,7 @@ const router = createRouter({
 
 // Глобальный навигационный хук
 router.beforeEach((to, from, next) => {
-  console.log('Navigation:', to.path, 'Token exists:', !!localStorage.getItem('token'))
+  console.log('Navigation:', to.path, 'Token exists:', !!localStorage.getItem('accessToken'))
 
   if (!to.meta.requiresAuth) {
     next()

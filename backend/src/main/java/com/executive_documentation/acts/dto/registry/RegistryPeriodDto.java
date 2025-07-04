@@ -1,4 +1,4 @@
-package com.executive_documentation.registries.dto;
+package com.executive_documentation.acts.dto.registry;
 
 import lombok.Builder;
 import lombok.Data;

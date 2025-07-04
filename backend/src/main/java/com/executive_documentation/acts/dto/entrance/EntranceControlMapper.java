@@ -1,4 +1,4 @@
-package com.executive_documentation.acts.dto;
+package com.executive_documentation.acts.dto.entrance;
 
 import com.executive_documentation.acts.model.EntranceControl;
 import org.springframework.stereotype.Component;

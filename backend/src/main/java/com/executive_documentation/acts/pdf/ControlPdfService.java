@@ -108,157 +108,127 @@ public class ControlPdfService {
     private void addControlTableData(PdfPTable controlTable, EntranceControl control) {
         String controlDate = control.getDate().toString();
         String[] controlDateList = controlDate.split("-");
-        controlDate = controlDateList[2] + " " + getMonth(controlDateList[1]) + " " + controlDateList[0] + " г.";
+        controlDate = controlDateList[2] + " " + PdfUtils.getMonth(controlDateList[1]) + " " + controlDateList[0] + " г.";
 
-        controlTable.addCell(creator.createCell("ООО «ЭНЕРГОМОНТАЖ»", "centerBorderBottom", fontToFillInControl, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(наименование строительной организации)", "centerTopNoBorder", subscript, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell(clearProjectNameForControls(control.getAct().getProject().getName(), 1), "centerBorderBottom", fontToFillInControl, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(наименование объекта)", "centerTopNoBorder", subscript, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("АКТ №", "rightBottomNoBorder", f1, 4, 1, 30F));
-        controlTable.addCell(creator.createCell(control.getAct().getActNumber(), "centerBottomBorderBottom", fontToFillInControl, 2, 1, 30F));
-        controlTable.addCell(creator.createCell("", "centerNoBorder", fontToFillInControl, 3, 1, 30F));
-        controlTable.addCell(creator.createCell("результатов входного контроля МТР и оборудования", "centerBottomNoBorder", f1, 9, 1, 30F));
-        addLongString(control.getMaterials(), controlTable, fontToFillInControl);
-        controlTable.addCell(creator.createCell("((наименование МТР)", "centerTopNoBorder", subscript, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("от", "rightBottomNoBorder", f1, 4, 1, 0.0F));
-        controlTable.addCell(creator.createCell(controlDate, "centerBottomBorderBottom", fontToFillInControl, 2, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "centerNoBorder", fontToFillInControl, 3, 1, 0.0F));
-        controlTable.addCell(creator.createCell("Составлен представителями:", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("субподрядной организации", "leftCenterNoBorder", f1, 2, 1, 0.0F));
-        controlTable.addCell(creator.createCell("Руководитель работ ООО «ЭНЕРГОМОНТАЖ» А.Е. Трифонов", "centerBorderBottom", fontToFillInControl, 7, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "centerNoBorder", fontToFillInControl, 2, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(должность, организация, ФИО)", "centerTopNoBorder", subscript, 7, 1, 0.0F));
-        controlTable.addCell(creator.createCell("строительного контроля подрядчика", "leftCenterNoBorder", f1, 3, 1, 0.0F));
-        controlTable.addCell(creator.createCell("Начальник отдела контроля качества", "centerBorderBottom", fontToFillInControl, 6, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "centerNoBorder", fontToFillInControl, 3, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(должность, организация, ФИО)", "centerTopNoBorder", subscript, 6, 1, 0.0F));
-        controlTable.addCell(creator.createCell("ООО «ЭНЕРГОМОНТАЖ» Попова Л.С.", "centerBorderBottom", fontToFillInControl, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("строительного контроля застройщика или технического заказчика", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("н/п", "centerBorderBottom", fontToFillInControl, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(должность, организация, ФИО)", "centerTopNoBorder", subscript, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("застройщика ", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("или технического заказчика ", "leftCenterNoBorder", f1, 2, 1, 0.0F));
-        controlTable.addCell(creator.createCell("Ведущий инженер ОКС ПК «Шесхарис» А.А. Челебиев", "centerBorderBottom", fontToFillInControl, 7, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "leftCenterNoBorder", f1, 2, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(должность, организация, ФИО)", "centerTopNoBorder", subscript, 7, 1, 0.0F));
-        controlTable.addCell(creator.createCell("в том, что произведен", "leftCenterNoBorder", f1, 2, 1, 0.0F));
-        controlTable.addCell(creator.createCell("выборочный", "centerBorderBottom", fontToFillInControl, 2, 1, 0.0F));
-        controlTable.addCell(creator.createCell("осмотр МТР и оборудования", "leftCenterNoBorder", f1, 5, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "leftCenterNoBorder", f1, 2, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(сплошной, выборочный)", "centerTopNoBorder", subscript, 2, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "leftCenterNoBorder", f1, 5, 1, 0.0F));
-        addLongString(control.getMaterials(), controlTable, fontToFillInControl);
-        controlTable.addCell(creator.createCell("(наименование)", "centerTopNoBorder", subscript, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("предназначенных проектной документацией", "leftCenterNoBorder", f1, 4, 1, 0.0F));
-        controlTable.addCell(creator.createCell(clearProjectNameForControls(control.getAct().getProject().getName(), 2), "centerBorderBottom", fontToFillInControl, 5, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "leftCenterNoBorder", f1, 4, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(шифр, раздел, номер изменения проектной документации)", "centerTopNoBorder", subscript, 5, 1, 0.0F));
-        controlTable.addCell(creator.createCell("для строительства на участке", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        addLongString(control.getSubObjectName(), controlTable, fontToFillInControl);
-        controlTable.addCell(creator.createCell("(участок линейной части (км/ПК), подобъект НПС/ЛПДС)", "centerTopNoBorder", subscript, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("1. Осмотром геометрических размеров, маркировки МТР и оборудования", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        addLongString(control.getMaterials(), controlTable, fontToFillInControl);
-        controlTable.addCell(creator.createCell("(наименование, заводской номер)", "centerTopNoBorder", subscript, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("сопроводительной документации", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        addLongString(control.getDocuments(), controlTable, fontToFillInControl);
-        controlTable.addCell(creator.createCell("(паспорта, сертификаты)", "centerTopNoBorder", subscript, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("установлено, что данный МТР и оборудование по своим техническим параметрам", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("Внешний вид, количество", "centerBorderBottom", fontToFillInControl, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(контролируемые параметры)", "centerTopNoBorder", subscript, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("номеру технических условий", "leftCenterNoBorder", f1, 3, 1, 0.0F));
-        controlTable.addCell(creator.createCell(control.getStandard(), "centerBorderBottom", fontToFillInControl, 6, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "leftCenterNoBorder", f1, 3, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(контролируемые параметры)", "centerTopNoBorder", subscript, 6, 1, 0.0F));
-        controlTable.addCell(creator.createCell("техническим характеристикам", "leftCenterNoBorder", f1, 3, 1, 0.0F));
-        controlTable.addCell(creator.createCell("по данным сопроводительной документации", "centerBorderBottom", fontToFillInControl, 6, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "leftCenterNoBorder", f1, 3, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(по данным сопроводительной документации, результатам испытаний)", "centerTopNoBorder", subscript, 6, 1, 0.0F));
-        controlTable.addCell(creator.createCell("соответствует", "centerBorderBottom", fontToFillInControl, 6, 1, 0.0F));
-        controlTable.addCell(creator.createCell("проектной документации.", "leftCenterNoBorder", f1, 3, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(соответствует/не соответствует)", "centerTopNoBorder", subscript, 6, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "leftCenterNoBorder", f1, 3, 1, 0.0F));
-        controlTable.addCell(creator.createCell("2. Сопроводительная документация на МТР и оборудование", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        addLongString(control.getDocuments(), controlTable, fontToFillInControl);
-        controlTable.addCell(creator.createCell("(паспорта, сертификаты)", "centerTopNoBorder", subscript, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("имеется в полном комплекте.", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("3. МТР и оборудование", "leftCenterNoBorder", f1, 2, 1, 0.0F));
-        controlTable.addCell(creator.createCell("не находится", "centerBorderBottom", fontToFillInControl, 2, 1, 0.0F));
-        controlTable.addCell(creator.createCell("в Перечне основных видов МТР и оборудования.", "leftCenterNoBorder", f1, 5, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "leftCenterNoBorder", f1, 2, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(находится/не находится)", "centerTopNoBorder", subscript, 2, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "leftCenterNoBorder", f1, 5, 1, 0.0F));
-        controlTable.addCell(creator.createCell("4. Техническая документация на МТР и оборудование ", "leftCenterNoBorder", f1, 5, 1, 0.0F));
-        controlTable.addCell(creator.createCell("отсутствует в Реестре", "centerBorderBottom", fontToFillInControl, 4, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "leftCenterNoBorder", f1, 5, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(номер учетной записи в Реестре/отсутствует в Реестре)", "centerTopNoBorder", subscript, 4, 1, 0.0F));
-        controlTable.addCell(creator.createCell("5. Дополнительно отмечено следующее", "leftCenterNoBorder", f1, 4, 1, 0.0F));
-        controlTable.addCell(creator.createCell("н/п", "centerBorderBottom", fontToFillInControl, 5, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "leftCenterNoBorder", f1, 4, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(заполняется при необходимости)", "centerTopNoBorder", subscript, 5, 1, 0.0F));
-        controlTable.addCell(creator.createCell("Представитель субподрядной", "leftBottomNoBorder", f1, 9, 1, 30F));
-        controlTable.addCell(creator.createCell("строительной организации", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("ООО «ЭНЕРГОМОНТАЖ» А.Е. Трифонов", "centerBorderBottom", fontToFillInControl, 4, 1, 0.0F));
+        controlTable.addCell(creator.createCell("ООО «ЭНЕРГОМОНТАЖ»", "CBB", fontToFillInControl, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(наименование строительной организации)", "cTNB", subscript, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell(clearProjectNameForControls(control.getAct().getProject().getName(), 1), "CBB", fontToFillInControl, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(наименование объекта)", "cTNB", subscript, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("АКТ №", "rBNB", f1, 4, 1, 30F));
+        controlTable.addCell(creator.createCell(control.getAct().getActNumber(), "lBBB", fontToFillInControl, 2, 1, 30F));
+        controlTable.addCell(creator.createCell("", "CNB", fontToFillInControl, 3, 1, 30F));
+        controlTable.addCell(creator.createCell("результатов входного контроля МТР и оборудования", "cBNB", f1, 9, 1, 30F));
+        PdfUtils.longString(control.getMaterials(), 98, controlTable, creator, fontToFillInControl, 9);
+        controlTable.addCell(creator.createCell("((наименование МТР)", "cTNB", subscript, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("от", "rBNB", f1, 4, 1, 0.0F));
+        controlTable.addCell(creator.createCell(controlDate, "cBBB", fontToFillInControl, 2, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "CNB", fontToFillInControl, 3, 1, 0.0F));
+        controlTable.addCell(creator.createCell("Составлен представителями:", "lCNB", f1, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("субподрядной организации", "lCNB", f1, 2, 1, 0.0F));
+        controlTable.addCell(creator.createCell("Руководитель работ ООО «ЭНЕРГОМОНТАЖ» А.Е. Трифонов", "CBB", fontToFillInControl, 7, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "CNB", fontToFillInControl, 2, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(должность, организация, ФИО)", "cTNB", subscript, 7, 1, 0.0F));
+        controlTable.addCell(creator.createCell("строительного контроля подрядчика", "lCNB", f1, 3, 1, 0.0F));
+        controlTable.addCell(creator.createCell("Начальник отдела контроля качества", "CBB", fontToFillInControl, 6, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "CNB", fontToFillInControl, 3, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(должность, организация, ФИО)", "cTNB", subscript, 6, 1, 0.0F));
+        controlTable.addCell(creator.createCell("ООО «ЭНЕРГОМОНТАЖ» Попова Л.С.", "CBB", fontToFillInControl, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("строительного контроля застройщика или технического заказчика", "lCNB", f1, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("н/п", "CBB", fontToFillInControl, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(должность, организация, ФИО)", "cTNB", subscript, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("застройщика ", "lCNB", f1, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("или технического заказчика ", "lCNB", f1, 2, 1, 0.0F));
+        controlTable.addCell(creator.createCell("Ведущий инженер ОКС ПК «Шесхарис» А.А. Челебиев", "CBB", fontToFillInControl, 7, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "lCNB", f1, 2, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(должность, организация, ФИО)", "cTNB", subscript, 7, 1, 0.0F));
+        controlTable.addCell(creator.createCell("в том, что произведен", "lCNB", f1, 2, 1, 0.0F));
+        controlTable.addCell(creator.createCell("выборочный", "CBB", fontToFillInControl, 2, 1, 0.0F));
+        controlTable.addCell(creator.createCell("осмотр МТР и оборудования", "lCNB", f1, 5, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "lCNB", f1, 2, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(сплошной, выборочный)", "cTNB", subscript, 2, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "lCNB", f1, 5, 1, 0.0F));
+        PdfUtils.longString(control.getMaterials(), 98, controlTable, creator, fontToFillInControl, 9);
+        controlTable.addCell(creator.createCell("(наименование)", "cTNB", subscript, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("предназначенных проектной документацией", "lCNB", f1, 4, 1, 0.0F));
+        controlTable.addCell(creator.createCell(clearProjectNameForControls(control.getAct().getProject().getName(), 2), "CBB", fontToFillInControl, 5, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "lCNB", f1, 4, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(шифр, раздел, номер изменения проектной документации)", "cTNB", subscript, 5, 1, 0.0F));
+        controlTable.addCell(creator.createCell("для строительства на участке", "lCNB", f1, 9, 1, 0.0F));
+        PdfUtils.longString(control.getSubObjectName(), 98, controlTable, creator, fontToFillInControl, 9);
+        controlTable.addCell(creator.createCell("(участок линейной части (км/ПК), подобъект НПС/ЛПДС)", "cTNB", subscript, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("1. Осмотром геометрических размеров, маркировки МТР и оборудования", "lCNB", f1, 9, 1, 0.0F));
+        PdfUtils.longString(control.getMaterials(), 98, controlTable, creator, fontToFillInControl, 9);
+        controlTable.addCell(creator.createCell("(наименование, заводской номер)", "cTNB", subscript, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("сопроводительной документации", "lCNB", f1, 9, 1, 0.0F));
+        PdfUtils.longString(control.getDocuments(), 98, controlTable, creator, fontToFillInControl, 9);
+        controlTable.addCell(creator.createCell("(паспорта, сертификаты)", "cTNB", subscript, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("установлено, что данный МТР и оборудование по своим техническим параметрам", "lCNB", f1, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("Внешний вид, количество", "CBB", fontToFillInControl, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(контролируемые параметры)", "cTNB", subscript, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("номеру технических условий", "lCNB", f1, 3, 1, 0.0F));
+        controlTable.addCell(creator.createCell(control.getStandard(), "CBB", fontToFillInControl, 6, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "lCNB", f1, 3, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(контролируемые параметры)", "cTNB", subscript, 6, 1, 0.0F));
+        controlTable.addCell(creator.createCell("техническим характеристикам", "lCNB", f1, 3, 1, 0.0F));
+        controlTable.addCell(creator.createCell("по данным сопроводительной документации", "CBB", fontToFillInControl, 6, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "lCNB", f1, 3, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(по данным сопроводительной документации, результатам испытаний)", "cTNB", subscript, 6, 1, 0.0F));
+        controlTable.addCell(creator.createCell("соответствует", "CBB", fontToFillInControl, 6, 1, 0.0F));
+        controlTable.addCell(creator.createCell("проектной документации.", "lCNB", f1, 3, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(соответствует/не соответствует)", "cTNB", subscript, 6, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "lCNB", f1, 3, 1, 0.0F));
+        controlTable.addCell(creator.createCell("2. Сопроводительная документация на МТР и оборудование", "lCNB", f1, 9, 1, 0.0F));
+        PdfUtils.longString(control.getDocuments(), 98, controlTable, creator, fontToFillInControl, 9);
+        controlTable.addCell(creator.createCell("(паспорта, сертификаты)", "cTNB", subscript, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("имеется в полном комплекте.", "lCNB", f1, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("3. МТР и оборудование", "lCNB", f1, 2, 1, 0.0F));
+        controlTable.addCell(creator.createCell("не находится", "CBB", fontToFillInControl, 2, 1, 0.0F));
+        controlTable.addCell(creator.createCell("в Перечне основных видов МТР и оборудования.", "lCNB", f1, 5, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "lCNB", f1, 2, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(находится/не находится)", "cTNB", subscript, 2, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "lCNB", f1, 5, 1, 0.0F));
+        controlTable.addCell(creator.createCell("4. Техническая документация на МТР и оборудование ", "lCNB", f1, 5, 1, 0.0F));
+        controlTable.addCell(creator.createCell("отсутствует в Реестре", "CBB", fontToFillInControl, 4, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "lCNB", f1, 5, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(номер учетной записи в Реестре/отсутствует в Реестре)", "cTNB", subscript, 4, 1, 0.0F));
+        controlTable.addCell(creator.createCell("5. Дополнительно отмечено следующее", "lCNB", f1, 4, 1, 0.0F));
+        controlTable.addCell(creator.createCell("н/п", "CBB", fontToFillInControl, 5, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "lCNB", f1, 4, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(заполняется при необходимости)", "cTNB", subscript, 5, 1, 0.0F));
+        controlTable.addCell(creator.createCell("Представитель субподрядной", "lBNB", f1, 9, 1, 30F));
+        controlTable.addCell(creator.createCell("строительной организации", "lCNB", f1, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("ООО «ЭНЕРГОМОНТАЖ» А.Е. Трифонов", "CBB", fontToFillInControl, 4, 1, 0.0F));
         addControlSigns(controlTable);
-        controlTable.addCell(creator.createCell("Представитель службы", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("строительного контроля", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("подрядчика", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("ООО «ЭНЕРГОМОНТАЖ» Л.С. Попова", "centerBorderBottom", fontToFillInControl, 4, 1, 0.0F));
+        controlTable.addCell(creator.createCell("Представитель службы", "lCNB", f1, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("строительного контроля", "lCNB", f1, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("подрядчика", "lCNB", f1, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("ООО «ЭНЕРГОМОНТАЖ» Л.С. Попова", "CBB", fontToFillInControl, 4, 1, 0.0F));
         addControlSigns(controlTable);
-        controlTable.addCell(creator.createCell("Представитель службы", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("строительного контроля", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("застройщика или", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("технического заказчика", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "centerBorderBottom", fontToFillInControl, 4, 1, 0.0F));
+        controlTable.addCell(creator.createCell("Представитель службы", "lCNB", f1, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("строительного контроля", "lCNB", f1, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("застройщика или", "lCNB", f1, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("технического заказчика", "lCNB", f1, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "CBB", fontToFillInControl, 4, 1, 0.0F));
         addControlSigns(controlTable);
-        controlTable.addCell(creator.createCell("Представитель застройщика", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("или технического заказчика", "leftCenterNoBorder", f1, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell("ПК «Шесхарис» А.А. Челебиев", "centerBorderBottom", fontToFillInControl, 4, 1, 0.0F));
+        controlTable.addCell(creator.createCell("Представитель застройщика", "lCNB", f1, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("или технического заказчика", "lCNB", f1, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell("ПК «Шесхарис» А.А. Челебиев", "CBB", fontToFillInControl, 4, 1, 0.0F));
         addControlSigns(controlTable);
     }
 
     void addControlSigns(PdfPTable controlTable) {
-        controlTable.addCell(creator.createCell("", "leftCenterNoBorder", f1, 1, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "centerBorderBottom", fontToFillInControl, 3, 1, 0.0F));
-        controlTable.addCell(creator.createCell("М.П.", "leftCenterNoBorder", f1, 1, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(организация, ФИО)", "centerTopNoBorder", subscript, 4, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "centerTopNoBorder", subscript, 1, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(подпись)", "centerTopNoBorder", subscript, 2, 1, 0.0F));
-        controlTable.addCell(creator.createCell("(дата)", "centerTopNoBorder", subscript, 1, 1, 0.0F));
-        controlTable.addCell(creator.createCell("", "centerTopNoBorder", subscript, 1, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "lCNB", f1, 1, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "CBB", fontToFillInControl, 3, 1, 0.0F));
+        controlTable.addCell(creator.createCell("М.П.", "lCNB", f1, 1, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(организация, ФИО)", "cTNB", subscript, 4, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "cTNB", subscript, 1, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(подпись)", "cTNB", subscript, 2, 1, 0.0F));
+        controlTable.addCell(creator.createCell("(дата)", "cTNB", subscript, 1, 1, 0.0F));
+        controlTable.addCell(creator.createCell("", "cTNB", subscript, 1, 1, 0.0F));
     }
 
     // utils
 // --------------------------------------------------------------------------------------------------------------------------------
-
-    private String getMonth(String month) {
-        List<String> cyphers = List.of("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12");
-        List<String> months = List.of("января", "февраля", "марта", "апреля", "мая", "июня", "июля",
-                "августа", "сентября", "октября", "ноября", "декабря");
-
-        Map<String, String> monthsMap = IntStream.range(0, cyphers.size())
-                .boxed()
-                .collect(Collectors.toMap(cyphers::get, months::get));
-        return monthsMap.get(month);
-    }
-
-    private void addLongString(String works, PdfPTable table, Font font) {
-        int currentLength = 118;
-
-        if (font == fontToFillInControl) {
-            currentLength = 98;
-        }
-
-        while (works.length() >= currentLength) {
-            String worksRow = works.substring(0, currentLength - 1);
-            int lastSpace = worksRow.lastIndexOf(" ");
-            worksRow = worksRow.substring(0, lastSpace);
-            table.addCell(creator.createCell(worksRow, "centerBorderBottom", font, 9, 1, 0.0F));
-            works = works.replace(worksRow, "");
-        }
-        table.addCell(creator.createCell(works, "centerBorderBottom", font, 9, 1, 0.0F));
-    }
-
-
     private String clearProjectNameForControls(String projectName, int choice) {
         String[] split = projectName.split("\\.");
         if (choice == 1) {

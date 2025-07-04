@@ -1,6 +1,5 @@
-package com.executive_documentation.registries.dto;
+package com.executive_documentation.acts.dto.registry;
 
-import jakarta.validation.constraints.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -27,14 +26,5 @@ public class RegistryMapper {
                 .startDate(startDate)
                 .endDate(endDate)
                 .build();
-    }
-
-
-
-    private static String formatLocalDate(@NotNull LocalDate date) {
-        if (date == null) {
-            return null;
-        }
-        return date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
     }
 }

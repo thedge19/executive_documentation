@@ -1,6 +1,6 @@
 package com.executive_documentation.worklogs.controller;
 
-import com.executive_documentation.acts.dto.ActLogResponseDto;
+import com.executive_documentation.acts.dto.act.ActLogResponseDto;
 import com.executive_documentation.worklogs.dto.WorkLogDto;
 import com.executive_documentation.worklogs.pdf.WorkLogPdfService;
 import com.executive_documentation.worklogs.service.WorkLogService;
@@ -45,7 +45,7 @@ public class WorkLogController {
     @GetMapping("/3/pdf")
     public void generateWorkLog3Pdf(HttpServletResponse response) throws IOException {
         try {
-            workLogPdfService.exportWorkLog3toPdf(response);
+            workLogPdfService.exportWorkLogToPdf(response, 3);
         } catch (DocumentException e) {
             response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Ошибка генерации PDF");
         }
@@ -54,7 +54,7 @@ public class WorkLogController {
     @GetMapping("/6/pdf")
     public void generateWorkLog6Pdf(HttpServletResponse response) throws IOException {
         try {
-            workLogPdfService.exportWorkLog6ToPdf(response);
+            workLogPdfService.exportWorkLogToPdf(response, 6);
         } catch (DocumentException e) {
             response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Ошибка генерации PDF");
         }

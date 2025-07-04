@@ -1,4 +1,4 @@
-package com.executive_documentation.acts.dto;
+package com.executive_documentation.acts.dto.act;
 
 import com.executive_documentation.acts.model.Act;
 import org.mapstruct.Mapper;

@@ -3,17 +3,15 @@ package com.executive_documentation.acts.pdf;
 import com.itextpdf.text.Font;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.pdf.PdfPCell;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class PdfCellCreator {
     private final ActPdfCellStyler cellStyler;
-
-    public PdfCellCreator() {
-        this.cellStyler = new ActPdfCellStyler();
-    }
 
     public PdfPCell createCell(String text, String position, Font font, int numberOfColumns, int numberOfRows,
                                 float cellHeight) {
@@ -33,47 +31,44 @@ public class PdfCellCreator {
         }
 
         switch (position) {
-            case "centerBorder":
+            case "CB":
                 cellStyler.createCellStyleHorizontalCenterBorder(cell);
                 break;
-            case "centerNoBorder":
-                cellStyler.createCellStyleHorizontalCenterAndVerticalCenter(cell);
-                break;
-            case "centerBottomNoBorder":
-                cellStyler.createCellStyleHorizontalCenterAndVerticalBottomNoBorder(cell);
-                break;
-            case "leftTopNoBorder":
-                cellStyler.createCellStyleHorizontalLeftAndVerticalTopNoBorder(cell);
-                break;
-            case "leftCenterNoBorder":
-                cellStyler.createCellStyleHorizontalLeftAndVerticalCenterNoBorder(cell);
-                break;
-            case "leftBottomNoBorder":
-                cellStyler.createCellStyleHorizontalLeftAndVerticalBottomNoBorder(cell);
-                break;
-            case "emptyCellBottomBorder":
-                cellStyler.createCellStyleBottomBorder(cell);
-                break;
-            case "centerTopNoBorder":
-                cellStyler.createCellStyleHorizontalCenterAndVerticalTopNoBorder(cell);
-                break;
-            case "rightBottomNoBorder":
-                cellStyler.createCellStyleHorizontalRightAndVerticalBottomNoBorder(cell);
-                break;
-            case "rightCenterNoBorder":
-                cellStyler.createCellStyleHorizontalRightAndVerticalCenterNoBorder(cell);
-                break;
-            case "rightTopNoBorder":
-                cellStyler.createCellStyleHorizontalRightAndVerticalTopNoBorder(cell);
-                break;
-            case "centerBorderBottom":
+            case "CBB":
                 cellStyler.createCellStyleHorizontalCenterAndVerticalCenterBottomBorder(cell);
                 break;
-            case "centerBottomBorderBottom":
+            case "cBBB":
                 cellStyler.createCellStyleHorizontalCenterAndVerticalBottomBottomBorder(cell);
                 break;
-            case "leftBottomBorderBottom":
+            case "CNB":
+                cellStyler.createCellStyleHorizontalCenterAndVerticalCenter(cell);
+                break;
+            case "cBNB":
+                cellStyler.createCellStyleHorizontalCenterAndVerticalBottomNoBorder(cell);
+                break;
+            case "cTNB":
+                cellStyler.createCellStyleHorizontalCenterAndVerticalTopNoBorder(cell);
+                break;
+            case "lTNB":
+                cellStyler.createCellStyleHorizontalLeftAndVerticalTopNoBorder(cell);
+                break;
+            case "lCNB":
+                cellStyler.createCellStyleHorizontalLeftAndVerticalCenterNoBorder(cell);
+                break;
+            case "lBNB":
+                cellStyler.createCellStyleHorizontalLeftAndVerticalBottomNoBorder(cell);
+                break;
+            case "lBBB":
                 cellStyler.createCellStyleHorizontalLeftAndVerticalBottomBottomBorder(cell);
+                break;
+            case "rBNB":
+                cellStyler.createCellStyleHorizontalRightAndVerticalBottomNoBorder(cell);
+                break;
+            case "rCNB":
+                cellStyler.createCellStyleHorizontalRightAndVerticalCenterNoBorder(cell);
+                break;
+            case "rTNB":
+                cellStyler.createCellStyleHorizontalRightAndVerticalTopNoBorder(cell);
                 break;
         }
 

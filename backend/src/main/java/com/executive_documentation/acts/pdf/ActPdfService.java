@@ -1,6 +1,6 @@
 package com.executive_documentation.acts.pdf;
 
-import com.executive_documentation.acts.dto.ActResponseDto;
+import com.executive_documentation.acts.dto.act.ActResponseDto;
 import com.executive_documentation.acts.model.Act;
 import com.executive_documentation.acts.model.EntranceControl;
 import com.executive_documentation.acts.repository.ActRepository;
@@ -16,6 +16,7 @@ import com.itextpdf.text.pdf.*;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -26,12 +27,10 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ActPdfService {
     private static final String FONT_PATH = "/fonts/times.ttf"; // Путь в ресурсах
 
@@ -48,16 +47,6 @@ public class ActPdfService {
     private Font subscript;
     private Font f13;
     private Font f14;
-
-    public ActPdfService(ActService actService, ControlPdfService controlPdfService, FileStorageService fileStorageService, EntranceControlRepository entranceControlRepository, ActRepository actRepository, PdfCellCreator creator, CertificateRepository certificateRepository) {
-        this.actService = actService;
-        this.controlPdfService = controlPdfService;
-        this.fileStorageService = fileStorageService;
-        this.entranceControlRepository = entranceControlRepository;
-        this.creator = creator;
-        this.actRepository = actRepository;
-        this.certificateRepository = certificateRepository;
-    }
 
     @PostConstruct
     public void initFonts() {
@@ -140,7 +129,7 @@ public class ActPdfService {
             if (actDto.getExecutiveSchemaUrl() != null) {
                 try {
                     addRemoteDocumentToMerge(copy,
-                            fileStorageService.getStorageBaseUrl(actDto.getExecutiveSchemaUrl()));
+                            fileStorageService.getFilePublicUrl(actDto.getExecutiveSchemaUrl()));
                 } catch (Exception e) {
                     log.warn("Не удалось добавить исполнительную схему: {}", e.getMessage());
                 }
@@ -160,7 +149,7 @@ public class ActPdfService {
                         if (certificate.getPath() != null) {
 
                             try {
-                                addRemoteDocumentToMerge(copy, fileStorageService.getStorageBaseUrl(
+                                addRemoteDocumentToMerge(copy, fileStorageService.getFilePublicUrl(
                                         certificate.getPath()));
                             } catch (Exception e) {
                                 log.warn("Не удалось добавить сертификат: {}", e.getMessage());
@@ -238,300 +227,262 @@ public class ActPdfService {
     private void addAOSRTableData(PdfPTable table, ActResponseDto act) {
         addFirstStaticBlock(table);
 
-
-        table.addCell(creator.createCell(act.getProjectName(), "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+        table.addCell(creator.createCell(act.getProjectName(), "CBB", fontToFillIn, 36, 1, 0.0F));
 
         addSecondStaticBlock(table);
 
-        table.addCell(creator.createCell("№", "rightBottomNoBorder", f14, 2, 1, 20F));
-        table.addCell(creator.createCell(act.getActNumber(), "centerBottomBorderBottom", fontToFillIn, 5, 1, 20F));
-        table.addCell(creator.createCell("", "rightBottomNoBorder", f14, 16, 1, 20F));
-        table.addCell(creator.createCell("«", "rightBottomNoBorder", f5, 1, 1, 20F));
-        table.addCell(creator.createCell(actDate(act.getEndDate())[0], "centerBottomBorderBottom", fontToFillIn, 2, 1, 20F));
-        table.addCell(creator.createCell("»", "leftBottomNoBorder", f5, 1, 1, 20F));
-        table.addCell(creator.createCell(actDate(act.getEndDate())[1], "centerBottomBorderBottom", fontToFillIn, 5, 1, 20F));
-        table.addCell(creator.createCell("", "rightBottomNoBorder", f14, 1, 1, 20F));
-        table.addCell(creator.createCell(actDate(act.getEndDate())[2], "centerBottomBorderBottom", fontToFillIn, 2, 1, 20F));
-        table.addCell(creator.createCell("г.", "leftBottomNoBorder", f5, 1, 1, 20F));
+        table.addCell(creator.createCell("№", "rBNB", f14, 2, 1, 20F));
+        table.addCell(creator.createCell(act.getActNumber(), "cBBB", fontToFillIn, 5, 1, 20F));
+        table.addCell(creator.createCell("", "rBNB", f14, 16, 1, 20F));
+        table.addCell(creator.createCell("«", "rBNB", f5, 1, 1, 20F));
+        table.addCell(creator.createCell(actDate(act.getEndDate())[0], "cBBB", fontToFillIn, 2, 1, 20F));
+        table.addCell(creator.createCell("»", "lBNB", f5, 1, 1, 20F));
+        table.addCell(creator.createCell(actDate(act.getEndDate())[1], "cBBB", fontToFillIn, 5, 1, 20F));
+        table.addCell(creator.createCell("", "rBNB", f14, 1, 1, 20F));
+        table.addCell(creator.createCell(actDate(act.getEndDate())[2], "cBBB", fontToFillIn, 2, 1, 20F));
+        table.addCell(creator.createCell("г.", "lBNB", f5, 1, 1, 20F));
 
         addThirdStaticBlock(table);
 
-        addLongString(act.getWorks(), table, fontToFillIn, 36);
+        PdfUtils.longString(act.getWorks(), 118, table, creator, fontToFillIn, 36);
         table.addCell(creator.createCell("(наименование скрытых работ)",
-                "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "cTNB", subscript, 36, 1, 0.0F));
 
-        table.addCell(creator.createCell("2. Работы выполнены по проектной документации", "leftCenterNoBorder", f5, 36, 1, 20F));
-        table.addCell(creator.createCell(act.getProjectName(), "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+        table.addCell(creator.createCell("2. Работы выполнены по проектной документации", "lCNB", f5, 36, 1, 20F));
+        table.addCell(creator.createCell(act.getProjectName(), "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("(номер, другие реквизиты чертежа, наименование проектной и/или рабочей документации, " +
                         "сведения о лицах, осуществляющих подготовку раздела проектной и/или рабочей документации)",
-                "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "cTNB", subscript, 36, 1, 0.0F));
 
-        table.addCell(creator.createCell("3. При выполнении работ применены", "leftCenterNoBorder", f5, 15, 1, 0.0F));
+        table.addCell(creator.createCell("3. При выполнении работ применены", "lCNB", f5, 15, 1, 0.0F));
         log.info(act.getMaterials());
         addMaterials(act.getMaterials(), table);
 
         table.addCell(creator.createCell("4. Предъявлены документы, подтверждающие соответствие работ предъявляемым к ним  требованиям",
-                "leftCenterNoBorder", f5, 36, 1, 0.0F));
-        addLongString(act.getSubmittedDocuments(), table, fontToFillIn, 36);
+                "lCNB", f5, 36, 1, 0.0F));
+        PdfUtils.longString(act.getSubmittedDocuments(), 118, table, creator, fontToFillIn, 36);
         table.addCell(creator.createCell("(исполнительные схемы и чертежи, результаты экспертиз, обследований, лабораторных " +
                         "и иных испытаний выполненных работ, проведенных в процессе строительного контроля)",
-                "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "cTNB", subscript, 36, 1, 0.0F));
 
-        table.addCell(creator.createCell("5. Даты:", "leftBottomNoBorder", f5, 3, 1, 20F));
-        table.addCell(creator.createCell("начала работ", "leftBottomNoBorder", f5, 8, 1, 20F));
-        table.addCell(creator.createCell("«", "rightBottomNoBorder", f5, 1, 1, 20F));
-        table.addCell(creator.createCell(actDate(act.getStartDate())[0], "centerBottomBorderBottom", fontToFillIn, 2, 1, 20F));
-        table.addCell(creator.createCell("»", "leftBottomNoBorder", f5, 1, 1, 20F));
-        table.addCell(creator.createCell(actDate(act.getStartDate())[1], "centerBottomBorderBottom", fontToFillIn, 4, 1, 20F));
-        table.addCell(creator.createCell("", "rightBottomNoBorder",
+        table.addCell(creator.createCell("5. Даты:", "lBNB", f5, 3, 1, 20F));
+        table.addCell(creator.createCell("начала работ", "lBNB", f5, 8, 1, 20F));
+        table.addCell(creator.createCell("«", "rBNB", f5, 1, 1, 20F));
+        table.addCell(creator.createCell(actDate(act.getStartDate())[0], "cBBB", fontToFillIn, 2, 1, 20F));
+        table.addCell(creator.createCell("»", "lBNB", f5, 1, 1, 20F));
+        table.addCell(creator.createCell(actDate(act.getStartDate())[1], "cBBB", fontToFillIn, 4, 1, 20F));
+        table.addCell(creator.createCell("", "rBNB",
                 f5, 1, 1, 20F));
-        table.addCell(creator.createCell(actDate(act.getStartDate())[2], "centerBottomBorderBottom",
+        table.addCell(creator.createCell(actDate(act.getStartDate())[2], "cBBB",
                 fontToFillIn, 3, 1, 20F));
-        table.addCell(creator.createCell("г.", "leftBottomNoBorder", f5, 13, 1, 20F));
+        table.addCell(creator.createCell("г.", "lBNB", f5, 13, 1, 20F));
 
-        table.addCell(creator.createCell("", "leftBottomNoBorder", f5, 3, 1, 0.0F));
-        table.addCell(creator.createCell("окончания работ", "leftBottomNoBorder", f5, 8, 1, 0.0F));
-        table.addCell(creator.createCell("«", "rightBottomNoBorder", f5, 1, 1, 0.0F));
-        table.addCell(creator.createCell(actDate(act.getEndDate())[0], "centerBottomBorderBottom", fontToFillIn, 2, 1, 0.0F));
-        table.addCell(creator.createCell("»", "leftBottomNoBorder", f5, 1, 1, 0.0F));
-        table.addCell(creator.createCell(actDate(act.getEndDate())[1], "centerBottomBorderBottom", fontToFillIn, 4, 1, 0.0F));
-        table.addCell(creator.createCell("", "rightBottomNoBorder", f5, 1, 1, 0.0F));
-        table.addCell(creator.createCell(actDate(act.getEndDate())[2], "centerBottomBorderBottom",
+        table.addCell(creator.createCell("", "lBNB", f5, 3, 1, 0.0F));
+        table.addCell(creator.createCell("окончания работ", "lBNB", f5, 8, 1, 0.0F));
+        table.addCell(creator.createCell("«", "rBNB", f5, 1, 1, 0.0F));
+        table.addCell(creator.createCell(actDate(act.getEndDate())[0], "cBBB", fontToFillIn, 2, 1, 0.0F));
+        table.addCell(creator.createCell("»", "lBNB", f5, 1, 1, 0.0F));
+        table.addCell(creator.createCell(actDate(act.getEndDate())[1], "cBBB", fontToFillIn, 4, 1, 0.0F));
+        table.addCell(creator.createCell("", "rBNB", f5, 1, 1, 0.0F));
+        table.addCell(creator.createCell(actDate(act.getEndDate())[2], "cBBB",
                 fontToFillIn, 3, 1, 0.0F));
-        table.addCell(creator.createCell("г.", "leftBottomNoBorder", f5, 13, 1, 0.0F));
+        table.addCell(creator.createCell("г.", "lBNB", f5, 13, 1, 0.0F));
 
-        table.addCell(creator.createCell("6. Работы выполнены в соответствии с", "leftCenterNoBorder", f5, 36, 1, 0.0F));
-        addLongString(act.getInAccordWith(), table, fontToFillIn, 36);
+        table.addCell(creator.createCell("6. Работы выполнены в соответствии с", "lCNB", f5, 36, 1, 0.0F));
+        PdfUtils.longString(act.getInAccordWith(), 118, table, creator, fontToFillIn, 36);
         table.addCell(creator.createCell("(наименования и структурные единицы технических регламентов, иных нормативных " +
                         "правовых актов, разделы проектной и (или) рабочей документации)",
-                "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "cTNB", subscript, 36, 1, 0.0F));
 
-        table.addCell(creator.createCell("7. Разрешается  производство   последующих  работ", "leftCenterNoBorder", f5, 36, 1, 0.0F));
-        addLongString(act.getNextWorks(), table, fontToFillIn, 36);
+        table.addCell(creator.createCell("7. Разрешается  производство   последующих  работ", "lCNB", f5, 36, 1, 0.0F));
+        PdfUtils.longString(act.getNextWorks(), 118, table, creator, fontToFillIn, 36);
         table.addCell(creator.createCell("(наименование работ, строительных конструкций, участков сетей инженерно-технического обеспечения)",
-                "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "cTNB", subscript, 36, 1, 0.0F));
 
-        table.addCell(creator.createCell("Дополнительные сведения", "leftCenterNoBorder", f5, 11, 1, 0.0F));
-        table.addCell(creator.createCell("н/п", "centerBottomBorderBottom", fontToFillIn, 25, 1, 0.0F));
-        table.addCell(creator.createCell("Акт составлен в  ", "leftCenterNoBorder", f5, 7, 1, 0.0F));
-        table.addCell(creator.createCell("3", "centerBottomBorderBottom", fontToFillIn, 2, 1, 0.0F));
-        table.addCell(creator.createCell("экземплярах (в случае заполнения акта на бумажном носителе).", "leftCenterNoBorder", f5, 27, 1, 0.0F));
+        table.addCell(creator.createCell("Дополнительные сведения", "lCNB", f5, 11, 1, 0.0F));
+        table.addCell(creator.createCell("н/п", "cBBB", fontToFillIn, 25, 1, 0.0F));
+        table.addCell(creator.createCell("Акт составлен в  ", "lCNB", f5, 7, 1, 0.0F));
+        table.addCell(creator.createCell("3", "cBBB", fontToFillIn, 2, 1, 0.0F));
+        table.addCell(creator.createCell("экземплярах (в случае заполнения акта на бумажном носителе).", "lCNB", f5, 27, 1, 0.0F));
 
-        table.addCell(creator.createCell("Приложения:", "leftCenterNoBorder", f5, 36, 1, 0.0F));
-        addLongString(act.getSubmittedDocuments(), table, fontToFillIn, 36);
+        table.addCell(creator.createCell("Приложения:", "lCNB", f5, 36, 1, 0.0F));
+        PdfUtils.longString(act.getSubmittedDocuments(), 118, table, creator, fontToFillIn, 36);
 
         addForthStaticBlock(table);
     }
 
     private void addFirstStaticBlock(PdfPTable table) {
-        table.addCell(creator.createCell("", "centerNoBorder", f5, 23, 1, 0.0F));
-        table.addCell(creator.createCell("Приказ Минстроя  №344/пр от 16.05.2023", "rightCenterNoBorder", f5, 13, 1, 0.0F));
-        table.addCell(creator.createCell("", "centerNoBorder", f5, 31, 1, 0.0F));
-        table.addCell(creator.createCell("приложение №3", "rightCenterNoBorder", f5, 5, 1, 0.0F));
-        table.addCell(creator.createCell("Объект капитального строительства", "leftCenterNoBorder", f5, 36, 1, 0.0F));
+        table.addCell(creator.createCell("", "CNB", f5, 23, 1, 0.0F));
+        table.addCell(creator.createCell("Приказ Минстроя  №344/пр от 16.05.2023", "rCNB", f5, 13, 1, 0.0F));
+        table.addCell(creator.createCell("", "CNB", f5, 31, 1, 0.0F));
+        table.addCell(creator.createCell("приложение №3", "rCNB", f5, 5, 1, 0.0F));
+        table.addCell(creator.createCell("Объект капитального строительства", "lCNB", f5, 36, 1, 0.0F));
     }
 
     private void addSecondStaticBlock(PdfPTable table) {
-        table.addCell(creator.createCell("РФ, Краснодарский кр., г. Новороссийск, ш. Сухумское, д. 85, к. 1", "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
-        table.addCell(creator.createCell("(наименование объекта капитального строительства в соответствии с проектной документацией, почтовый или строительный адрес объекта капитального строительства)", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+        table.addCell(creator.createCell("РФ, Краснодарский кр., г. Новороссийск, ш. Сухумское, д. 85, к. 1", "CBB", fontToFillIn, 36, 1, 0.0F));
+        table.addCell(creator.createCell("(наименование объекта капитального строительства в соответствии с проектной документацией, почтовый или строительный адрес объекта капитального строительства)", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("Застройщик, технический заказчик, лицо, ответственное за  эксплуатацию здания, сооружения, или региональный оператор",
-                "leftCenterNoBorder", f5, 36, 1, 0.0F));
+                "lCNB", f5, 36, 1, 0.0F));
         table.addCell(creator.createCell("АО «Черномортранснефть», ОГРН 1022302384136, ИНН 2315072242, 353911, Россия, Краснодарский край,",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("(фамилия, имя, отчество (последнее -  при наличии), адрес места жительства, ОРГНИП, " +
-                "ИНН индивидуального предпринимателя, полное и (или) сокращенное наименование,  ", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "ИНН индивидуального предпринимателя, полное и (или) сокращенное наименование,  ", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("г. Новороссийск, Сухумское шоссе, д.85, к.1, (8617) 60-34-51, 60-92-61, 60-92-80, Факс: (8617) 64-55-81",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("ОГРН, ИНН, адрес юридического лица в пределах его места нахождения, телефон или факс, " +
-                "полное и (или) сокращенное наименование, ОГРН, ИНН саморегулируемой организации,", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "полное и (или) сокращенное наименование, ОГРН, ИНН саморегулируемой организации,", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("Саморегулируемая организация «Союз Професиональных Строителей Южного Региона» ОГРН 1092300003400,",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("членом которой является указанное юридическое лицо или индивидуальный предприниматель " +
-                "(за исключением случаев, когда членство в саморегулируемых организациях", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "(за исключением случаев, когда членство в саморегулируемых организациях", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("ИНН2310141990, 350015, Краснодарский Край, г. Краснодар, ул. Коммунаров, д. 258, тел. (факс) +7(861)2981178",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell(" в области строительства, реконструкции, капитального ремонта объектов капитального " +
-                "строительства не требуется);", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "строительства не требуется);", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("Лицо, осуществляющее строительство, реконструкцию, капитальный ремонт",
-                "leftCenterNoBorder", f5, 36, 1, 0.0F));
+                "lCNB", f5, 36, 1, 0.0F));
         table.addCell(creator.createCell("ООО «ЭНЕРГОМОНТАЖ» ОГРН 1157456011899, ИНН7456028407,455025,РФ,Челябинская область,",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("(фамилия, имя, отчество (последнее - при наличии), адрес места жительства, ОГРНИП, " +
-                "ИНН индивидуального предпринимателя, полное и (или) сокращенное наименование,", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "ИНН индивидуального предпринимателя, полное и (или) сокращенное наименование,", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("г.о. Магнитогорский, г. Магнитогорск, ул. Лесопарковая, д. 93, к.3, пом. 6, тел +7 (951)244-35-65, +7(3519)33-01-04",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("ОГРН, ИНН, адрес юридического лица в пределах его места нахождения, телефон или факс, " +
-                "полное и (или) сокращенное наименование, ОГРН, ИНН саморегулируемой организации,", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "полное и (или) сокращенное наименование, ОГРН, ИНН саморегулируемой организации,", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("«Союз строительных компаний Урала и Сибири» ОГРН 1087400001897 ИНН 7453198672, 454092, Челябинская область,",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("членом которой является указанное юридическое лицо или индивидуальный предприниматель " +
-                "(за исключением случаев, когда членство в саморегулируемых организациях", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "(за исключением случаев, когда членство в саморегулируемых организациях", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("г. Челябинск, ул. Елькина, д. 84, тел. (факс) +7 351 280-41-14",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell(" в области строительства, реконструкции, капитального ремонта объектов капитального" +
-                " строительства не требуется)", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                " строительства не требуется)", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("Лицо, осуществляющее подготовку проектной документации",
-                "leftCenterNoBorder", f5, 36, 1, 0.0F));
+                "lCNB", f5, 36, 1, 0.0F));
         table.addCell(creator.createCell("Проектно-сметное бюро, АО «Черномортранснефть», ОГРН 1022302384136 ИНН 2315072242, РФ,",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("(фамилия, имя, отчество (последнее - при наличии), адрес места жительства, ОГРНИП, " +
-                "ИНН индивидуального предпринимателя, полное и (или) сокращенное наименование,", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "ИНН индивидуального предпринимателя, полное и (или) сокращенное наименование,", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("Краснодарский край, г. Новороссийск, Сухумское шоссе, д.85, к.1, (8617) 60-34-51, 60-92-61, Факс: (8617) 64-55-81",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("ОГРН, ИНН, адрес юридического лица в пределах его места нахождения, телефон или факс, " +
-                "полное и (или) сокращенное наименование, ОГРН, ИНН саморегулируемой организации,", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "полное и (или) сокращенное наименование, ОГРН, ИНН саморегулируемой организации,", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("Саморегулируемая организация «Союз Професиональных Строителей Южного Региона» ОГРН 1092300003400,",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("членом которой является указанное юридическое лицо или индивидуальный предприниматель " +
-                "(за исключением случаев, когда членство в саморегулируемых организациях", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "(за исключением случаев, когда членство в саморегулируемых организациях", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("ИНН2310141990, 350015, Краснодарский Край, г. Краснодар, ул. Коммунаров, д. 258, тел. (факс) +7(861)2981178",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell(" в области строительства, реконструкции, капитального ремонта объектов капитального" +
-                " строительства не требуется)", "centerTopNoBorder", subscript, 36, 1, 0.0F));
-        table.addCell(creator.createCell("АКТ", "centerBottomNoBorder", f13, 36, 1, 30F));
-        table.addCell(creator.createCell("освидетельствования скрытых работ", "centerNoBorder", f13, 36, 1, 0.0F));
+                " строительства не требуется)", "cTNB", subscript, 36, 1, 0.0F));
+        table.addCell(creator.createCell("АКТ", "cBNB", f13, 36, 1, 30F));
+        table.addCell(creator.createCell("освидетельствования скрытых работ", "CNB", f13, 36, 1, 0.0F));
     }
 
     private void addThirdStaticBlock(PdfPTable table) {
-        table.addCell(creator.createCell("", "centerNoBorder", f5, 23, 1, 20F));
-        table.addCell(creator.createCell("(дата составления акта)", "centerTopNoBorder", subscript, 13, 1, 20F));
+        table.addCell(creator.createCell("", "CNB", f5, 23, 1, 20F));
+        table.addCell(creator.createCell("(дата составления акта)", "cTNB", subscript, 13, 1, 20F));
 
         table.addCell(creator.createCell("Представитель застройщика, технического заказчика, лица, ответственного за " +
                         "эксплуатацию здания, сооружения, или регионального оператора по вопросам строительного контроля",
-                "leftTopNoBorder", f5, 36, 1, 0.0F));
+                "lTNB", f5, 36, 1, 0.0F));
         table.addCell(creator.createCell("Ведущий инженер ОКС ПК «Шесхарис» А.А. Челебиев, приказ № 155 от 19.02.2024 г.",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("(должность (при наличии), фамилия, инициалы, идентификационный номер в национальном " +
-                "реестре специалистов в области строительства (за исключением случаев,", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "реестре специалистов в области строительства (за исключением случаев,", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("АО «Черномортранснефть», ОГРН 1022302384136, ИНН 2315072242, почтовый адрес: 353911, Россия,",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell(" когда членство в саморегулируемых организациях в области строительства, реконструкции, " +
-                "капитального ремонта объектов капитального строительства не требуется),", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "капитального ремонта объектов капитального строительства не требуется),", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("Краснодарский край, г. Новороссийск, Шесхарис-11, тел. +7 (8617) 645740, факс +7 (8617) 645581",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell(" реквизиты распорядительного документа, подтверждающего полномочия, с указанием полного " +
                 "и (или) сокращенного наименования, ОГРН, ИНН, адреса юридического лица в пределах его места" +
                 " нахождения (в случае осуществления строительного контроля на основании договора с застройщиком или " +
                 "техническим заказчиком), фамилии, имени, отчества (последнее - при наличии), адреса места " +
                 "жительства, ОГРНИП, ИНН индивидуального предпринимателя (в случае осуществления строительного " +
-                "контроля на основании договора с застройщиком или техническим заказчиком)", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "контроля на основании договора с застройщиком или техническим заказчиком)", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("Представитель лица, осуществляющего строительство, реконструкцию, капитальный ремонт",
-                "leftTopNoBorder", f5, 36, 1, 0.0F));
+                "lTNB", f5, 36, 1, 0.0F));
         table.addCell(creator.createCell("Руководитель работ ООО «ЭНЕРГОМОНТАЖ» А.Е. Трифонов, приказ №696/16 от 16.07.2024 г.",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("(должность (при наличии), фамилия, инициалы, реквизиты распорядительного документа, " +
-                "подтверждающего полномочия)", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "подтверждающего полномочия)", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("Представитель лица, осуществляющего строительство, реконструкцию, капитальный ремонт, " +
-                "по вопросам строительного контроля", "leftTopNoBorder", f5, 36, 1, 0.0F));
+                "по вопросам строительного контроля", "lTNB", f5, 36, 1, 0.0F));
         table.addCell(creator.createCell("Начальник СКК ООО «Энергомонтаж» Л.С. Попова, приказ №176/14.295.24-ЧТН-2024 от 21.06.2024 г.",
-                "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("(должность (при наличии), фамилия, инициалы, идентификационный номер" +
                         " в национальном реестре специалистов в области строительства (за исключением случаев, когда членство в " +
                         "саморегулируемых организациях в области строительства, реконструкции, капитального ремонта объектов капитального " +
                         "строительства не требуется), реквизиты распорядительного документа, подтверждающего полномочия)",
-                "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("Представитель лица, осуществляющего подготовку проектной документации (в случае привлечения " +
                         "застройщиком лица, осуществляющего подготовку проектной документации, для проверки соответствия выполняемых работ " +
                         "проектной документации согласно части 2 статьи 53 Градостроительного кодекса Российской Федерации)",
-                "leftTopNoBorder", f5, 36, 1, 0.0F));
-        table.addCell(creator.createCell("н/п", "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "lTNB", f5, 36, 1, 0.0F));
+        table.addCell(creator.createCell("н/п", "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("(должность (при наличии), фамилия, инициалы, реквизиты распорядительного документа, " +
                 "подтверждающего полномочия, с указанием полного и (или) сокращенного наименования, ОГРН, ИНН, адреса юридического лица " +
                 "в пределах его места нахождения, фамилии, имени, отчества (последнее - при наличии), адреса места жительства, ОГРНИП, " +
-                "ИНН индивиуального предпринимателя)", "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "ИНН индивиуального предпринимателя)", "cTNB", subscript, 36, 1, 0.0F));
         table.addCell(creator.createCell("Представитель лица, выполнившего работы, подлежащие освидетельствованию (в случае " +
                 "выполнения работ по договорам о строительстве, реконструкции, капитальном ремонте объектов капитального строительства, " +
-                "заключенным с иными лицами)", "leftTopNoBorder", f5, 36, 1, 0.0F));
-        table.addCell(creator.createCell("н/п", "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "заключенным с иными лицами)", "lTNB", f5, 36, 1, 0.0F));
+        table.addCell(creator.createCell("н/п", "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("(должность (при наличии), фамилия, инициалы, реквизиты распорядительного документа, " +
                 "подтверждающего полномочия, с указанием полного и (или) сокращенного наименования, ОГРН, ИНН, адреса юридического лица " +
                 "в пределах его места нахождения, фамилии, имени, отчества (последнее - при наличии), адреса места жительства, ОГРНИП, " +
-                "ИНН индивиуального предпринимателя)", "centerTopNoBorder", subscript, 36, 1, 0.0F));
-        table.addCell(creator.createCell("произвели осмотр работ, выполненных", "leftTopNoBorder", f5, 36, 1, 0.0F));
-        table.addCell(creator.createCell("ООО «ЭНЕРГОМОНТАЖ»", "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+                "ИНН индивиуального предпринимателя)", "cTNB", subscript, 36, 1, 0.0F));
+        table.addCell(creator.createCell("произвели осмотр работ, выполненных", "lTNB", f5, 36, 1, 0.0F));
+        table.addCell(creator.createCell("ООО «ЭНЕРГОМОНТАЖ»", "CBB", fontToFillIn, 36, 1, 0.0F));
         table.addCell(creator.createCell("(полное и (или) сокращенное наименование или фамилия, имя, отчество (последнее - при наличии) " +
-                "лица,  выполнившего работы, подлежащие освидетельствованию)", "centerTopNoBorder", subscript, 36, 1, 0.0F));
-        table.addCell(creator.createCell("и составили настоящий акт о нижеследующем:", "leftTopNoBorder", f5, 36, 1, 0.0F));
-        table.addCell(creator.createCell("1. К освидетельствованию предъявлены следующие работы:", "leftTopNoBorder", f5, 36, 1, 0.0F));
+                "лица,  выполнившего работы, подлежащие освидетельствованию)", "cTNB", subscript, 36, 1, 0.0F));
+        table.addCell(creator.createCell("и составили настоящий акт о нижеследующем:", "lTNB", f5, 36, 1, 0.0F));
+        table.addCell(creator.createCell("1. К освидетельствованию предъявлены следующие работы:", "lTNB", f5, 36, 1, 0.0F));
     }
 
     private void addForthStaticBlock(PdfPTable table) {
         table.addCell(creator.createCell("(исполнительные схемы и чертежи, результаты экспертиз, обследований, лабораторных и иных испытаний)",
-                "centerTopNoBorder", subscript, 36, 1, 0.0F));
+                "cTNB", subscript, 36, 1, 0.0F));
 
         table.addCell(creator.createCell("Представитель застройщика, технического заказчика, лица, ответственного за " +
-                        "эксплуатацию здания, сооружения, или регионального оператора по вопросам строительного контроля", "leftCenterNoBorder",
+                        "эксплуатацию здания, сооружения, или регионального оператора по вопросам строительного контроля", "lCNB",
                 f5, 36, 1, 0.0F));
-        table.addCell(creator.createCell("Челебиев А.А.", "centerBottomBorderBottom", fontToFillIn, 15, 1, 0.0F));
+        table.addCell(creator.createCell("Челебиев А.А.", "cBBB", fontToFillIn, 15, 1, 0.0F));
         addSubscripts(table);
 
-        table.addCell(creator.createCell("Представитель лица, осуществляющего строительство, реконструкцию, капитальный ремонт", "leftCenterNoBorder",
+        table.addCell(creator.createCell("Представитель лица, осуществляющего строительство, реконструкцию, капитальный ремонт", "lCNB",
                 f5, 36, 1, 0.0F));
-        table.addCell(creator.createCell("Трифонов А.Е.", "centerBottomBorderBottom", fontToFillIn, 15, 1, 0.0F));
+        table.addCell(creator.createCell("Трифонов А.Е.", "cBBB", fontToFillIn, 15, 1, 0.0F));
         addSubscripts(table);
 
         table.addCell(creator.createCell("Представитель лица, осуществляющего строительство, реконструкцию, капитальный ремонт, " +
-                "по вопросам строительного контроля", "leftCenterNoBorder", f5, 36, 1, 0.0F));
-        table.addCell(creator.createCell("Попова Л.С.", "centerBottomBorderBottom", fontToFillIn, 15, 1, 0.0F));
+                "по вопросам строительного контроля", "lCNB", f5, 36, 1, 0.0F));
+        table.addCell(creator.createCell("Попова Л.С.", "cBBB", fontToFillIn, 15, 1, 0.0F));
         addSubscripts(table);
 
         table.addCell(creator.createCell("Представитель лица, осуществляющего подготовку проектной документации (в случае привлечения " +
                         "застройщиком лица, осуществляющего подготовку проектной документации, для проверки соответствия " +
                         "выполняемых работ проектной документации  согласно части 2 статьи 53 Градостроительного кодекса Российской Федерации)",
-                "leftCenterNoBorder", f5, 36, 1, 0.0F));
-        table.addCell(creator.createCell("н/п", "centerBottomBorderBottom", fontToFillIn, 15, 1, 0.0F));
+                "lCNB", f5, 36, 1, 0.0F));
+        table.addCell(creator.createCell("н/п", "cBBB", fontToFillIn, 15, 1, 0.0F));
         addSubscripts(table);
 
         table.addCell(creator.createCell("Представитель лица, выполнившего работы, подлежащие освидетельствованию (в случае " +
                 "выполнения работ по договорам о строительстве, реконструкции, капитальном ремонте объектов капитального " +
-                "строительства, заключенным с иными лицами)", "leftCenterNoBorder", f5, 36, 1, 0.0F));
-        table.addCell(creator.createCell("н/п", "centerBottomBorderBottom", fontToFillIn, 15, 1, 0.0F));
+                "строительства, заключенным с иными лицами)", "lCNB", f5, 36, 1, 0.0F));
+        table.addCell(creator.createCell("н/п", "cBBB", fontToFillIn, 15, 1, 0.0F));
         addSubscripts(table);
     }
 
     private void addSubscripts(PdfPTable table) {
-        table.addCell(creator.createCell("", "leftCenterNoBorder", f5, 12, 1, 0.0F));
-        table.addCell(creator.createCell("", "centerBottomBorderBottom", fontToFillIn, 9, 1, 0.0F));
-        table.addCell(creator.createCell("(фамилия, инициалы)", "centerTopNoBorder", subscript, 15, 1, 0.0F));
-        table.addCell(creator.createCell("", "centerTopNoBorder", subscript, 12, 1, 0.0F));
-        table.addCell(creator.createCell("(подпись)", "centerTopNoBorder", subscript, 9, 1, 0.0F));
-    }
-
-    // utils
-// --------------------------------------------------------------------------------------------------------------------------------
-
-
-    public String[] actDate(String date) {
-        String[] endDateList = date.split("-");
-        String day = endDateList[0];
-        String month = getMonth(endDateList[1]);
-        String year = endDateList[2];
-
-        return new String[]{day, month, year};
-    }
-
-    private String getMonth(String month) {
-        List<String> cyphers = List.of("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12");
-        List<String> months = List.of("января", "февраля", "марта", "апреля", "мая", "июня", "июля",
-                "августа", "сентября", "октября", "ноября", "декабря");
-
-        Map<String, String> monthsMap = IntStream.range(0, cyphers.size())
-                .boxed()
-                .collect(Collectors.toMap(cyphers::get, months::get));
-        return monthsMap.get(month);
-    }
-
-    private void addLongString(String works, PdfPTable table, Font font, int numberOfColumns) {
-        int currentLength = 118;
-
-        while (works.length() >= currentLength) {
-            String worksRow = works.substring(0, currentLength - 1);
-            int lastSpace = worksRow.lastIndexOf(" ");
-            worksRow = worksRow.substring(0, lastSpace);
-            table.addCell(creator.createCell(worksRow, "centerBorderBottom", font, numberOfColumns, 1, 0.0F));
-            works = works.replace(worksRow, "");
-        }
-        table.addCell(creator.createCell(works, "centerBorderBottom", font, numberOfColumns, 1, 0.0F));
+        table.addCell(creator.createCell("", "lCNB", f5, 12, 1, 0.0F));
+        table.addCell(creator.createCell("", "cBBB", fontToFillIn, 9, 1, 0.0F));
+        table.addCell(creator.createCell("(фамилия, инициалы)", "cTNB", subscript, 15, 1, 0.0F));
+        table.addCell(creator.createCell("", "cTNB", subscript, 12, 1, 0.0F));
+        table.addCell(creator.createCell("(подпись)", "cTNB", subscript, 9, 1, 0.0F));
     }
 
     private void addMaterials(String materials, PdfPTable table) {
@@ -541,27 +492,38 @@ public class ActPdfService {
         }
 
         if (materials.length() < 60) {
-            table.addCell(creator.createCell(materials, "centerBorderBottom", fontToFillIn, 21, 1, 0.0F));
-            table.addCell(creator.createCell("", "leftCenterNoBorder", f5, 15, 1, 0.0F));
-            table.addCell(creator.createCell("(наименования строительных  материалов (изделий),", "centerTopNoBorder",
+            table.addCell(creator.createCell(materials, "CBB", fontToFillIn, 21, 1, 0.0F));
+            table.addCell(creator.createCell("", "lCNB", f5, 15, 1, 0.0F));
+            table.addCell(creator.createCell("(наименования строительных  материалов (изделий),", "cTNB",
                     subscript, 21, 1, 0.0F));
-            table.addCell(creator.createCell("н/п", "centerBorderBottom", fontToFillIn, 36, 1, 0.0F));
+            table.addCell(creator.createCell("н/п", "CBB", fontToFillIn, 36, 1, 0.0F));
         } else {
             String materialsRow = materials.substring(0, 60);
             int lastSpace = materialsRow.lastIndexOf(" ");
             materialsRow = materialsRow.substring(0, lastSpace);
-            table.addCell(creator.createCell(materialsRow, "centerBorderBottom", fontToFillIn, 21, 1, 0.0F));
+            table.addCell(creator.createCell(materialsRow, "CBB", fontToFillIn, 21, 1, 0.0F));
 
-            table.addCell(creator.createCell("", "leftCenterNoBorder", f5, 15, 1, 0.0F));
-            table.addCell(creator.createCell("(наименования строительных  материалов (изделий),", "centerTopNoBorder",
+            table.addCell(creator.createCell("", "lCNB", f5, 15, 1, 0.0F));
+            table.addCell(creator.createCell("(наименования строительных  материалов (изделий),", "cTNB",
                     subscript, 21, 1, 0.0F));
             materials = materials.replace(materialsRow, "");
-            addLongString(materials, table, fontToFillIn, 36);
+            PdfUtils.longString(materials, 118, table, creator, fontToFillIn, 36);
         }
         table.addCell(creator.createCell("реквизиты сертификатов и (или) других документов, подтверждающих их качество и " +
                         "безопасность, в случае если необходимо указывать более 5 документов, указывается ссылка на " +
-                        "их реестр, который является неотъемлемой частью акта)", "centerTopNoBorder",
+                        "их реестр, который является неотъемлемой частью акта)", "cTNB",
                 subscript, 36, 1, 0.0F));
+    }
+
+    // utils
+// --------------------------------------------------------------------------------------------------------------------------------
+    public String[] actDate(String date) {
+        String[] endDateList = date.split("-");
+        String day = endDateList[0];
+        String month = PdfUtils.getMonth(endDateList[1]);
+        String year = endDateList[2];
+
+        return new String[]{day, month, year};
     }
 }
 

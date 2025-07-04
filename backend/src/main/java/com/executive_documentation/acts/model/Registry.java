@@ -1,4 +1,4 @@
-package com.executive_documentation.registries.model;
+package com.executive_documentation.acts.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;

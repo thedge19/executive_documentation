@@ -1,7 +1,7 @@
 package com.executive_documentation.worklogs.service;
 
-import com.executive_documentation.acts.dto.ActLogResponseDto;
-import com.executive_documentation.acts.dto.ActMapper;
+import com.executive_documentation.acts.dto.act.ActLogResponseDto;
+import com.executive_documentation.acts.dto.act.ActMapper;
 import com.executive_documentation.acts.model.Act;
 import com.executive_documentation.acts.repository.ActRepository;
 import com.executive_documentation.subobjects.service.SubObjectService;
@@ -12,7 +12,6 @@ import com.executive_documentation.worklogs.repository.WorkLogRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.Sheet;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;

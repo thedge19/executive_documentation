@@ -1,21 +1,17 @@
-package com.executive_documentation.registries.pdf;
+package com.executive_documentation.acts.pdf;
 
-import com.executive_documentation.acts.dto.ActMapper;
-import com.executive_documentation.acts.dto.ActResponseDto;
+import com.executive_documentation.acts.dto.act.ActMapper;
+import com.executive_documentation.acts.dto.act.ActResponseDto;
 import com.executive_documentation.acts.model.Act;
 import com.executive_documentation.acts.model.EntranceControl;
-import com.executive_documentation.acts.pdf.ActPdfService;
-import com.executive_documentation.acts.pdf.ControlLogPdfService;
-import com.executive_documentation.acts.pdf.ControlPdfService;
-import com.executive_documentation.acts.pdf.PdfCellCreator;
 import com.executive_documentation.acts.repository.ActRepository;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.executive_documentation.fileStorage.service.FileStorageService;
 import com.executive_documentation.materials.model.Certificate;
 import com.executive_documentation.materials.model.Material;
 import com.executive_documentation.materials.repository.CertificateRepository;
-import com.executive_documentation.registries.dto.RegistryPeriodDto;
-import com.executive_documentation.registries.model.Registry;
+import com.executive_documentation.acts.dto.registry.RegistryPeriodDto;
+import com.executive_documentation.acts.model.Registry;
 import com.executive_documentation.worklogs.pdf.WorkLogPdfService;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
@@ -151,9 +147,9 @@ public class RegistryPdfService {
 
         List<Registry> journalRegistries = createJournalRegistryEntries();
 
-        ByteArrayOutputStream workLog3Pdf = workLogPdfService.generateWorkLog3Pdf();
-        ByteArrayOutputStream workLog6Pdf = workLogPdfService.generateWorkLog6Pdf();
-        ByteArrayOutputStream controlLogPdf = controlLogPdfService.generateControlLogPdf();
+        ByteArrayOutputStream workLog3Pdf = workLogPdfService.generateWorkLogPdf(true, 3);
+        ByteArrayOutputStream workLog6Pdf = workLogPdfService.generateWorkLogPdf(true, 6);
+        ByteArrayOutputStream controlLogPdf = controlLogPdfService.generateControlLogPdf(true);
 
         // Обновляем количество страниц для каждого журнала
         for (Registry journal : journalRegistries) {
@@ -196,7 +192,7 @@ public class RegistryPdfService {
                     Registry schemaRegistry = createSchemaRegistryEntry(act);
                     try {
                         int schemaPages = addRemoteDocumentToMerge(copy,
-                                fileStorageService.getStorageBaseUrl(dto.getExecutiveSchemaUrl()));
+                                fileStorageService.getFilePublicUrl(dto.getExecutiveSchemaUrl()));
                         schemaRegistry.setNumberOfSheets(schemaPages);
                     } catch (Exception e) {
                         log.warn("Не удалось добавить исполнительную схему: {}", e.getMessage());
@@ -295,12 +291,12 @@ public class RegistryPdfService {
 
             // Добавляем все строки реестра
             for (Registry registry : registries) {
-                tempTable.addCell(creator.createCell(String.valueOf(registry.getRowNumber()), "centerBorder", f1, 1, 1, 0.0F));
-                tempTable.addCell(creator.createCell(registry.getDocumentName(), "centerBorder", f1, 1, 1, 0.0F));
-                tempTable.addCell(creator.createCell(registry.getDocumentNumber(), "centerBorder", f1, 1, 1, 0.0F));
-                tempTable.addCell(creator.createCell(registry.getDocumentAuthor(), "centerBorder", f1, 1, 1, 0.0F));
-                tempTable.addCell(creator.createCell("", "centerBorder", f1, 1, 1, 0.0F));
-                tempTable.addCell(creator.createCell("", "centerBorder", f1, 1, 1, 0.0F));
+                tempTable.addCell(creator.createCell(String.valueOf(registry.getRowNumber()), "CB", f1, 1, 1, 0.0F));
+                tempTable.addCell(creator.createCell(registry.getDocumentName(), "CB", f1, 1, 1, 0.0F));
+                tempTable.addCell(creator.createCell(registry.getDocumentNumber(), "CB", f1, 1, 1, 0.0F));
+                tempTable.addCell(creator.createCell(registry.getDocumentAuthor(), "CB", f1, 1, 1, 0.0F));
+                tempTable.addCell(creator.createCell("", "CB", f1, 1, 1, 0.0F));
+                tempTable.addCell(creator.createCell("", "CB", f1, 1, 1, 0.0F));
             }
 
             addPdfFooter(tempTable);
@@ -353,15 +349,15 @@ public class RegistryPdfService {
             String documentNumber = registry.getDocumentNumber();
 
             log.info("Документ {}, {}, {}", registry.getDocumentName(), registry.getDocumentNumber(), registry.getNumberOfSheets());
-            table.addCell(creator.createCell(String.valueOf(registry.getRowNumber()), "centerBorder", f1, 1, 1, 0.0F));
-            table.addCell(creator.createCell(String.valueOf(registry.getDocumentName()), "centerBorder", f1, 1, 1, 0.0F));
-            table.addCell(creator.createCell(documentNumber, "centerBorder", f1, 1, 1, 0.0F));
-            table.addCell(creator.createCell(registry.getDocumentAuthor(), "centerBorder", f1, 1, 1, 0.0F));
-            table.addCell(creator.createCell(String.valueOf(registry.getNumberOfSheets()), "centerBorder", f1, 1, 1, 0.0F));
+            table.addCell(creator.createCell(String.valueOf(registry.getRowNumber()), "CB", f1, 1, 1, 0.0F));
+            table.addCell(creator.createCell(String.valueOf(registry.getDocumentName()), "CB", f1, 1, 1, 0.0F));
+            table.addCell(creator.createCell(documentNumber, "CB", f1, 1, 1, 0.0F));
+            table.addCell(creator.createCell(registry.getDocumentAuthor(), "CB", f1, 1, 1, 0.0F));
+            table.addCell(creator.createCell(String.valueOf(registry.getNumberOfSheets()), "CB", f1, 1, 1, 0.0F));
             if (counter > 0) {
                 registry.setListInOrder(registries.get(counter - 1).getListInOrder() + registries.get(counter - 1).getNumberOfSheets());
             }
-            table.addCell(creator.createCell(String.valueOf(registry.getListInOrder()), "centerBorder", f1, 1, 1, 0.0F));
+            table.addCell(creator.createCell(String.valueOf(registry.getListInOrder()), "CB", f1, 1, 1, 0.0F));
             counter++;
         }
 
@@ -370,50 +366,50 @@ public class RegistryPdfService {
 
     private void addPdfRegistryHeader(PdfPTable table) {
 //      1 строка
-        table.addCell(creator.createCell("", "centerNoBorder", f1, 3, 1, 0.0F));
-        table.addCell(creator.createCell("Форма", "leftCenterNoBorder", f1, 1, 1, 0.0F));
-        table.addCell(creator.createCell("№1.2", "leftCenterNoBorder", f1, 2, 1, 0.0F));
+        table.addCell(creator.createCell("", "CNB", f1, 3, 1, 0.0F));
+        table.addCell(creator.createCell("Форма", "lCNB", f1, 1, 1, 0.0F));
+        table.addCell(creator.createCell("№1.2", "lCNB", f1, 2, 1, 0.0F));
 //      2 строка
-        table.addCell(creator.createCell("Заказчик: АО «Черномортранснефть»", "leftCenterNoBorder", f1, 3, 1, 0.0F));
-        table.addCell(creator.createCell("Основание", "leftCenterNoBorder", f1, 1, 1, 0.0F));
-        table.addCell(creator.createCell("ВСН 012-88 (часть II)", "leftCenterNoBorder", f1, 2, 1, 0.0F));
+        table.addCell(creator.createCell("Заказчик: АО «Черномортранснефть»", "lCNB", f1, 3, 1, 0.0F));
+        table.addCell(creator.createCell("Основание", "lCNB", f1, 1, 1, 0.0F));
+        table.addCell(creator.createCell("ВСН 012-88 (часть II)", "lCNB", f1, 2, 1, 0.0F));
 //      3 строка
-        table.addCell(creator.createCell("Подрядчик: ООО «Энергомонтаж»", "leftTopNoBorder", f1, 3, 1, 0.0F));
-        table.addCell(creator.createCell("Строительство", "leftTopNoBorder", f1, 1, 1, 0.0F));
-        table.addCell(creator.createCell("14.295.24 ТЕКУЩИЙ РЕМОНТ ЗДАНИЙ И СООРУЖЕНИЙ ПК «ШЕСХАРИС»", "leftCenterNoBorder", f1, 2, 1, 0.0F));
+        table.addCell(creator.createCell("Подрядчик: ООО «Энергомонтаж»", "lTNB", f1, 3, 1, 0.0F));
+        table.addCell(creator.createCell("Строительство", "lTNB", f1, 1, 1, 0.0F));
+        table.addCell(creator.createCell("14.295.24 ТЕКУЩИЙ РЕМОНТ ЗДАНИЙ И СООРУЖЕНИЙ ПК «ШЕСХАРИС»", "lCNB", f1, 2, 1, 0.0F));
 //      4 строка
-        table.addCell(creator.createCell("Субподрядчик:", "leftTopNoBorder", f1, 3, 1, 0.0F));
-        table.addCell(creator.createCell("Объект: ", "leftTopNoBorder", f1, 1, 1, 0.0F));
+        table.addCell(creator.createCell("Субподрядчик:", "lTNB", f1, 3, 1, 0.0F));
+        table.addCell(creator.createCell("Объект: ", "lTNB", f1, 1, 1, 0.0F));
         table.addCell(creator.createCell("«Текущий ремонт зданий ПП «Грушовая» ПК «Шесхарис». " +
                 "Текущий ремонт». «Текущий ремонт зданий ПП «Шесхарис». " +
-                "ПК «Шесхарис». Текущий ремонт", "leftTopNoBorder", f1, 2, 1, 0.0F));
+                "ПК «Шесхарис». Текущий ремонт", "lTNB", f1, 2, 1, 0.0F));
 //      Заголовок
-        table.addCell(creator.createCell("РЕЕСТР", "centerBottomNoBorder", f1, 6, 1, 50F));
-        table.addCell(creator.createCell("исполнительной  документации", "centerTopNoBorder", f1, 6, 1, 30F));
+        table.addCell(creator.createCell("РЕЕСТР", "cBNB", f1, 6, 1, 50F));
+        table.addCell(creator.createCell("исполнительной  документации", "cTNB", f1, 6, 1, 30F));
     }
 
     private void addTableRegistryHeader(PdfPTable table) {
-        table.addCell(creator.createCell("№ п/п", "centerBorder", f2, 1, 1, 0.0F));
-        table.addCell(creator.createCell("Наименование документа", "centerBorder", f2, 1, 1, 0.0F));
-        table.addCell(creator.createCell("№ документа, дата", "centerBorder", f2, 1, 1, 0.0F));
-        table.addCell(creator.createCell("Организация, составившая документ", "centerBorder", f2, 1, 1, 0.0F));
-        table.addCell(creator.createCell("Кол-во листов", "centerBorder", f2, 1, 1, 0.0F));
-        table.addCell(creator.createCell("Страница по списку", "centerBorder", f2, 1, 1, 0.0F));
+        table.addCell(creator.createCell("№ п/п", "CB", f2, 1, 1, 0.0F));
+        table.addCell(creator.createCell("Наименование документа", "CB", f2, 1, 1, 0.0F));
+        table.addCell(creator.createCell("№ документа, дата", "CB", f2, 1, 1, 0.0F));
+        table.addCell(creator.createCell("Организация, составившая документ", "CB", f2, 1, 1, 0.0F));
+        table.addCell(creator.createCell("Кол-во листов", "CB", f2, 1, 1, 0.0F));
+        table.addCell(creator.createCell("Страница по списку", "CB", f2, 1, 1, 0.0F));
     }
 
     private void addPdfFooter(PdfPTable table) {
-        table.addCell(creator.createCell("Сдал", "leftBottomNoBorder", f1, 2, 1, 50F));
+        table.addCell(creator.createCell("Сдал", "lBNB", f1, 2, 1, 50F));
         addRegistrySignature(table);
-        table.addCell(creator.createCell("Принял", "leftBottomNoBorder", f1, 2, 1, 40F));
+        table.addCell(creator.createCell("Принял", "lBNB", f1, 2, 1, 40F));
         addRegistrySignature(table);
     }
 
     private void addRegistrySignature(PdfPTable table) {
-        table.addCell(creator.createCell("", "emptyCellBottomBorder", f1, 4, 1, 50F));
-        table.addCell(creator.createCell("", "centerNoBorder", f1, 2, 1, 0.0F));
-        table.addCell(creator.createCell("(фамилия, инициалы)", "centerTopNoBorder", f3, 2, 1, 0.0F));
-        table.addCell(creator.createCell("(подпись)", "centerTopNoBorder", f3, 1, 1, 0.0F));
-        table.addCell(creator.createCell("(дата)", "centerTopNoBorder", f3, 1, 1, 0.0F));
+        table.addCell(creator.createCell("", "CBB", f1, 4, 1, 50F));
+        table.addCell(creator.createCell("", "CNB", f1, 2, 1, 0.0F));
+        table.addCell(creator.createCell("(фамилия, инициалы)", "cTNB", f3, 2, 1, 0.0F));
+        table.addCell(creator.createCell("(подпись)", "cTNB", f3, 1, 1, 0.0F));
+        table.addCell(creator.createCell("(дата)", "cTNB", f3, 1, 1, 0.0F));
     }
 
     private List<Registry> prepareRegistryData(Registry registryHeader, List<Act> acts, List<Registry> journalRegistries) {
@@ -533,9 +529,9 @@ public class RegistryPdfService {
 
                 // Выбираем нужный генератор PDF в зависимости от типа журнала
                 switch (journalName) {
-                    case "Общий журнал работ (раздел 3)" -> pdfStream = workLogPdfService.generateWorkLog3Pdf();
-                    case "Общий журнал работ (раздел 6)" -> pdfStream = workLogPdfService.generateWorkLog6Pdf();
-                    case "Журнал входного контроля" -> pdfStream = controlLogPdfService.generateControlLogPdf();
+                    case "Общий журнал работ (раздел 3)" -> pdfStream = workLogPdfService.generateWorkLogPdf(true, 3);
+                    case "Общий журнал работ (раздел 6)" -> pdfStream = workLogPdfService.generateWorkLogPdf(true, 6);
+                    case "Журнал входного контроля" -> pdfStream = controlLogPdfService.generateControlLogPdf(true);
                     case null, default -> {
                         continue; // Пропускаем неизвестные типы журналов
                     }

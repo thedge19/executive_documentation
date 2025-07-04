@@ -1,7 +1,7 @@
 package com.executive_documentation.acts.service;
 
-import com.executive_documentation.acts.dto.ActResponseDto;
-import com.executive_documentation.acts.dto.EntranceControlResponseDto;
+import com.executive_documentation.acts.dto.act.ActResponseDto;
+import com.executive_documentation.acts.dto.entrance.EntranceControlResponseDto;
 import com.executive_documentation.acts.model.Act;
 import com.executive_documentation.acts.model.ExecutiveSchema;
 import org.springframework.web.multipart.MultipartFile;

@@ -1,15 +1,15 @@
 package com.executive_documentation.acts.controller;
 
-import com.executive_documentation.acts.dto.ActResponseDto;
-import com.executive_documentation.acts.dto.EntranceControlResponseDto;
+import com.executive_documentation.acts.dto.act.ActResponseDto;
+import com.executive_documentation.acts.dto.entrance.EntranceControlResponseDto;
 import com.executive_documentation.acts.model.ExecutiveSchema;
 import com.executive_documentation.acts.pdf.ActPdfService;
 import com.executive_documentation.acts.pdf.ControlLogPdfService;
 import com.executive_documentation.acts.service.ActService;
-import com.executive_documentation.registries.dto.RegistryMapper;
-import com.executive_documentation.registries.dto.RegistryPeriodDto;
-import com.executive_documentation.registries.dto.RegistryRequestDto;
-import com.executive_documentation.registries.pdf.RegistryPdfService;
+import com.executive_documentation.acts.dto.registry.RegistryMapper;
+import com.executive_documentation.acts.dto.registry.RegistryPeriodDto;
+import com.executive_documentation.acts.dto.registry.RegistryRequestDto;
+import com.executive_documentation.acts.pdf.RegistryPdfService;
 import com.itextpdf.text.DocumentException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

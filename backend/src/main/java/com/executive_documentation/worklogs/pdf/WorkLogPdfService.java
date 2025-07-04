@@ -1,7 +1,7 @@
 package com.executive_documentation.worklogs.pdf;
 
-import com.executive_documentation.acts.dto.ActLogResponseDto;
-import com.executive_documentation.acts.dto.ActMapper;
+import com.executive_documentation.acts.dto.act.ActLogResponseDto;
+import com.executive_documentation.acts.dto.act.ActMapper;
 import com.executive_documentation.acts.pdf.PdfCellCreator;
 import com.executive_documentation.acts.repository.ActRepository;
 import com.executive_documentation.worklogs.dto.WorkLogDto;
@@ -15,6 +15,7 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+@RequiredArgsConstructor
 @Service
 @Slf4j
 public class WorkLogPdfService {
@@ -39,12 +41,6 @@ public class WorkLogPdfService {
     private Font f4;
     private Font f5;
     private Font f6;
-
-    public WorkLogPdfService(WorkLogService workLogService, ActRepository actRepository, PdfCellCreator creator) {
-        this.workLogService = workLogService;
-        this.creator = creator;
-        this.actRepository = actRepository;
-    }
 
     @PostConstruct
     public void initFonts() {
@@ -95,141 +91,29 @@ public class WorkLogPdfService {
     }
 
     public void exportWorkLog3toPdf(HttpServletResponse response) throws IOException, DocumentException {
-        List<WorkLogDto> dtos3 = workLogService.getWorkLog3();
-
         String fileName = "Общий_Журнал_работ_третий_раздел.pdf";
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition",
                 "inline; filename=\"" + URLEncoder.encode(fileName, StandardCharsets.UTF_8) + "\"");
 
-        // 1. Создаем PDF 3 раздела
-        ByteArrayOutputStream workLog3PdfStream = new ByteArrayOutputStream();
-        Document workLog3Document = new Document();
-        try {
-            PdfWriter.getInstance(workLog3Document, workLog3PdfStream);
-            workLog3Document.open();
-
-            PdfPTable table = new PdfPTable(4);
-            table.setWidthPercentage(105);
-            table.setTotalWidth(500f);
-            float[] widths = new float[]{31.11f, 79.89f, 267.07f, 121.93f};
-            table.setWidths(widths);
-
-            addWorkLog3TableData(table, dtos3);
-            workLog3Document.add(table);
-        } finally {
-            if (workLog3Document.isOpen()) {
-                workLog3Document.close();
-            }
-        }
-        response.getOutputStream().write(workLog3PdfStream.toByteArray());
+        response.getOutputStream().write(
+                generateWorkLogPdf(false, 3)
+                        .toByteArray());
 
         log.info("PDF третьего раздела сгенерирован");
     }
 
-    public ByteArrayOutputStream generateWorkLog3Pdf() throws DocumentException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Document document = new Document();
-        List<WorkLogDto> dtos3 = workLogService.getWorkLog3();
-
-        try {
-            PdfWriter writer = PdfWriter.getInstance(document, output);
-            document.open();
-            // Генерация содержимого журнала
-            PdfPTable table = new PdfPTable(4);
-            table.setWidthPercentage(105);
-            table.setTotalWidth(500f);
-            float[] widths = new float[]{31.11f, 79.89f, 267.07f, 121.93f};
-            table.setWidths(widths);
-
-            addWorkLog3TableData(table, dtos3);
-            document.add(table);
-
-            int currentPages = writer.getPageNumber();
-            if (currentPages % 2 != 0) {
-                // Добавляем пустую страницу
-                document.newPage();
-                document.add(new Paragraph(" ")); // Пустой контент
-                log.info("Добавлена пустая страница для журнала (раздел 3). Было {} страниц", currentPages);
-            }
-        } finally {
-            document.close();
-        }
-        return output;
-    }
-
     public void exportWorkLog6ToPdf(HttpServletResponse response) throws IOException, DocumentException {
-        List<ActLogResponseDto> dtos = actRepository
-                .findAllByOrderByEndDateAscActNumberAsc()
-                .stream()
-                .map(ActMapper::actToActLogResponseDto)
-                .toList();
-
         String fileName = "Общий_Журнал_работ_третий_раздел.pdf";
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition",
                 "inline; filename=\"" + URLEncoder.encode(fileName, StandardCharsets.UTF_8) + "\"");
 
-        // 1. Создаем PDF 6 раздела
-        ByteArrayOutputStream workLog6PdfStream = new ByteArrayOutputStream();
-        Document workLog6Document = new Document();
-        try {
-            PdfWriter.getInstance(workLog6Document, workLog6PdfStream);
-            workLog6Document.open();
-
-            PdfPTable table = new PdfPTable(3);
-            table.setWidthPercentage(105);
-            table.setTotalWidth(500f);
-            float[] widths = new float[]{19.92f, 335.92f, 144.16f};
-            table.setWidths(widths);
-
-            addWorkLog6TableData(table, dtos);
-            workLog6Document.add(table);
-        } finally {
-            if (workLog6Document.isOpen()) {
-                workLog6Document.close();
-            }
-        }
-        response.getOutputStream().write(workLog6PdfStream.toByteArray());
+        response.getOutputStream().write(
+                generateWorkLogPdf(false, 6)
+                        .toByteArray());
 
         log.info("PDF шестого раздела сгенерирован");
-    }
-
-    public ByteArrayOutputStream generateWorkLog6Pdf() throws DocumentException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Document document = new Document();
-        List<ActLogResponseDto> dtos = actRepository
-                .findAllByOrderByEndDateAscActNumberAsc()
-                .stream()
-                .map(ActMapper::actToActLogResponseDto)
-                .toList();
-        log.info("dtos {}", dtos);
-        try {
-            PdfWriter writer = PdfWriter.getInstance(document, output);
-            document.open();
-
-            PdfPTable table = new PdfPTable(3);
-            table.setWidthPercentage(105);
-            table.setTotalWidth(500f);
-            float[] widths = new float[]{19.92f, 335.92f, 144.16f};
-            table.setWidths(widths);
-
-            addWorkLog6TableData(table, dtos);
-            document.add(table);
-
-            int currentPages = writer.getPageNumber();
-            if (currentPages % 2 != 0) {
-                // Добавляем пустую страницу
-                document.newPage();
-                document.add(new Paragraph(" ")); // Пустой контент
-                log.info("Добавлена пустая страница для журнала (раздел 3). Было {} страниц", currentPages);
-            }
-        } finally {
-            if (document.isOpen()) {
-                document.close();
-            }
-        }
-        return output;
     }
 
     // workLog
@@ -239,31 +123,31 @@ public class WorkLogPdfService {
         addPdfWorkLog3TableHeader(table);
 
         for (WorkLogDto dto : dtos3) {
-            table.addCell(creator.createCell(String.valueOf(dto.getWorkLogNumber()), "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(creator.createCell(String.valueOf(dto.getWorkDate()), "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(creator.createCell(String.valueOf(dto.getName()), "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(creator.createCell("Руководитель работ Трифонов А.Е.", "centerBorder", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(String.valueOf(dto.getWorkLogNumber()), "CB", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(String.valueOf(dto.getWorkDate()), "CB", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(String.valueOf(dto.getName()), "CB", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell("Руководитель работ Трифонов А.Е.", "CB", f3, 1, 1, 0.0F));
         }
 
     }
 
     private void addPdfWorkLog3Header(PdfPTable table) {
-        table.addCell(creator.createCell("РАЗДЕЛ 3", "centerNoBorder", f4, 4, 1, 0.0F));
+        table.addCell(creator.createCell("РАЗДЕЛ 3", "CNB", f4, 4, 1, 0.0F));
         table.addCell(creator.createCell("Сведения о выполнении работ в процессе строительства, \n" +
-                "реконструкции, капитального ремонта объекта капитального строительства", "centerNoBorder", f5, 4, 1, 50F));
+                "реконструкции, капитального ремонта объекта капитального строительства", "CNB", f5, 4, 1, 50F));
     }
 
     private void addPdfWorkLog3TableHeader(PdfPTable table) {
-        table.addCell(creator.createCell("№№/пп", "centerBorder", f6, 1, 1, 0.0F));
-        table.addCell(creator.createCell("Дата выполнения работ", "centerBorder", f6, 1, 1, 0.0F));
+        table.addCell(creator.createCell("№№/пп", "CB", f6, 1, 1, 0.0F));
+        table.addCell(creator.createCell("Дата выполнения работ", "CB", f6, 1, 1, 0.0F));
         table.addCell(creator.createCell("Наименование работ, выполняемых  в процессе строительства, " +
-                "реконструкции, капитального ремонта объекта капитального строительства", "centerBorder", f6, 1, 1, 0.0F));
+                "реконструкции, капитального ремонта объекта капитального строительства", "CB", f6, 1, 1, 0.0F));
         table.addCell(creator.createCell("Должность, фамилия, инициалы, подпись уполномоченного представителя лица, " +
-                "осуществляющего строительство", "centerBorder", f6, 1, 1, 0.0F));
-        table.addCell(creator.createCell("1", "centerBorder", f3, 1, 1, 0.0F));
-        table.addCell(creator.createCell("2", "centerBorder", f3, 1, 1, 0.0F));
-        table.addCell(creator.createCell("3", "centerBorder", f3, 1, 1, 0.0F));
-        table.addCell(creator.createCell("4", "centerBorder", f3, 1, 1, 0.0F));
+                "осуществляющего строительство", "CB", f6, 1, 1, 0.0F));
+        table.addCell(creator.createCell("1", "CB", f3, 1, 1, 0.0F));
+        table.addCell(creator.createCell("2", "CB", f3, 1, 1, 0.0F));
+        table.addCell(creator.createCell("3", "CB", f3, 1, 1, 0.0F));
+        table.addCell(creator.createCell("4", "CB", f3, 1, 1, 0.0F));
     }
 
     private void addWorkLog6TableData(PdfPTable table, List<ActLogResponseDto> dtos6) {
@@ -274,12 +158,12 @@ public class WorkLogPdfService {
 
         for (ActLogResponseDto dto : dtos6) {
 
-            table.addCell(creator.createCell(String.valueOf(rowNumber), "centerBorder", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(String.valueOf(rowNumber), "CB", f3, 1, 1, 0.0F));
 
             String rowAct = "Акт освидетельствования скрытых работ №"
                     + dto.getActNumber() + " "
                     + dto.getWorks();
-            table.addCell(creator.createCell(rowAct, "centerBorder", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(rowAct, "CB", f3, 1, 1, 0.0F));
 
             String rowDateAndSigns = String.valueOf(dto.getEndDate());
 
@@ -289,27 +173,95 @@ public class WorkLogPdfService {
 
             rowDateAndSigns += signs;
 
-            table.addCell(creator.createCell(rowDateAndSigns, "centerBorder", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(rowDateAndSigns, "CB", f3, 1, 1, 0.0F));
 
             rowNumber++;
         }
     }
 
     private void addPdfWorkLog6Header(PdfPTable table) {
-        table.addCell(creator.createCell("РАЗДЕЛ 6", "centerNoBorder", f4, 4, 1, 0.0F));
+        table.addCell(creator.createCell("РАЗДЕЛ 6", "CNB", f4, 4, 1, 0.0F));
         table.addCell(creator.createCell("Перечень исполнительной документации при строительстве, \n" +
-                "реконструкции, капитальном ремонте объекта капитального строительства", "centerNoBorder", f5, 4, 1, 50F));
+                "реконструкции, капитальном ремонте объекта капитального строительства", "CNB", f5, 4, 1, 50F));
     }
 
     private void addPdfWorkLog6TableHeader(PdfPTable table) {
-        table.addCell(creator.createCell("№№/пп", "centerBorder", f6, 1, 1, 0.0F));
+        table.addCell(creator.createCell("№№/пп", "CB", f6, 1, 1, 0.0F));
         table.addCell(creator.createCell("Наименование исполнительной документации (с указанием вида работ, места " +
                         "расположения конструкций, участков сетей инженерно – технического обеспечения и т.д.)",
-                "centerBorder", f6, 1, 1, 0.0F));
+                "CB", f6, 1, 1, 0.0F));
         table.addCell(creator.createCell("Дата подписания акта, должности, фамилии, инициалы лиц, подписавших акты",
-                "centerBorder", f6, 1, 1, 0.0F));
-        table.addCell(creator.createCell("1", "centerBorder", f3, 1, 1, 0.0F));
-        table.addCell(creator.createCell("2", "centerBorder", f3, 1, 1, 0.0F));
-        table.addCell(creator.createCell("3", "centerBorder", f3, 1, 1, 0.0F));
+                "CB", f6, 1, 1, 0.0F));
+        table.addCell(creator.createCell("1", "CB", f3, 1, 1, 0.0F));
+        table.addCell(creator.createCell("2", "CB", f3, 1, 1, 0.0F));
+        table.addCell(creator.createCell("3", "CB", f3, 1, 1, 0.0F));
+    }
+
+    public ByteArrayOutputStream generateWorkLogPdf(boolean addPage, int section) throws DocumentException {
+        // Определяем данные и структуру таблицы в зависимости от раздела
+        PdfPTable table;
+        if (section == 3) {
+            table = new PdfPTable(4);
+            float[] widths = new float[]{31.11f, 79.89f, 267.07f, 121.93f};
+            table.setWidths(widths);
+        } else if (section == 6) {
+            table = new PdfPTable(3);
+            float[] widths = new float[]{19.92f, 335.92f, 144.16f};
+            table.setWidths(widths);
+        } else {
+            throw new IllegalArgumentException("Unsupported section: " + section);
+        }
+
+        // Общая часть для обоих разделов
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Document document = new Document();
+        try {
+            PdfWriter writer = PdfWriter.getInstance(document, output);
+            document.open();
+
+            table.setWidthPercentage(105);
+            table.setTotalWidth(500f);
+
+            // Заполняем таблицу данными
+            if (section == 3) {
+                addWorkLog3TableData(table, workLogService.getWorkLog3());
+            } else {
+                addWorkLog6TableData(table, actRepository
+                        .findAllByOrderByEndDateAscActNumberAsc()
+                        .stream()
+                        .map(ActMapper::actToActLogResponseDto)
+                        .toList());
+            }
+
+            document.add(table);
+
+            // Добавляем пустую страницу при необходимости
+            if (addPage) {
+                int currentPages = writer.getPageNumber();
+                if (currentPages % 2 != 0) {
+                    document.newPage();
+                    document.add(new Paragraph(" "));
+                    log.info("Добавлена пустая страница для журнала (раздел {}). Было {} страниц", section, currentPages);
+                }
+            }
+        } finally {
+            if (document.isOpen()) {
+                document.close();
+            }
+        }
+        return output;
+    }
+
+    public void exportWorkLogToPdf(HttpServletResponse response, int section) throws IOException, DocumentException {
+        String fileName = "Общий_Журнал_работ_третий_раздел.pdf";
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition",
+                "inline; filename=\"" + URLEncoder.encode(fileName, StandardCharsets.UTF_8) + "\"");
+
+        response.getOutputStream().write(
+                generateWorkLogPdf(false, section)
+                        .toByteArray());
+
+        log.info("PDF {} раздела сгенерирован", section);
     }
 }

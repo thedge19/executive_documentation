@@ -1,7 +1,7 @@
 package com.executive_documentation.acts.pdf;
 
-import com.executive_documentation.acts.dto.EntranceControlExportDto;
-import com.executive_documentation.acts.dto.EntranceControlMapper;
+import com.executive_documentation.acts.dto.entrance.EntranceControlExportDto;
+import com.executive_documentation.acts.dto.entrance.EntranceControlMapper;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.BaseFont;
@@ -87,50 +87,25 @@ public class ControlLogPdfService {
     }
 
     public void exportEntranceControlLogToPdf(HttpServletResponse response) throws IOException, DocumentException {
-        List<EntranceControlExportDto> controls = entranceControlRepository
-                .findAllByOrderByDateAsc()
-                .stream()
-                .map(entranceControlMapper::toExportDto).toList();
-
         String fileName = "Журнал_входного_контроля.pdf";
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition",
                 "inline; filename=\"" + URLEncoder.encode(fileName, StandardCharsets.UTF_8) + "\"");
 
-        // 1. Создаем PDF ЖВК
-        ByteArrayOutputStream controlLogPdfStream = new ByteArrayOutputStream();
-        Document controlLogDocument = new Document();
-        controlLogDocument.setPageSize(PageSize.A4.rotate());
-        try {
-            PdfWriter.getInstance(controlLogDocument, controlLogPdfStream);
-            controlLogDocument.open();
-
-            PdfPTable table = new PdfPTable(9);
-            table.setWidthPercentage(105);
-            table.setTotalWidth(500f);
-            float[] widths = new float[]{19.93f, 38.71f, 98.51f, 47.84f, 138.38f, 41.58f, 33.61f, 34.17f, 47.28f};
-            table.setWidths(widths);
-
-            addEntranceControlLogTableData(table, controls);
-            controlLogDocument.add(table);
-        } finally {
-            if (controlLogDocument.isOpen()) {
-                controlLogDocument.close();
-            }
-        }
-
-        response.getOutputStream().write(controlLogPdfStream.toByteArray());
+        response.getOutputStream().write(
+                generateControlLogPdf(false).toByteArray());
 
         log.info("PDF ЖВК сгенерирован");
     }
 
-    public ByteArrayOutputStream generateControlLogPdf() throws DocumentException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Document document = new Document(PageSize.A4.rotate());
+    public ByteArrayOutputStream generateControlLogPdf(boolean addPage) throws DocumentException {
         List<EntranceControlExportDto> controls = entranceControlRepository
                 .findAllByOrderByDateAsc()
                 .stream()
                 .map(entranceControlMapper::toExportDto).toList();
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Document document = new Document(PageSize.A4.rotate());
 
         try {
             PdfWriter writer = PdfWriter.getInstance(document, output);
@@ -145,12 +120,14 @@ public class ControlLogPdfService {
             addEntranceControlLogTableData(table, controls);
             document.add(table);
 
-            int currentPages = writer.getPageNumber();
-            if (currentPages % 2 != 0) {
-                // Добавляем пустую страницу
-                document.newPage();
-                document.add(new Paragraph(" ")); // Пустой контент
-                log.info("Добавлена пустая страница для журнала (раздел 3). Было {} страниц", currentPages);
+            if (addPage) {
+                int currentPages = writer.getPageNumber();
+                if (currentPages % 2 != 0) {
+                    // Добавляем пустую страницу
+                    document.newPage();
+                    document.add(new Paragraph(" ")); // Пустой контент
+                    log.info("Добавлена пустая страница для журнала (раздел 3). Было {} страниц", currentPages);
+                }
             }
         } finally {
             document.close();
@@ -166,62 +143,62 @@ public class ControlLogPdfService {
         int counter = 1;
 
         for (EntranceControlExportDto control : controls) {
-            table.addCell(creator.createCell(counter + "", "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(creator.createCell(String.valueOf(control.getDate()), "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(creator.createCell(control.getMaterials().split(" - ")[0], "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(creator.createCell(control.getMaterials().split(" - ")[1], "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(creator.createCell(control.getDocuments(), "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(creator.createCell("Скл. хран.", "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(creator.createCell("", "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(creator.createCell("", "centerBorder", f3, 1, 1, 0.0F));
-            table.addCell(creator.createCell("Годен", "centerBorder", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(counter + "", "CB", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(String.valueOf(control.getDate()), "CB", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(control.getMaterials().split(" - ")[0], "CB", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(control.getMaterials().split(" - ")[1], "CB", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(control.getDocuments(), "CB", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell("Скл. хран.", "CB", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell("", "CB", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell("", "CB", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell("Годен", "CB", f3, 1, 1, 0.0F));
         }
     }
 
     private void addEntranceControlLogTitle(PdfPTable table) {
-        table.addCell(creator.createCell("Журнал", "centerBottomNoBorder", f7, 9, 1, 200F));
-        table.addCell(creator.createCell("входного учета и контроля качества получаемых деталей,", "centerBottomNoBorder", f8, 9, 1, 0.0F));
-        table.addCell(creator.createCell("материалов, конструкций и оборудования", "centerBottomNoBorder", f8, 9, 1, 0.0F));
-        table.addCell(creator.createCell("на объекте:", "centerNoBorder", f9, 9, 1, 80F));
-        table.addCell(creator.createCell("14.295.24 «Текущий ремонт зданий и сооружений ПК «Шесхарис»", "centerTopNoBorder", f9, 9, 1, 200F));
-        table.addCell(creator.createCell("", "centerTopNoBorder", f9, 9, 1, 520F));
-        table.addCell(creator.createCell("ООО «Энергомонтаж»", "leftBottomNoBorder", f1, 8, 1, 20F));
-        table.addCell(creator.createCell("Форма 12", "rightBottomNoBorder", f1, 1, 1, 20F));
-        table.addCell(creator.createCell("(Наименование предприятия)", "leftCenterNoBorder", f1, 6, 1, 0.0F));
-        table.addCell(creator.createCell("РД 39-00147105-015-98", "rightCenterNoBorder", f1, 3, 1, 0.0F));
-        table.addCell(creator.createCell("Строительство: Текущий ремонт", "rightCenterNoBorder", f1, 9, 1, 0.0F));
-        table.addCell(creator.createCell("Объект: 14.295.24 «Текущий ремонт зданий и сооружений ПК «Шесхарис»", "rightTopNoBorder", f1, 9, 1, 110F));
-        table.addCell(creator.createCell("Журнал", "centerTopNoBorder", f9, 9, 1, 0.0F));
-        table.addCell(creator.createCell("входного контроля качества", "centerTopNoBorder", f9, 9, 1, 0.0F));
-        table.addCell(creator.createCell("", "centerBottomNoBorder", f1, 5, 1, 120F));
-        table.addCell(creator.createCell("Начат:", "leftBottomNoBorder", f1, 1, 1, 120F));
-        table.addCell(creator.createCell("« 02 » сентября 2024г.", "leftBottomNoBorder", f1, 3, 1, 120F));
-        table.addCell(creator.createCell("", "centerBottomNoBorder", f1, 5, 1, 20F));
-        table.addCell(creator.createCell("Окончен:", "leftBottomNoBorder", f1, 1, 1, 20F));
-        table.addCell(creator.createCell("«      »                 20__г.", "leftBottomNoBorder", f1, 3, 1, 20F));
-        table.addCell(creator.createCell("Руководитель подрядной организации", "leftBottomNoBorder", f1, 4, 1, 110F));
-        table.addCell(creator.createCell("__________________________", "centerBottomNoBorder", f1, 1, 1, 110F));
-        table.addCell(creator.createCell("_________________", "centerBottomNoBorder", f1, 2, 1, 110F));
-        table.addCell(creator.createCell("_________________", "centerBottomNoBorder", f1, 2, 1, 110F));
-        table.addCell(creator.createCell("М.П.", "leftTopNoBorder", f1, 4, 1, 20F));
-        table.addCell(creator.createCell("Фамилия, инициалы", "centerTopNoBorder", f1, 1, 1, 70F));
-        table.addCell(creator.createCell("Подпись", "centerTopNoBorder", f1, 2, 1, 70F));
-        table.addCell(creator.createCell("Дата", "centerTopNoBorder", f1, 2, 1, 70F));
+        table.addCell(creator.createCell("Журнал", "cBNB", f7, 9, 1, 200F));
+        table.addCell(creator.createCell("входного учета и контроля качества получаемых деталей,", "cBNB", f8, 9, 1, 0.0F));
+        table.addCell(creator.createCell("материалов, конструкций и оборудования", "cBNB", f8, 9, 1, 0.0F));
+        table.addCell(creator.createCell("на объекте:", "CNB", f9, 9, 1, 80F));
+        table.addCell(creator.createCell("14.295.24 «Текущий ремонт зданий и сооружений ПК «Шесхарис»", "cTNB", f9, 9, 1, 200F));
+        table.addCell(creator.createCell("", "cTNB", f9, 9, 1, 520F));
+        table.addCell(creator.createCell("ООО «Энергомонтаж»", "lBNB", f1, 8, 1, 20F));
+        table.addCell(creator.createCell("Форма 12", "rBNB", f1, 1, 1, 20F));
+        table.addCell(creator.createCell("(Наименование предприятия)", "lCNB", f1, 6, 1, 0.0F));
+        table.addCell(creator.createCell("РД 39-00147105-015-98", "rCNB", f1, 3, 1, 0.0F));
+        table.addCell(creator.createCell("Строительство: Текущий ремонт", "rCNB", f1, 9, 1, 0.0F));
+        table.addCell(creator.createCell("Объект: 14.295.24 «Текущий ремонт зданий и сооружений ПК «Шесхарис»", "rTNB", f1, 9, 1, 110F));
+        table.addCell(creator.createCell("Журнал", "cTNB", f9, 9, 1, 0.0F));
+        table.addCell(creator.createCell("входного контроля качества", "cTNB", f9, 9, 1, 0.0F));
+        table.addCell(creator.createCell("", "cBNB", f1, 5, 1, 120F));
+        table.addCell(creator.createCell("Начат:", "lBNB", f1, 1, 1, 120F));
+        table.addCell(creator.createCell("« 02 » сентября 2024г.", "lBNB", f1, 3, 1, 120F));
+        table.addCell(creator.createCell("", "cBNB", f1, 5, 1, 20F));
+        table.addCell(creator.createCell("Окончен:", "lBNB", f1, 1, 1, 20F));
+        table.addCell(creator.createCell("«      »                 20__г.", "lBNB", f1, 3, 1, 20F));
+        table.addCell(creator.createCell("Руководитель подрядной организации", "lBNB", f1, 4, 1, 110F));
+        table.addCell(creator.createCell("__________________________", "cBNB", f1, 1, 1, 110F));
+        table.addCell(creator.createCell("_________________", "cBNB", f1, 2, 1, 110F));
+        table.addCell(creator.createCell("_________________", "cBNB", f1, 2, 1, 110F));
+        table.addCell(creator.createCell("М.П.", "lTNB", f1, 4, 1, 20F));
+        table.addCell(creator.createCell("Фамилия, инициалы", "cTNB", f1, 1, 1, 70F));
+        table.addCell(creator.createCell("Подпись", "cTNB", f1, 2, 1, 70F));
+        table.addCell(creator.createCell("Дата", "cTNB", f1, 2, 1, 70F));
 
 
     }
 
     private void addEntranceControlLogTableHeader(PdfPTable table) {
-        table.addCell(creator.createCell("№ п/п", "centerBorder", f3, 1, 2, 0.0F));
-        table.addCell(creator.createCell("Дата поставки", "centerBorder", f3, 1, 2, 0.0F));
-        table.addCell(creator.createCell("Объект контроля", "centerBorder", f3, 1, 2, 0.0F));
-        table.addCell(creator.createCell("Количество ед. измерения", "centerBorder", f3, 1, 2, 0.0F));
-        table.addCell(creator.createCell("Номер партии, сертификат, тех.паспорт", "centerBorder", f3, 1, 2, 0.0F));
-        table.addCell(creator.createCell("Условия хранения", "centerBorder", f3, 1, 2, 0.0F));
-        table.addCell(creator.createCell("Подпись принявших продукцию по качеству", "centerBorder", f3, 2, 1, 0.0F));
-        table.addCell(creator.createCell("Определение степени годности", "centerBorder", f3, 1, 2, 0.0F));
+        table.addCell(creator.createCell("№ п/п", "CB", f3, 1, 2, 0.0F));
+        table.addCell(creator.createCell("Дата поставки", "CB", f3, 1, 2, 0.0F));
+        table.addCell(creator.createCell("Объект контроля", "CB", f3, 1, 2, 0.0F));
+        table.addCell(creator.createCell("Количество ед. измерения", "CB", f3, 1, 2, 0.0F));
+        table.addCell(creator.createCell("Номер партии, сертификат, тех.паспорт", "CB", f3, 1, 2, 0.0F));
+        table.addCell(creator.createCell("Условия хранения", "CB", f3, 1, 2, 0.0F));
+        table.addCell(creator.createCell("Подпись принявших продукцию по качеству", "CB", f3, 2, 1, 0.0F));
+        table.addCell(creator.createCell("Определение степени годности", "CB", f3, 1, 2, 0.0F));
 
-        table.addCell(creator.createCell("Исполни-тель работ", "centerBorder", f3, 1, 1, 0.0F));
-        table.addCell(creator.createCell("Контроллёр", "centerBorder", f3, 1, 1, 0.0F));
+        table.addCell(creator.createCell("Исполни-тель работ", "CB", f3, 1, 1, 0.0F));
+        table.addCell(creator.createCell("Контроллёр", "CB", f3, 1, 1, 0.0F));
     }
 }
