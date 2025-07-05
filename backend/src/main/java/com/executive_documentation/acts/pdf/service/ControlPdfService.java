@@ -1,10 +1,12 @@
-package com.executive_documentation.acts.pdf;
+package com.executive_documentation.acts.pdf.service;
 
+import com.executive_documentation.acts.dto.font.Fonts;
 import com.executive_documentation.acts.model.EntranceControl;
+import com.executive_documentation.acts.pdf.utils.PdfCellCreator;
+import com.executive_documentation.acts.pdf.utils.PdfUtils;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Font;
-import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import jakarta.annotation.PostConstruct;
@@ -13,12 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Service
 @Slf4j
@@ -35,49 +31,10 @@ public class ControlPdfService {
 
     @PostConstruct
     public void initFonts() {
-        try {
-            // Загрузка шрифта из ресурсов
-            InputStream fontStream = getClass().getResourceAsStream(FONT_PATH);
-            BaseFont baseFont;
-            if (fontStream == null) {
-                // Попробуем альтернативный путь
-                String alternativePath = "src/main/resources" + FONT_PATH;
-                File fontFile = new File(alternativePath);
-                if (fontFile.exists()) {
-                    baseFont = BaseFont.createFont(
-                            alternativePath,
-                            BaseFont.IDENTITY_H,
-                            BaseFont.EMBEDDED
-                    );
-                } else {
-                    // Используем системный шрифт как последнее средство
-                    baseFont = BaseFont.createFont(
-                            "c:/windows/fonts/arial.ttf",
-                            BaseFont.IDENTITY_H,
-                            BaseFont.EMBEDDED
-                    );
-                    log.warn("Using fallback font (Arial) as main font was not found");
-                }
-            } else {
-                baseFont = BaseFont.createFont(
-                        FONT_PATH,
-                        BaseFont.IDENTITY_H,
-                        BaseFont.EMBEDDED,
-                        true,
-                        fontStream.readAllBytes(),
-                        null
-                );
-                fontStream.close();
-            }
-
-            // Инициализация всех шрифтов
-            this.f1 = new Font(baseFont, 9);
-            this.fontToFillInControl = new Font(baseFont, 9, Font.BOLDITALIC);
-            this.subscript = new Font(baseFont, 6);
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize PDF fonts", e);
-        }
+        Fonts fonts = PdfUtils.initFonts();
+        this.f1 = fonts.f1();
+        this.fontToFillInControl = fonts.fontToFillInControl();
+        this.subscript = fonts.subscript();
     }
 
     public ByteArrayOutputStream generateControlPdf(EntranceControl control) throws DocumentException {

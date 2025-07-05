@@ -1,18 +1,21 @@
 <template>
   <Navbar/>
   <div class="container py-4">
-    <div class="row justify-content-center">
-      <div class="col-12 mt-5">
-        <h1 class="text-center mb-4 text-light">Общий журнал работ. Раздел 3</h1>
+    <div class="row justify-content-center mt-5">
+      <div class="col-12">
+        <!-- Заголовок и кнопки с правильным центрированием -->
+        <div class="d-flex align-items-center mb-4 position-relative">
+          <!-- Кнопки слева -->
+          <div class="d-flex">
+            <button @click.prevent="generatePdf" class="btn btn-info mx-2 shadow-sm rounded-pill" :disabled="isLoading">
+              <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить в PDF
+            </button>
+          </div>
 
-        <!-- Action buttons -->
-        <div class="d-flex justify-content-start mb-4">
-          <button @click="fillInTheLog" class="btn btn-success mx-2 shadow-sm rounded-pill" :disabled="isLoading">
-            <i class="bi bi-file-earmark-plus me-2"></i>Сформировать ОЖР
-          </button>
-          <button @click.prevent="generatePdf" class="btn btn-info mx-2 shadow-sm rounded-pill" :disabled="isLoading">
-            <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить в PDF
-          </button>
+          <!-- Заголовок по центру оставшегося пространства -->
+          <h1 class="text-light position-absolute start-50" style="width: max-content;">
+            Общий журнал работ. Раздел 3
+          </h1>
         </div>
 
         <!-- Error message -->
@@ -23,7 +26,7 @@
         <!-- Table -->
         <div class="card shadow-sm border-0">
           <div class="card-body p-0">
-            <div class="table-responsive" style="max-height: 75vh;">
+            <div class="table-responsive" style="max-height: 85vh;">
               <table class="table table-hover mb-0">
                 <thead class="sticky-top" style="background-color: #002d72;">
                 <tr>
@@ -84,7 +87,7 @@ const getLogs = async () => {
     isLoading.value = true
     error.value = null
 
-    const response = await fetch('http://localhost:8080/worklog', {
+    const response = await fetch('http://localhost:8080/acts/worklog', {
       headers: getAuthHeaders()
     })
 
@@ -107,57 +110,6 @@ const getLogs = async () => {
   }
 }
 
-const fillInTheLog = async () => {
-  try {
-    isLoading.value = true;
-    error.value = null;
-
-    // 1. Проверяем токен перед запросом
-    const token = localStorage.getItem('token');
-    if (!token) {
-      handleUnauthorized();
-      return;
-    }
-
-    // 2. Добавляем обработку credentials для CORS
-    const response = await fetch('http://localhost:8080/worklog/fill3', {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      credentials: 'include' // Важно для передачи кук и авторизации
-    });
-
-    // 3. Улучшенная обработка 401 ошибки
-    if (response.status === 401 || response.status === 403) {
-      handleUnauthorized();
-      error.value = 'Сессия истекла. Требуется повторная авторизация';
-      return;
-    }
-
-    // 4. Проверяем успешность запроса
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      error.value = errorData.message || 'Ошибка формирования журнала';
-      return;
-    }
-
-    // 5. Обновляем данные
-    await getLogs();
-
-  } catch (err) {
-    console.error("Ошибка:", err);
-    error.value = err.message;
-
-    // Не перенаправляем если это не ошибка авторизации
-    if (!err.message.includes('Сессия истекла')) {
-      error.value = 'Ошибка при формировании журнала: ' + err.message;
-    }
-  } finally {
-    isLoading.value = false;
-  }
-}
-
 const generatePdf = async () => {
   try {
     const token = localStorage.getItem('token');
@@ -170,7 +122,7 @@ const generatePdf = async () => {
     const pdfWindow = window.open('', '_blank');
 
     // Делаем запрос с заголовками авторизации
-    const response = await fetch(`http://localhost:8080/worklog/3/pdf`, {
+    const response = await fetch(`http://localhost:8080/acts/worklog/3/pdf`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -217,12 +169,12 @@ body {
 
 /* Стили для таблицы */
 .table {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .table th {
   font-weight: 500;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }
 
 .table-hover tbody tr:hover {
@@ -235,21 +187,96 @@ body {
   overflow: hidden;
 }
 
-/* Стили для кнопок */
+/* Стили для кнопок с эффектами */
 .btn {
-  transition: all 0.2s ease;
-  border-radius: 6px;
-  padding: 8px 16px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
+  position: relative;
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem 1.25rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
-.btn-primary {
-  background-color: #002d72;
-  border-color: #002d72;
+/* Внутренняя граница */
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50px;
+  pointer-events: none;
 }
 
-.btn-primary:hover {
-  background-color: #001f4d;
-  border-color: #001f4d;
+/* Эффект нажатия */
+.btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Эффект наведения */
+.btn:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Специфичные цвета для кнопок */
+.btn-success {
+  background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+}
+
+.btn-info {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+}
+
+/* Эффект "волны" при клике */
+.btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%);
+  transform-origin: 50% 50%;
+}
+
+.btn:focus:not(:active)::after {
+  animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(20, 20);
+    opacity: 0;
+  }
+}
+
+/* Иконки в кнопках */
+.btn .bi {
+  transition: transform 0.2s ease;
+}
+
+.btn:hover .bi {
+  transform: scale(1.1);
+}
+
+/* Убираем стандартный outline и добавляем кастомный */
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 45, 114, 0.3);
 }
 
 /* Скролл таблицы */
@@ -276,9 +303,11 @@ body {
 @keyframes fadeIn {
   from {
     opacity: 0;
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -286,8 +315,8 @@ body {
   animation: fadeIn 0.3s ease forwards;
 }
 
-/* Loading state */
-.btn:disabled {
-  opacity: 0.7;
+/* Иконки для кнопок */
+.bi {
+  font-size: 1rem;
 }
 </style>

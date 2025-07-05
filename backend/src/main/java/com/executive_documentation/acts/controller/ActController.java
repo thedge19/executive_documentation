@@ -1,15 +1,18 @@
 package com.executive_documentation.acts.controller;
 
+import com.executive_documentation.acts.dto.act.ActLogResponseDto;
 import com.executive_documentation.acts.dto.act.ActResponseDto;
 import com.executive_documentation.acts.dto.entrance.EntranceControlResponseDto;
+import com.executive_documentation.acts.dto.worklog.WorkLogDto;
 import com.executive_documentation.acts.model.ExecutiveSchema;
-import com.executive_documentation.acts.pdf.ActPdfService;
-import com.executive_documentation.acts.pdf.ControlLogPdfService;
+import com.executive_documentation.acts.pdf.service.ActPdfService;
+import com.executive_documentation.acts.pdf.service.ControlLogPdfService;
+import com.executive_documentation.acts.pdf.service.WorkLogPdfService;
 import com.executive_documentation.acts.service.ActService;
 import com.executive_documentation.acts.dto.registry.RegistryMapper;
 import com.executive_documentation.acts.dto.registry.RegistryPeriodDto;
 import com.executive_documentation.acts.dto.registry.RegistryRequestDto;
-import com.executive_documentation.acts.pdf.RegistryPdfService;
+import com.executive_documentation.acts.pdf.service.RegistryPdfService;
 import com.itextpdf.text.DocumentException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,7 @@ public class ActController {
     private final ControlLogPdfService controlLogPdfService;
     private final RegistryMapper registryMapper;
     private final RegistryPdfService registryPdfService;
+    private final WorkLogPdfService workLogPdfService;
 
     @GetMapping("/{id}")
     public ActResponseDto get(@PathVariable Long id) {
@@ -134,5 +138,26 @@ public class ActController {
     @GetMapping("/globalStats")
     public ResponseEntity<Long> getGlobalStats() {
         return ResponseEntity.ok(actService.getGlobalStats());
+    }
+
+    @GetMapping("/worklog")
+    public List<WorkLogDto> getWorkLog3() {
+        return actService.getWorkLog3();
+    }
+
+    @GetMapping("/worklog/6")
+    public List<ActLogResponseDto> getWorkLog6() {
+        return actService.getWorkLog6();
+    }
+
+    @GetMapping("worklog/{section}/pdf")
+    public void generateWorkLogPdf(
+            @PathVariable int section,
+            HttpServletResponse response) throws IOException {
+        try {
+            workLogPdfService.exportWorkLogToPdf(response, section);
+        } catch (DocumentException e) {
+            response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Ошибка генерации PDF");
+        }
     }
 }

@@ -2,54 +2,57 @@
   <Navbar/>
   <div class="container py-4">
     <div class="row justify-content-center">
-      <div class="col-12 mt-5">
-        <h1 class="text-center mb-4 text-light">Общий журнал работ. Раздел 6</h1>
-
+      <div class="col-12">
         <!-- Кнопки действий -->
-        <div class="d-flex justify-content-start mb-4">
-          <button @click="fillInTheLog"
-                  class="btn btn-success mx-2 shadow-sm rounded-pill position-relative overflow-hidden">
-            <span
-                class="position-absolute top-0 start-0 w-100 h-100 border-2 border-white border-opacity-25 rounded-pill"></span>
-            <i class="bi bi-file-earmark-plus me-2"></i>Сформировать 6 раздел
-          </button>
+        <div class="row justify-content-center mt-5">
+          <div class="col-12">
+            <!-- Заголовок и кнопки с правильным центрированием -->
+            <div class="d-flex align-items-center mb-4 position-relative">
+              <!-- Кнопки слева -->
+              <div class="d-flex">
+                <button @click.prevent="generatePdf" class="btn btn-info mx-2 shadow-sm rounded-pill"
+                        :disabled="isLoading">
+                  <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить в PDF
+                </button>
+              </div>
 
-          <button @click="generatePdf"
-                  class="btn btn-info mx-2 shadow-sm rounded-pill position-relative overflow-hidden">
-            <span
-                class="position-absolute top-0 start-0 w-100 h-100 border-2 border-white border-opacity-25 rounded-pill"></span>
-            <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить в PDF
-          </button>
-        </div>
+              <!-- Заголовок по центру оставшегося пространства -->
+              <h1 class="text-light position-absolute start-50" style="width: max-content;">
+                Общий журнал работ. Раздел 6
+              </h1>
+            </div>
 
-        <!-- Таблица -->
-        <div class="card shadow-sm border-0">
-          <div class="card-body p-0">
-            <div class="table-responsive" style="max-height: 75vh;">
-              <table class="table table-hover mb-0">
-                <thead class="sticky-top" style="background-color: #002d72;">
-                <tr>
-                  <th class="text-center text-white fw-normal" style="width: 5%; background-color: #000000;">№ п/п</th>
-                  <th class="text-center text-white fw-normal" style="width: 60%; background-color: #000000;">
-                    Наименование исполнительной документации
-                  </th>
-                  <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">Дата
-                    подписания акта
-                  </th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-for="(act, index) in acts" :key="act.id"
-                    :class="{'table-light': index % 2 === 0}">
-                  <td class="text-center align-middle">{{ index + 1 }}</td>
-                  <td class="align-middle">Акт освидетельствования скрытых работ № {{ act.actNumber }} {{
-                      act.works
-                    }}
-                  </td>
-                  <td class="text-center align-middle">{{ act.endDate }}</td>
-                </tr>
-                </tbody>
-              </table>
+            <!-- Таблица -->
+            <div class="card shadow-sm border-0">
+              <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 85vh;">
+                  <table class="table table-hover mb-0">
+                    <thead class="sticky-top" style="background-color: #002d72;">
+                    <tr>
+                      <th class="text-center text-white fw-normal" style="width: 5%; background-color: #000000;">№ п/п
+                      </th>
+                      <th class="text-center text-white fw-normal" style="width: 60%; background-color: #000000;">
+                        Наименование исполнительной документации
+                      </th>
+                      <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">Дата
+                        подписания акта
+                      </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="(act, index) in acts" :key="act.id"
+                        :class="{'table-light': index % 2 === 0}">
+                      <td class="text-center align-middle">{{ index + 1 }}</td>
+                      <td class="align-middle">Акт освидетельствования скрытых работ № {{ act.actNumber }} {{
+                          act.works
+                        }}
+                      </td>
+                      <td class="text-center align-middle">{{ act.endDate }}</td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -80,25 +83,13 @@ const getAuthHeaders = () => {
 // Получение актов
 const getActs = async () => {
   try {
-    const response = await fetch('http://localhost:8080/worklog/6', {
+    const response = await fetch('http://localhost:8080/acts/worklog/6', {
       mode: 'cors',
       headers: getAuthHeaders()
     })
     acts.value = await response.json()
   } catch (error) {
     console.error('Ошибка при загрузке актов:', error)
-  }
-}
-
-
-// Формирование раздела
-const fillInTheLog = async () => {
-  try {
-    await fetch('http://localhost:8080/worklog/fill')
-    console.log("Запрос отправлен")
-    await getActs() // Обновляем список после формирования
-  } catch (error) {
-    console.error('Ошибка при формировании раздела:', error)
   }
 }
 
@@ -120,7 +111,7 @@ const generatePdf = async () => {
     const pdfWindow = window.open('', '_blank');
 
     // Делаем запрос с заголовками авторизации
-    const response = await fetch(`http://localhost:8080/worklog/6/pdf`, {
+    const response = await fetch(`http://localhost:8080/acts/worklog/6/pdf`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }

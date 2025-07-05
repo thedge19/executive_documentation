@@ -1,8 +1,11 @@
-package com.executive_documentation.acts.pdf;
+package com.executive_documentation.acts.pdf.service;
 
 import com.executive_documentation.acts.dto.act.ActResponseDto;
+import com.executive_documentation.acts.dto.font.Fonts;
 import com.executive_documentation.acts.model.Act;
 import com.executive_documentation.acts.model.EntranceControl;
+import com.executive_documentation.acts.pdf.utils.PdfCellCreator;
+import com.executive_documentation.acts.pdf.utils.PdfUtils;
 import com.executive_documentation.acts.repository.ActRepository;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.executive_documentation.acts.service.ActService;
@@ -42,59 +45,20 @@ public class ActPdfService {
     private final PdfCellCreator creator;
     private final CertificateRepository certificateRepository;
 
-    private Font f5;
     private Font fontToFillIn;
     private Font subscript;
+    private Font f5;
     private Font f13;
     private Font f14;
 
     @PostConstruct
     public void initFonts() {
-        try {
-            // Загрузка шрифта из ресурсов
-            InputStream fontStream = getClass().getResourceAsStream(FONT_PATH);
-            BaseFont baseFont;
-            if (fontStream == null) {
-                // Попробуем альтернативный путь
-                String alternativePath = "src/main/resources" + FONT_PATH;
-                File fontFile = new File(alternativePath);
-                if (fontFile.exists()) {
-                    baseFont = BaseFont.createFont(
-                            alternativePath,
-                            BaseFont.IDENTITY_H,
-                            BaseFont.EMBEDDED
-                    );
-                } else {
-                    // Используем системный шрифт как последнее средство
-                    baseFont = BaseFont.createFont(
-                            "c:/windows/fonts/arial.ttf",
-                            BaseFont.IDENTITY_H,
-                            BaseFont.EMBEDDED
-                    );
-                    log.warn("Using fallback font (Arial) as main font was not found");
-                }
-            } else {
-                baseFont = BaseFont.createFont(
-                        FONT_PATH,
-                        BaseFont.IDENTITY_H,
-                        BaseFont.EMBEDDED,
-                        true,
-                        fontStream.readAllBytes(),
-                        null
-                );
-                fontStream.close();
-            }
-
-            // Инициализация всех шрифтов
-            this.f5 = new Font(baseFont, 9);
-            this.fontToFillIn = new Font(baseFont, 9, Font.BOLDITALIC);
-            this.subscript = new Font(baseFont, 6);
-            this.f13 = new Font(baseFont, 11, Font.BOLD);
-            this.f14 = new Font(baseFont, 10, Font.BOLD);
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize PDF fonts", e);
-        }
+        Fonts fonts = PdfUtils.initFonts();
+        this.fontToFillIn = fonts.fontToFillIn();
+        this.subscript = fonts.subscript();
+        this.f5 = fonts.f5();
+        this.f13 = fonts.f13();
+        this.f14 = fonts.f14();
     }
 
     public void exportCombinedDocuments(long actId, HttpServletResponse response)
@@ -129,7 +93,7 @@ public class ActPdfService {
             if (actDto.getExecutiveSchemaUrl() != null) {
                 try {
                     addRemoteDocumentToMerge(copy,
-                            fileStorageService.getFilePublicUrl(actDto.getExecutiveSchemaUrl()));
+                            fileStorageService.getStorageBaseUrl(actDto.getExecutiveSchemaUrl()));
                 } catch (Exception e) {
                     log.warn("Не удалось добавить исполнительную схему: {}", e.getMessage());
                 }
@@ -149,7 +113,7 @@ public class ActPdfService {
                         if (certificate.getPath() != null) {
 
                             try {
-                                addRemoteDocumentToMerge(copy, fileStorageService.getFilePublicUrl(
+                                addRemoteDocumentToMerge(copy, fileStorageService.getStorageBaseUrl(
                                         certificate.getPath()));
                             } catch (Exception e) {
                                 log.warn("Не удалось добавить сертификат: {}", e.getMessage());

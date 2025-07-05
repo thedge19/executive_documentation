@@ -1,16 +1,17 @@
-package com.executive_documentation.worklogs.pdf;
+package com.executive_documentation.acts.pdf.service;
 
 import com.executive_documentation.acts.dto.act.ActLogResponseDto;
 import com.executive_documentation.acts.dto.act.ActMapper;
-import com.executive_documentation.acts.pdf.PdfCellCreator;
+import com.executive_documentation.acts.dto.font.Fonts;
+import com.executive_documentation.acts.dto.worklog.WorkLogDto;
+import com.executive_documentation.acts.pdf.utils.PdfCellCreator;
+import com.executive_documentation.acts.pdf.utils.PdfUtils;
 import com.executive_documentation.acts.repository.ActRepository;
-import com.executive_documentation.worklogs.dto.WorkLogDto;
-import com.executive_documentation.worklogs.service.WorkLogService;
+import com.executive_documentation.acts.service.ActService;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Font;
 import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import jakarta.annotation.PostConstruct;
@@ -20,9 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -31,9 +30,7 @@ import java.util.List;
 @Service
 @Slf4j
 public class WorkLogPdfService {
-    private static final String FONT_PATH = "/fonts/times.ttf"; // Путь в ресурсах
-
-    private final WorkLogService workLogService;
+    private final ActService actService;
     private final ActRepository actRepository;
     private final PdfCellCreator creator;
 
@@ -44,79 +41,82 @@ public class WorkLogPdfService {
 
     @PostConstruct
     public void initFonts() {
+        Fonts fonts = PdfUtils.initFonts();
+        this.f3 = fonts.f3();
+        this.f4 = fonts.f4();
+        this.f5 = fonts.f5();
+        this.f6 = fonts.f6();
+    }
+
+    public ByteArrayOutputStream generateWorkLogPdf(boolean addPage, int section) throws DocumentException {
+        // Определяем данные и структуру таблицы в зависимости от раздела
+        PdfPTable table;
+        if (section == 3) {
+            table = new PdfPTable(4);
+            float[] widths = new float[]{31.11f, 79.89f, 267.07f, 121.93f};
+            table.setWidths(widths);
+        } else if (section == 6) {
+            table = new PdfPTable(3);
+            float[] widths = new float[]{19.92f, 335.92f, 144.16f};
+            table.setWidths(widths);
+        } else {
+            throw new IllegalArgumentException("Unsupported section: " + section);
+        }
+
+        // Общая часть для обоих разделов
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Document document = new Document();
         try {
-            // Загрузка шрифта из ресурсов
-            InputStream fontStream = getClass().getResourceAsStream(FONT_PATH);
-            BaseFont baseFont;
-            if (fontStream == null) {
-                // Попробуем альтернативный путь
-                String alternativePath = "src/main/resources" + FONT_PATH;
-                File fontFile = new File(alternativePath);
-                if (fontFile.exists()) {
-                    baseFont = BaseFont.createFont(
-                            alternativePath,
-                            BaseFont.IDENTITY_H,
-                            BaseFont.EMBEDDED
-                    );
-                } else {
-                    // Используем системный шрифт как последнее средство
-                    baseFont = BaseFont.createFont(
-                            "c:/windows/fonts/arial.ttf",
-                            BaseFont.IDENTITY_H,
-                            BaseFont.EMBEDDED
-                    );
-                    log.warn("Using fallback font (Arial) as main font was not found");
-                }
+            PdfWriter writer = PdfWriter.getInstance(document, output);
+            document.open();
+
+            table.setWidthPercentage(105);
+            table.setTotalWidth(500f);
+
+            // Заполняем таблицу данными
+            if (section == 3) {
+                addWorkLog3TableData(table, actService.getWorkLog3());
             } else {
-                baseFont = BaseFont.createFont(
-                        FONT_PATH,
-                        BaseFont.IDENTITY_H,
-                        BaseFont.EMBEDDED,
-                        true,
-                        fontStream.readAllBytes(),
-                        null
-                );
-                fontStream.close();
+                addWorkLog6TableData(table, actRepository
+                        .findAllByOrderByEndDateAscActNumberAsc()
+                        .stream()
+                        .map(ActMapper::actToActLogResponseDto)
+                        .toList());
             }
 
-            // Инициализация всех шрифтов
-            this.f3 = new Font(baseFont, 9, Font.ITALIC);
-            this.f4 = new Font(baseFont, 14, Font.BOLD);
-            this.f5 = new Font(baseFont, 9);
-            this.f6 = new Font(baseFont, 10, Font.ITALIC);
+            document.add(table);
 
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize PDF fonts", e);
+            // Добавляем пустую страницу при необходимости
+            if (addPage) {
+                int currentPages = writer.getPageNumber();
+                if (currentPages % 2 != 0) {
+                    document.newPage();
+                    document.add(new Paragraph(" "));
+                    log.info("Добавлена пустая страница для журнала (раздел {}). Было {} страниц", section, currentPages);
+                }
+            }
+        } finally {
+            if (document.isOpen()) {
+                document.close();
+            }
         }
+        return output;
     }
 
-    public void exportWorkLog3toPdf(HttpServletResponse response) throws IOException, DocumentException {
+    public void exportWorkLogToPdf(HttpServletResponse response, int section) throws IOException, DocumentException {
         String fileName = "Общий_Журнал_работ_третий_раздел.pdf";
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition",
                 "inline; filename=\"" + URLEncoder.encode(fileName, StandardCharsets.UTF_8) + "\"");
 
         response.getOutputStream().write(
-                generateWorkLogPdf(false, 3)
+                generateWorkLogPdf(false, section)
                         .toByteArray());
 
-        log.info("PDF третьего раздела сгенерирован");
+        log.info("PDF {} раздела сгенерирован", section);
     }
 
-    public void exportWorkLog6ToPdf(HttpServletResponse response) throws IOException, DocumentException {
-        String fileName = "Общий_Журнал_работ_третий_раздел.pdf";
-        response.setContentType("application/pdf");
-        response.setHeader("Content-Disposition",
-                "inline; filename=\"" + URLEncoder.encode(fileName, StandardCharsets.UTF_8) + "\"");
-
-        response.getOutputStream().write(
-                generateWorkLogPdf(false, 6)
-                        .toByteArray());
-
-        log.info("PDF шестого раздела сгенерирован");
-    }
-
-    // workLog
+    // workLog3
     // --------------------------------------------------------------------------------------------------------------------------------
     private void addWorkLog3TableData(PdfPTable table, List<WorkLogDto> dtos3) {
         addPdfWorkLog3Header(table);
@@ -150,6 +150,8 @@ public class WorkLogPdfService {
         table.addCell(creator.createCell("4", "CB", f3, 1, 1, 0.0F));
     }
 
+    // workLog6
+    // --------------------------------------------------------------------------------------------------------------------------------
     private void addWorkLog6TableData(PdfPTable table, List<ActLogResponseDto> dtos6) {
         addPdfWorkLog6Header(table);
         addPdfWorkLog6TableHeader(table);
@@ -197,71 +199,4 @@ public class WorkLogPdfService {
         table.addCell(creator.createCell("3", "CB", f3, 1, 1, 0.0F));
     }
 
-    public ByteArrayOutputStream generateWorkLogPdf(boolean addPage, int section) throws DocumentException {
-        // Определяем данные и структуру таблицы в зависимости от раздела
-        PdfPTable table;
-        if (section == 3) {
-            table = new PdfPTable(4);
-            float[] widths = new float[]{31.11f, 79.89f, 267.07f, 121.93f};
-            table.setWidths(widths);
-        } else if (section == 6) {
-            table = new PdfPTable(3);
-            float[] widths = new float[]{19.92f, 335.92f, 144.16f};
-            table.setWidths(widths);
-        } else {
-            throw new IllegalArgumentException("Unsupported section: " + section);
-        }
-
-        // Общая часть для обоих разделов
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Document document = new Document();
-        try {
-            PdfWriter writer = PdfWriter.getInstance(document, output);
-            document.open();
-
-            table.setWidthPercentage(105);
-            table.setTotalWidth(500f);
-
-            // Заполняем таблицу данными
-            if (section == 3) {
-                addWorkLog3TableData(table, workLogService.getWorkLog3());
-            } else {
-                addWorkLog6TableData(table, actRepository
-                        .findAllByOrderByEndDateAscActNumberAsc()
-                        .stream()
-                        .map(ActMapper::actToActLogResponseDto)
-                        .toList());
-            }
-
-            document.add(table);
-
-            // Добавляем пустую страницу при необходимости
-            if (addPage) {
-                int currentPages = writer.getPageNumber();
-                if (currentPages % 2 != 0) {
-                    document.newPage();
-                    document.add(new Paragraph(" "));
-                    log.info("Добавлена пустая страница для журнала (раздел {}). Было {} страниц", section, currentPages);
-                }
-            }
-        } finally {
-            if (document.isOpen()) {
-                document.close();
-            }
-        }
-        return output;
-    }
-
-    public void exportWorkLogToPdf(HttpServletResponse response, int section) throws IOException, DocumentException {
-        String fileName = "Общий_Журнал_работ_третий_раздел.pdf";
-        response.setContentType("application/pdf");
-        response.setHeader("Content-Disposition",
-                "inline; filename=\"" + URLEncoder.encode(fileName, StandardCharsets.UTF_8) + "\"");
-
-        response.getOutputStream().write(
-                generateWorkLogPdf(false, section)
-                        .toByteArray());
-
-        log.info("PDF {} раздела сгенерирован", section);
-    }
 }

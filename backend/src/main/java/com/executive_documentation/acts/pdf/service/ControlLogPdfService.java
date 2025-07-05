@@ -1,10 +1,12 @@
-package com.executive_documentation.acts.pdf;
+package com.executive_documentation.acts.pdf.service;
 
 import com.executive_documentation.acts.dto.entrance.EntranceControlExportDto;
 import com.executive_documentation.acts.dto.entrance.EntranceControlMapper;
+import com.executive_documentation.acts.dto.font.Fonts;
+import com.executive_documentation.acts.pdf.utils.PdfCellCreator;
+import com.executive_documentation.acts.pdf.utils.PdfUtils;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.itextpdf.text.*;
-import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import jakarta.annotation.PostConstruct;
@@ -14,9 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -25,8 +25,6 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 public class ControlLogPdfService {
-    private static final String FONT_PATH = "/fonts/times.ttf"; // Путь в ресурсах
-
     private final EntranceControlRepository entranceControlRepository;
     private final PdfCellCreator creator;
     private final EntranceControlMapper entranceControlMapper;
@@ -39,51 +37,12 @@ public class ControlLogPdfService {
 
     @PostConstruct
     public void initFonts() {
-        try {
-            // Загрузка шрифта из ресурсов
-            InputStream fontStream = getClass().getResourceAsStream(FONT_PATH);
-            BaseFont baseFont;
-            if (fontStream == null) {
-                // Попробуем альтернативный путь
-                String alternativePath = "src/main/resources" + FONT_PATH;
-                File fontFile = new File(alternativePath);
-                if (fontFile.exists()) {
-                    baseFont = BaseFont.createFont(
-                            alternativePath,
-                            BaseFont.IDENTITY_H,
-                            BaseFont.EMBEDDED
-                    );
-                } else {
-                    // Используем системный шрифт как последнее средство
-                    baseFont = BaseFont.createFont(
-                            "c:/windows/fonts/arial.ttf",
-                            BaseFont.IDENTITY_H,
-                            BaseFont.EMBEDDED
-                    );
-                    log.warn("Using fallback font (Arial) as main font was not found");
-                }
-            } else {
-                baseFont = BaseFont.createFont(
-                        FONT_PATH,
-                        BaseFont.IDENTITY_H,
-                        BaseFont.EMBEDDED,
-                        true,
-                        fontStream.readAllBytes(),
-                        null
-                );
-                fontStream.close();
-            }
-
-            // Инициализация всех шрифтов
-            this.f1 = new Font(baseFont, 11);
-            this.f3 = new Font(baseFont, 9, Font.ITALIC);
-            this.f7 = new Font(baseFont, 30, Font.BOLD);
-            this.f8 = new Font(baseFont, 16, Font.BOLD);
-            this.f9 = new Font(baseFont, 14);
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize PDF fonts", e);
-        }
+        Fonts fonts = PdfUtils.initFonts();
+        this.f1 = fonts.f1();
+        this.f3 = fonts.f3();
+        this.f7 = fonts.f7();
+        this.f8 = fonts.f8();
+        this.f9 = fonts.f9();
     }
 
     public void exportEntranceControlLogToPdf(HttpServletResponse response) throws IOException, DocumentException {

@@ -1,23 +1,30 @@
 <template>
   <Navbar/>
-  <div class="container-fluid px-4 py-4">
+  <div class="container-fluid px-4 py-5">
     <div class="card shadow-sm border-0">
       <div class="card-body p-0">
-        <h1 class="text-center text-primary my-4 mt-5">АОСР</h1>
+        <!-- Заголовок и кнопки в одной строке -->
+        <div class="d-flex align-items-center px-4 py-3 border-bottom">
+          <!-- Кнопки слева (как в оригинале) -->
+          <div class="d-flex gap-3">
+            <div>
+              <a href="/addAct" class="btn btn-primary rounded-pill px-4">
+                <i class="bi bi-plus-lg me-2"></i>Добавить акт
+              </a>
+            </div>
+            <div>
+              <button v-if="showDates" @click.prevent="showRegistryDates"
+                      class="btn btn-outline-dark rounded-pill px-4">
+                <i class="bi bi-border-width me-2"></i>Реестр
+              </button>
+            </div>
+          </div>
 
-        <!-- Action buttons -->
-        <div class="d-flex justify-content-start px-4">
-          <div>
-            <a href="/addAct" class="btn btn-primary rounded-pill px-4">
-              <i class="bi bi-plus-lg me-2"></i>Добавить акт
-            </a>
-          </div>
-          <div class="mx-4">
-            <button v-if="showDates" @click.prevent="showRegistryDates"
-                    class="btn btn-outline-dark rounded-pill px-4">
-              <i class="bi bi-border-width me-2"></i>Реестр
-            </button>
-          </div>
+          <!-- Заголовок по центру оставшегося пространства -->
+          <h1 class="text-primary mb-0 mx-auto">АОСР</h1>
+
+          <!-- Пустой элемент для балансировки -->
+          <div style="width: 180px;"></div>
         </div>
 
         <!-- Date selection form -->
@@ -43,7 +50,7 @@
         </div>
 
         <!-- Table with black header -->
-        <div class="table-responsive mt-3" style="max-height: 78vh;">
+        <div v-if="showDates" class="table-responsive mt-3" style="max-height: 84vh;">
           <table class="table table-hover align-middle mb-0">
             <thead class="sticky-top">
             <tr>

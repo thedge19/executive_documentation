@@ -1,9 +1,11 @@
 package com.executive_documentation.acts.service;
 
+import com.executive_documentation.acts.dto.act.ActLogResponseDto;
 import com.executive_documentation.acts.dto.act.ActMapper;
 import com.executive_documentation.acts.dto.act.ActResponseDto;
 import com.executive_documentation.acts.dto.entrance.EntranceControlMapper;
 import com.executive_documentation.acts.dto.entrance.EntranceControlResponseDto;
+import com.executive_documentation.acts.dto.worklog.WorkLogDto;
 import com.executive_documentation.acts.model.Act;
 import com.executive_documentation.acts.model.EntranceControl;
 import com.executive_documentation.acts.model.ExecutiveSchema;
@@ -302,6 +304,117 @@ public class ActServiceImplementation implements ActService {
     @Override
     public long getGlobalStats() {
         return 100 * actRepository.countAllActs() / workingRepository.countAllWorkings();
+    }
+
+    @Override
+    public List<WorkLogDto> getWorkLog3() {
+
+        List<Act> acts = actRepository.findAllByOrderByStartDateAscActNumberAsc();
+        List<LocalDate> workLogDates = new ArrayList<>();
+        List<Long> subObjectIds = new ArrayList<>();
+        Map<LocalDate, Map<Long, List<String>>> logRows = new HashMap<>();
+
+        for (Act act : acts) {
+            ArrayList<LocalDate> actDates = new ArrayList<>();
+            for (LocalDate d = act.getStartDate(); !d.isAfter(act.getEndDate()); d = d.plusDays(1)) {
+                actDates.add(d);
+                if (!workLogDates.contains(d)) {
+                    workLogDates.add(d);
+                }
+            }
+
+            Long subObjectId = act.getSubObject().getId();
+            subObjectIds.add(subObjectId);
+            double workDone = act.getWorkDone().doubleValue();
+
+            if (!subObjectIds.contains(subObjectId)) {
+                subObjectIds.add(subObjectId);
+            }
+
+            String currentWork = act.getWorks().split(":", 2)[1];
+
+            String[] works = currentWork.split(" ");
+            int worksSize = works.length;
+
+            StringBuilder workString = new StringBuilder();
+            String units = works[worksSize - 1];
+
+            for (int j = 0; j < worksSize - 3; j++) {
+                workString.append(works[j]);
+                workString.append(" ");
+            }
+
+            currentWork = workString.toString();
+
+
+            double rowWorkDone = workDone / actDates.size();
+
+            for (int k = 0; k < actDates.size(); k++) {
+                LocalDate rowDate = actDates.get(k);
+
+                if (actDates.size() > 1) {
+                    if (k != actDates.size() - 1) {
+                        workDone = workDone - rowWorkDone;
+                    } else {
+                        rowWorkDone = workDone;
+                    }
+                }
+                String rowCurrentWork = currentWork + " - " + String.format("%.2f", rowWorkDone) + " " + units;
+
+                if (logRows.get(rowDate) == null) {
+                    Map<Long, List<String>> row = new HashMap<>();
+                    List<String> rowWorks = new ArrayList<>();
+                    rowWorks.add(rowCurrentWork);
+                    row.put(subObjectId, rowWorks);
+
+                    logRows.put(actDates.get(k), row);
+                } else {
+                    if (logRows.get(rowDate).get(subObjectId) == null) {
+                        List<String> rowWorks = new ArrayList<>();
+                        rowWorks.add(rowCurrentWork);
+                        logRows.get(rowDate).put(subObjectId, rowWorks);
+                    } else {
+                        logRows.get(rowDate).get(subObjectId).add(rowCurrentWork);
+                    }
+                }
+
+
+            }
+        }
+
+        int i = 1;
+
+        List<WorkLogDto> workLogs = new ArrayList<>();
+
+        for (LocalDate d : workLogDates) {
+
+            WorkLogDto workLog = new WorkLogDto();
+
+            workLog.setWorkDate(d);
+            Set<Long> rowKeySet = logRows.get(d).keySet();
+            StringBuilder workLogName = new StringBuilder();
+
+            for (Long rowKey : rowKeySet) {
+                workLogName.append(subObjectRepository.findById(rowKey).orElseThrow().getName()).append(": ");
+                for (String work : logRows.get(d).get(rowKey)) {
+                    workLogName.append(work).append("; ");
+                }
+            }
+            workLog.setName(workLogName.toString());
+            workLog.setWorkLogNumber(i);
+
+            workLogs.add(workLog);
+
+            i++;
+        }
+        return workLogs;
+    }
+
+    @Override
+    public List<ActLogResponseDto> getWorkLog6() {
+        List<Act> acts = actRepository.findAllByOrderByEndDateAscActNumberAsc();
+
+        return acts.stream().map(ActMapper::actToActLogResponseDto).toList();
     }
 
     // Вспомогательные методы

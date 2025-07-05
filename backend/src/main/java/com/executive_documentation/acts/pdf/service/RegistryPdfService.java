@@ -1,9 +1,12 @@
-package com.executive_documentation.acts.pdf;
+package com.executive_documentation.acts.pdf.service;
 
 import com.executive_documentation.acts.dto.act.ActMapper;
 import com.executive_documentation.acts.dto.act.ActResponseDto;
+import com.executive_documentation.acts.dto.font.Fonts;
 import com.executive_documentation.acts.model.Act;
 import com.executive_documentation.acts.model.EntranceControl;
+import com.executive_documentation.acts.pdf.utils.PdfCellCreator;
+import com.executive_documentation.acts.pdf.utils.PdfUtils;
 import com.executive_documentation.acts.repository.ActRepository;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.executive_documentation.fileStorage.service.FileStorageService;
@@ -12,11 +15,11 @@ import com.executive_documentation.materials.model.Material;
 import com.executive_documentation.materials.repository.CertificateRepository;
 import com.executive_documentation.acts.dto.registry.RegistryPeriodDto;
 import com.executive_documentation.acts.model.Registry;
-import com.executive_documentation.worklogs.pdf.WorkLogPdfService;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class RegistryPdfService {
     private static final String FONT_PATH = "/fonts/times.ttf"; // Путь в ресурсах
 
@@ -55,79 +59,20 @@ public class RegistryPdfService {
 
     private final static String ENERGY = "ООО «Энергомонтаж»";
     private final Path fileStorageLocation;
+    @Value("${file.upload-dir}") String uploadDir;
 
     private Font f1;
     private Font f2;
     private Font f3;
     private Font fontForPageNumbers;
 
-    public RegistryPdfService(ActRepository actRepository,
-                              EntranceControlRepository entranceControlRepository,
-                              ActPdfService actPdfService,
-                              ControlPdfService controlPdfService,
-                              ActMapper actMapper,
-                              FileStorageService fileStorageService,
-                              @Value("${file.upload-dir}") String uploadDir, PdfCellCreator creator, WorkLogPdfService workLogPdfService, ControlLogPdfService controlLogPdfService, CertificateRepository certificateRepository, Path fileStorageLocation) {
-        this.actRepository = actRepository;
-        this.creator = creator;
-        this.workLogPdfService = workLogPdfService;
-        this.controlLogPdfService = controlLogPdfService;
-        this.certificateRepository = certificateRepository;
-        this.fileStorageLocation = fileStorageLocation;
-        this.entranceControlRepository = entranceControlRepository;
-        this.actPdfService = actPdfService;
-        this.controlPdfService = controlPdfService;
-
-        this.actMapper = actMapper;
-        this.fileStorageService = fileStorageService;
-    }
-
     @PostConstruct
     public void initFonts() {
-        try {
-            // Загрузка шрифта из ресурсов
-            InputStream fontStream = getClass().getResourceAsStream(FONT_PATH);
-            BaseFont baseFont;
-            if (fontStream == null) {
-                // Попробуем альтернативный путь
-                String alternativePath = "src/main/resources" + FONT_PATH;
-                File fontFile = new File(alternativePath);
-                if (fontFile.exists()) {
-                    baseFont = BaseFont.createFont(
-                            alternativePath,
-                            BaseFont.IDENTITY_H,
-                            BaseFont.EMBEDDED
-                    );
-                } else {
-                    // Используем системный шрифт как последнее средство
-                    baseFont = BaseFont.createFont(
-                            "c:/windows/fonts/arial.ttf",
-                            BaseFont.IDENTITY_H,
-                            BaseFont.EMBEDDED
-                    );
-                    log.warn("Using fallback font (Arial) as main font was not found");
-                }
-            } else {
-                baseFont = BaseFont.createFont(
-                        FONT_PATH,
-                        BaseFont.IDENTITY_H,
-                        BaseFont.EMBEDDED,
-                        true,
-                        fontStream.readAllBytes(),
-                        null
-                );
-                fontStream.close();
-            }
-
-            // Инициализация всех шрифтов
-            this.f1 = new Font(baseFont, 11);
-            this.f2 = new Font(baseFont, 12, Font.BOLD);
-            this.f3 = new Font(baseFont, 9, Font.ITALIC);
-            this.fontForPageNumbers = new Font(baseFont, 9, Font.BOLDITALIC);
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize PDF fonts", e);
-        }
+        Fonts fonts = PdfUtils.initFonts();
+        this.f1 = fonts.f1();
+        this.f2 = fonts.f2();
+        this.f3 = fonts.f3();
+        this.fontForPageNumbers = fonts.fontForPageNumbers();
     }
 
     public void createRegistryForPeriod(RegistryPeriodDto periodDto, HttpServletResponse response)

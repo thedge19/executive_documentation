@@ -1,4 +1,4 @@
-package com.executive_documentation.acts.pdf;
+package com.executive_documentation.acts.pdf.utils;
 
 import com.itextpdf.text.Font;
 import com.itextpdf.text.Paragraph;
