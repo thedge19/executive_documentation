@@ -29,7 +29,6 @@ public interface ActMapper {
                 .submittedDocuments(act.getSubmittedDocuments())
                 .inAccordWith(act.getInAccordWith())
                 .nextWorks(act.getNextWorks())
-                .inRegistry(act.getInRegistry())
                 .build();
     }
 
@@ -45,6 +44,20 @@ public interface ActMapper {
                 .endDate(act.getEndDate() != null
                         ? act.getEndDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
                         : null)
+                .build();
+    }
+
+    static ActLogDto actToActLogDto(Act act) {
+        if (act == null) {
+            return null;
+        }
+
+        return ActLogDto.builder()
+                .id(act.getId())
+                .works(act.getWorks())
+                .startDate(act.getStartDate())
+                .endDate(act.getEndDate())
+                .workDone(act.getWorkDone())
                 .build();
     }
 }

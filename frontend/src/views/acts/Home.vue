@@ -4,47 +4,44 @@
     <div class="card shadow-sm border-0">
       <div class="card-body p-0">
         <!-- Заголовок и кнопки в одной строке -->
-        <div class="d-flex align-items-center px-4 py-3 border-bottom">
-          <!-- Кнопки слева (как в оригинале) -->
+        <div class="d-flex align-items-center px-4 py-3 border-bottom bg-transparent">
+          <!-- Кнопки слева -->
           <div class="d-flex gap-3">
             <div>
-              <a href="/addAct" class="btn btn-primary rounded-pill px-4">
+              <a href="/addAct" class="btn btn-info rounded-pill px-4">
                 <i class="bi bi-plus-lg me-2"></i>Добавить акт
               </a>
             </div>
             <div>
               <button v-if="showDates" @click.prevent="showRegistryDates"
-                      class="btn btn-outline-dark rounded-pill px-4">
+                      class="btn btn-outline-secondary rounded-pill px-4">
                 <i class="bi bi-border-width me-2"></i>Реестр
               </button>
             </div>
           </div>
 
-          <!-- Заголовок по центру оставшегося пространства -->
-          <h1 class="text-primary mb-0 mx-auto">АОСР</h1>
-
-          <!-- Пустой элемент для балансировки -->
-          <div style="width: 180px;"></div>
+          <!-- Заголовок по центру -->
+          <h1 class="text-light mb-0 mx-auto">АОСР</h1>
         </div>
 
         <!-- Date selection form -->
         <div v-if="!showDates" class="px-4 py-3">
           <div class="d-flex flex-wrap align-items-center gap-3">
-            <div>
-              <label class="input-group-text"><i class="bi bi-calendar-month me-2"></i>Дата начала периода</label>
-              <VDatePicker v-model="startDate" mode="date"/>
+            <div class="flex-grow-1">
+              <label class="form-label"><i class="bi bi-calendar-month me-2"></i>Дата начала периода</label>
+              <VDatePicker v-model="startDate" mode="date" class="form-control"/>
             </div>
-            <div>
-              <label class="input-group-text"><i class="bi bi-calendar-month me-2"></i>Дата окончания периода</label>
-              <VDatePicker v-model="endDate" mode="date"/>
+            <div class="flex-grow-1">
+              <label class="form-label"><i class="bi bi-calendar-month me-2"></i>Дата окончания периода</label>
+              <VDatePicker v-model="endDate" mode="date" class="form-control"/>
             </div>
           </div>
-          <div class="d-flex mt-3">
-            <button @click.prevent="addDates" class="btn btn-outline-success rounded-pill px-4 me-2">
-              <i class="bi bi-file-earmark-pdf me-2 text-danger"></i>Сформировать реестр
+          <div class="d-flex gap-2 mt-3">
+            <button @click.prevent="addDates" class="btn btn-success rounded-pill px-4">
+              <i class="bi bi-file-earmark-pdf me-2"></i>Сформировать реестр
             </button>
             <button @click.prevent="showRegistryDates" class="btn btn-outline-danger rounded-pill px-4">
-              <i class="bi bi-x"></i>Отмена
+              <i class="bi bi-x me-1"></i>Отмена
             </button>
           </div>
         </div>
@@ -109,13 +106,11 @@ import Navbar from '../../components/Navbar.vue'
 
 const acts = ref([])
 const path = ref('http://localhost:8080/acts')
-const containerPath = ref('http://localhost:8080/acts/container')
 const startDate = ref(new Date())
 const endDate = ref(new Date())
 const showDates = ref(true)
 const isLoading = ref(false)
 const error = ref(null)
-const container = ref("");
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token')

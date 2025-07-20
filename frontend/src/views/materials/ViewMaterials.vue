@@ -237,12 +237,12 @@ body {
 
 /* Стили для таблицы */
 .table {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .table th {
   font-weight: 500;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }
 
 .table-hover tbody tr:hover {
@@ -255,35 +255,96 @@ body {
   overflow: hidden;
 }
 
-/* Стили для кнопок */
+/* Стили для кнопок с эффектами */
 .btn {
-  transition: all 0.2s ease;
-  border-radius: 6px;
-  padding: 8px 16px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
+  position: relative;
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem 1.25rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
+/* Внутренняя граница */
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50px;
+  pointer-events: none;
+}
+
+/* Эффект нажатия */
+.btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Эффект наведения */
+.btn:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Специфичные цвета для кнопок */
 .btn-success {
-  background-color: #28a745;
-  border-color: #28a745;
+  background: linear-gradient(135deg, #28a745 0%, #218838 100%);
 }
 
-.btn-success:hover {
-  background-color: #218838;
-  border-color: #218838;
+.btn-info {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
 }
 
-.btn-outline-primary {
-  color: #002d72;
-  border-color: #002d72;
+/* Эффект "волны" при клике */
+.btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%);
+  transform-origin: 50% 50%;
 }
 
-.btn-outline-primary:hover {
-  background-color: #002d72;
-  color: white;
+.btn:focus:not(:active)::after {
+  animation: ripple 0.6s ease-out;
 }
 
-.btn-outline-danger:hover {
-  color: white;
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(20, 20);
+    opacity: 0;
+  }
+}
+
+/* Иконки в кнопках */
+.btn .bi {
+  transition: transform 0.2s ease;
+}
+
+.btn:hover .bi {
+  transform: scale(1.1);
+}
+
+/* Убираем стандартный outline и добавляем кастомный */
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 45, 114, 0.3);
 }
 
 /* Скролл таблицы */
@@ -306,35 +367,24 @@ body {
   background-color: #f1f1f1;
 }
 
-/* Документы */
-.document-link {
-  transition: all 0.2s;
-  display: block;
-  padding: 2px 5px;
-  border-radius: 4px;
+/* Анимация загрузки */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.document-link:hover {
-  background-color: rgba(13, 110, 253, 0.1);
+.table tbody tr {
+  animation: fadeIn 0.3s ease forwards;
 }
 
-.document-toggle {
-  cursor: pointer;
-  user-select: none;
-}
-
-.document-toggle:hover {
-  text-decoration: underline;
-}
-
-.document-list {
-  border-left: 2px solid #dee2e6;
-  padding-left: 10px;
-  margin-left: 5px;
-}
-
-/* Loading state */
-.btn:disabled {
-  opacity: 0.7;
+/* Иконки для кнопок */
+.bi {
+  font-size: 1rem;
 }
 </style>

@@ -22,7 +22,6 @@
         <div v-if="error" class="alert alert-danger mb-4">
           <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
         </div>
-
         <!-- Table -->
         <div class="card shadow-sm border-0">
           <div class="card-body p-0">

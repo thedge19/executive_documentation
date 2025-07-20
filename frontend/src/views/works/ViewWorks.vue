@@ -1,31 +1,34 @@
 <template>
   <Navbar/>
-  <div class="container py-4">
-    <div class="card shadow-sm border-0">
-      <div class="card-header bg-primary text-white py-3 mt-3">
-        <h1 class="h3 mb-0 text-center">Учет выполненных работ</h1>
-      </div>
-
-      <div class="card-body">
-        <!-- Controls -->
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-1 gap-3">
-          <div class="d-flex justify-content-start">
+  <div class="container py-3">
+    <div class="row justify-content-center mt-5">
+      <div class="col-12">
+        <!-- Заголовок и элементы управления -->
+        <div class="d-flex align-items-center mb-3 position-relative">
+          <!-- Кнопки слева -->
+          <div class="d-flex">
             <a :href="`/addWork/${subObjectId}?page=${works.totalPages - 1}`"
-               class="btn btn-primary rounded-pill my-2">
+               class="btn btn-info mx-2 shadow-sm rounded-pill">
               <i class="bi bi-plus-circle me-2"></i>Добавить работу
             </a>
             <router-link
                 v-if="works.content && works.content.length > 0"
                 :to="`/subObjects/${works.content[0].projectId}`"
-                class="btn btn-outline-secondary rounded-pill m-lg-2">
+                class="btn btn-outline-secondary rounded-pill mx-2">
               <i class="bi bi-arrow-left me-2"></i>В подобъекты
             </router-link>
           </div>
 
-          <div class="flex-grow-1 mx-md-3" style="max-width: 500px;">
+          <!-- Заголовок по центру -->
+          <h1 class="text-light position-absolute start-50" style="width: max-content;">
+            Работы
+          </h1>
+
+          <!-- Выбор подобъекта справа -->
+          <div class="flex-grow-1 ms-auto" style="max-width: 400px;">
             <div class="input-group">
-              <label class="input-group-text bg-white"><i class="bi bi-building"></i></label>
-              <select class="form-select" v-model="subObjectId" @change="onChangeSubObject()">
+              <label class="input-group-text bg-white border-end-0"><i class="bi bi-building"></i></label>
+              <select class="form-select border-start-0" v-model="subObjectId" @change="onChangeSubObject()">
                 <option value="" disabled selected>Выберите подобъект...</option>
                 <option v-for="subObject in subObjects" :value="subObject.id">
                   {{ subObject.name }}
@@ -35,100 +38,117 @@
           </div>
         </div>
 
+        <!-- Error message -->
+        <div v-if="error" class="alert alert-danger mb-2">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+        </div>
+
         <!-- Table -->
-        <div class="table-responsive">
-          <table class="table table-hover align-middle">
-            <thead class="table-dark">
-            <tr>
-              <th scope="col" class="text-nowrap">ID</th>
-              <th scope="col" class="text-nowrap">Наименование</th>
-              <th scope="col" class="text-nowrap">Ед. изм.</th>
-              <th scope="col" class="text-nowrap">Количество</th>
-              <th scope="col" class="text-nowrap">Выполнено</th>
-              <th scope="col" class="text-nowrap">Закрыто, руб.</th>
-              <th scope="col" class="text-nowrap">Осталось</th>
-              <th scope="col" class="text-nowrap">Не закрыто, руб.</th>
-              <th scope="col" class="text-nowrap">Всего, руб.</th>
-              <th scope="col" class="text-nowrap text-end" style="width:15%">Действие</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr v-if="works.content && works.content.length > 0" v-for="work in works.content" :key="work.id">
-              <th scope="row" class="fw-semibold">{{ work.id }}</th>
-              <td :class="{ 'fw-bold': work.unitPrice > 0 }">{{ work.name }}</td>
-              <td class="text-center">{{ work.units }}</td>
-              <td class="text-center">{{ work.quantity }}</td>
-              <td class="text-center">{{ work.done }}</td>
-              <td class="text-center">{{ work.doneAmount.toFixed(2) }}</td>
-              <td class="text-center">{{ work.finalQuantity }}</td>
-              <td class="text-center">{{ work.remainingAmount.toFixed(2) }}</td>
-              <td class="text-center">{{ work.totalAmount.toFixed(2) }}</td>
-              <td class="text-end">
-                <div class="d-flex justify-content-end gap-2">
-                  <a class="btn btn-sm btn-outline-primary"
-                     :href="`/editWork/${work.id}?page=${works.number}&subObjectId=${subObjectId}`">
-                    <i class="bi bi-pencil"></i>
-                  </a>
-                  <button class="btn btn-sm btn-outline-danger" @click="deleteWork(work.id)">
-                    <i class="bi bi-trash"></i>
+        <div class="card shadow-sm border-0">
+          <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 85vh;">
+              <table class="table table-hover mb-0">
+                <thead class="sticky-top" style="background-color: #002d72;">
+                <tr>
+                  <th class="text-center text-white fw-normal" style="background-color: #000000;">ID</th>
+                  <th class="text-center text-white fw-normal" style="background-color: #000000;">Наименование</th>
+                  <th class="text-center text-white fw-normal" style="background-color: #000000;">Ед. изм.</th>
+                  <th class="text-center text-white fw-normal" style="background-color: #000000;">Количество</th>
+                  <th class="text-center text-white fw-normal" style="background-color: #000000;">Выполнено</th>
+                  <th class="text-center text-white fw-normal" style="background-color: #000000;">Закрыто, руб.</th>
+                  <th class="text-center text-white fw-normal" style="background-color: #000000;">Осталось</th>
+                  <th class="text-center text-white fw-normal" style="background-color: #000000;">Не закрыто</th>
+                  <th class="text-center text-white fw-normal" style="background-color: #000000;">Всего, руб.</th>
+                  <th class="text-center text-white fw-normal" style="background-color: #000000;">Действия</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-if="works.content && works.content.length > 0"
+                    v-for="(work, index) in works.content"
+                    :key="work.id"
+                    :class="{'table-light': index % 2 === 0}">
+                  <td class="text-center align-middle fw-semibold">{{ work.id }}</td>
+                  <td class="align-middle" :class="{ 'fw-bold': work.unitPrice > 0 }">{{ work.name }}</td>
+                  <td class="text-center align-middle">{{ work.units }}</td>
+                  <td class="text-center align-middle">{{ work.quantity }}</td>
+                  <td class="text-center align-middle">{{ work.done }}</td>
+                  <td class="text-center align-middle">{{ work.doneAmount.toFixed(2) }}</td>
+                  <td class="text-center align-middle">{{ work.finalQuantity }}</td>
+                  <td class="text-center align-middle">{{ work.remainingAmount.toFixed(2) }}</td>
+                  <td class="text-center align-middle">{{ work.totalAmount.toFixed(2) }}</td>
+                  <td class="text-center align-middle">
+                    <div class="d-flex justify-content-center gap-2">
+                      <a class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                         :href="`/editWork/${work.id}?page=${works.number}&subObjectId=${subObjectId}`">
+                        <i class="bi bi-pencil me-1"></i>Изменить
+                      </a>
+                      <button class="btn btn-sm btn-outline-danger rounded-pill" @click="deleteWork(work.id)">
+                        <i class="bi bi-trash me-1"></i>Удалить
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr v-else>
+                  <td colspan="10" class="text-center py-4 text-muted">
+                    <i class="bi bi-exclamation-circle fs-4 d-block mb-2"></i>
+                    Нет данных для отображения
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagination and Total -->
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          <!-- Pagination (centered) -->
+          <div class="flex-grow-1 d-flex justify-content-center">
+            <nav aria-label="Page navigation">
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item" :class="{ disabled: works.first }">
+                  <button class="page-link rounded-pill mx-1" @click="changePage(0)">
+                    <i class="bi bi-chevron-double-left"></i>
                   </button>
-                </div>
-              </td>
-            </tr>
-            <tr v-else>
-              <td colspan="7" class="text-center py-4 text-muted">
-                <i class="bi bi-exclamation-circle fs-4 d-block mb-2"></i>
-                Нет данных для отображения
-              </td>
-            </tr>
-            </tbody>
-          </table>
-        </div>
+                </li>
+                <li class="page-item" :class="{ disabled: works.first }">
+                  <button class="page-link rounded-pill mx-1" @click="changePage(works.number - 1)">
+                    <i class="bi bi-chevron-left"></i>
+                  </button>
+                </li>
 
-        <!-- Pagination -->
-        <div class="d-flex flex-column align-items-center mt-4">
-          <nav aria-label="Page navigation">
-            <ul class="pagination pagination-sm">
-              <li class="page-item" :class="{ disabled: works.first }">
-                <button class="page-link" @click="changePage(0)">
-                  <i class="bi bi-chevron-double-left"></i>
-                </button>
-              </li>
-              <li class="page-item" :class="{ disabled: works.first }">
-                <button class="page-link" @click="changePage(works.number - 1)">
-                  <i class="bi bi-chevron-left"></i>
-                </button>
-              </li>
+                <li class="page-item" v-for="page in pageNumbers" :key="page"
+                    :class="{ active: works.number === page }">
+                  <button class="page-link rounded-pill mx-1" @click="changePage(page)">{{ page + 1 }}</button>
+                </li>
 
-              <li class="page-item" v-for="page in pageNumbers" :key="page"
-                  :class="{ active: works.number === page }">
-                <button class="page-link" @click="changePage(page)">{{ page + 1 }}</button>
-              </li>
+                <li class="page-item" :class="{ disabled: works.last }">
+                  <button class="page-link rounded-pill mx-1" @click="changePage(works.number + 1)">
+                    <i class="bi bi-chevron-right"></i>
+                  </button>
+                </li>
+                <li class="page-item" :class="{ disabled: works.last }">
+                  <button class="page-link rounded-pill mx-1" @click="changePage(works.totalPages - 1)">
+                    <i class="bi bi-chevron-double-right"></i>
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
 
-              <li class="page-item" :class="{ disabled: works.last }">
-                <button class="page-link" @click="changePage(works.number + 1)">
-                  <i class="bi bi-chevron-right"></i>
-                </button>
-              </li>
-              <li class="page-item" :class="{ disabled: works.last }">
-                <button class="page-link" @click="changePage(works.totalPages - 1)">
-                  <i class="bi bi-chevron-double-right"></i>
-                </button>
-              </li>
-            </ul>
-          </nav>
-
-          <div v-if="works.totalElements > 0" class="text-muted small mt-2">
-            Показано {{ works.numberOfElements }} из {{ works.totalElements }} работ
-            (Страница {{ works.number + 1 }} из {{ works.totalPages }})
+          <!-- Total amount (right-aligned) -->
+          <div v-if="works.content && works.content.length > 0" class="ms-3">
+            <div class="alert alert-success mb-0 py-2 px-3 rounded-pill">
+              <strong>Итого по подобъекту:</strong>
+              <span class="ms-2 fw-bold">{{ formatCurrency(totalAmountBySubObject) }}</span>
+            </div>
           </div>
         </div>
-        <!-- Итоговая сумма -->
-        <div v-if="works.content && works.content.length > 0" class="d-flex justify-content-end mt-3">
-          <div class="alert alert-success mb-0 py-2 px-3">
-            <strong>Итого по подобъекту:</strong>
-            <span class="ms-2">{{ formatCurrency(totalAmountBySubObject) }}</span>
-          </div>
+
+        <!-- Page info -->
+        <div v-if="works.totalElements > 0" class="text-light small mt-2 text-center">
+          Показано {{ works.numberOfElements }} из {{ works.totalElements }} работ
+          (Страница {{ works.number + 1 }} из {{ works.totalPages }})
         </div>
       </div>
     </div>
@@ -144,7 +164,6 @@ const router = useRouter()
 const route = useRoute()
 const error = ref("")
 const totalAmountBySubObject = ref(0)
-
 const isLoading = ref(false)
 const works = ref({
   content: [],
@@ -202,11 +221,7 @@ const getWorks = async () => {
   isLoading.value = true;
   try {
     const headers = getAuthHeaders();
-
-    // Получаем page из URL или используем 0
     const page = parseInt(route.query.page) || 0;
-
-    // Обязательно сохраняем номер страницы в состоянии
     works.value.number = page;
 
     const response = await fetch(
@@ -215,22 +230,28 @@ const getWorks = async () => {
     )
 
     if (!response.ok) {
-      // обработка ошибок
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
+      }
+      error.value = 'Ошибка загрузки данных';
+      return;
     }
 
     const data = await response.json();
     works.value = {
       ...data,
-      number: page // Сохраняем актуальный номер страницы
+      number: page
     }
 
-    // Если в URL не было параметра page - добавляем его
     if (!route.query.page && page !== 0) {
       await router.replace({query: {...route.query, page}})
     }
 
+    await fetchTotalAmountBySubObject();
   } catch (err) {
     console.error('Ошибка:', err)
+    error.value = err.message || 'Ошибка загрузки данных';
     if (err.message.includes('авторизация')) {
       handleUnauthorized()
     }
@@ -244,7 +265,6 @@ const deleteWork = async (id) => {
 
   try {
     const headers = getAuthHeaders()
-
     const response = await fetch(`http://localhost:8080/workings/${id}`, {
       method: 'DELETE',
       headers
@@ -260,17 +280,15 @@ const deleteWork = async (id) => {
     }
 
     await getWorks()
-    alert('Работа успешно удалена')
   } catch (err) {
     console.error('Ошибка:', err)
-    alert(err.message || 'Не удалось удалить работу')
+    error.value = err.message || 'Не удалось удалить работу';
   }
 }
 
 const getSubObjects = async () => {
   try {
     const headers = getAuthHeaders()
-
     const response = await fetch('http://localhost:8080/subobjects', {headers})
 
     if (!response.ok) {
@@ -285,13 +303,13 @@ const getSubObjects = async () => {
     subObjects.value = await response.json()
   } catch (err) {
     console.error('Ошибка:', err)
+    error.value = err.message || 'Ошибка загрузки данных';
     if (err.message.includes('авторизация')) {
       handleUnauthorized()
     }
   }
 }
 
-// Форматирование валюты (если нужно)
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
@@ -301,7 +319,6 @@ const formatCurrency = (value) => {
   }).format(value || 0)
 }
 
-// Запрос суммы totalAmount для SubObject
 const fetchTotalAmountBySubObject = async () => {
   if (!subObjectId.value) return;
 
@@ -317,7 +334,7 @@ const fetchTotalAmountBySubObject = async () => {
       return;
     }
 
-    totalAmountBySubObject.value = await response.json(); // Предполагаем, что бэкенд возвращает число
+    totalAmountBySubObject.value = await response.json();
   } catch (err) {
     console.error("Ошибка загрузки суммы:", err);
     totalAmountBySubObject.value = 0;
@@ -332,68 +349,244 @@ const onChangeSubObject = () => {
 const changePage = (pageNumber) => {
   if (pageNumber >= 0 && pageNumber < works.value.totalPages) {
     works.value.number = pageNumber;
-    // Обновляем URL с новым параметром page
     router.push({query: {...route.query, page: pageNumber}});
     getWorks();
   }
 };
 
 onMounted(() => {
-  // Инициализируем номер страницы из URL
   if (route.query.page) {
     works.value.number = parseInt(route.query.page);
   }
-  fetchTotalAmountBySubObject();
   getWorks();
   getSubObjects();
 });
 
 watch(subObjectId, async () => {
-  await fetchTotalAmountBySubObject(); // Обновляем сумму при смене подобъекта
+  await fetchTotalAmountBySubObject();
 });
 </script>
 
 <style scoped>
-/* Стили остаются без изменений */
-.card {
-  border-radius: 10px;
-  overflow: hidden;
+/* Основные стили */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Стили для таблицы */
 .table {
-  font-size: 0.9rem;
-  margin-bottom: 0;
+  font-size: 0.95rem;
 }
 
 .table th {
   font-weight: 500;
-  white-space: nowrap;
+  letter-spacing: 1px;
 }
 
 .table-hover tbody tr:hover {
-  background-color: rgba(0, 0, 0, 0.03);
+  background-color: rgba(0, 45, 114, 0.05);
 }
 
+/* Стили для карточки */
+.card {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Стили для кнопок с эффектами */
 .btn {
-  transition: all 0.2s;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
+  position: relative;
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem 1.25rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
-.btn-outline-primary:hover, .btn-outline-danger:hover {
+.btn-sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.btn-outline-primary {
+  border: 1px solid #002d72;
+  color: #002d72;
+  background: transparent;
+}
+
+.btn-outline-primary:hover {
+  background: #002d72;
   color: white;
 }
 
-.page-item.active .page-link {
-  background-color: #0d6efd;
-  border-color: #0d6efd;
+.btn-outline-danger {
+  border: 1px solid #dc3545;
+  color: #dc3545;
+  background: transparent;
 }
 
+.btn-outline-danger:hover {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-outline-secondary {
+  border: 1px solid #6c757d;
+  color: #6c757d;
+  background: transparent;
+}
+
+.btn-outline-secondary:hover {
+  background: #6c757d;
+  color: white;
+}
+
+/* Внутренняя граница */
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50px;
+  pointer-events: none;
+}
+
+/* Эффект нажатия */
+.btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Эффект наведения */
+.btn:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Специфичные цвета для кнопок */
+.btn-info {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+}
+
+/* Эффект "волны" при клике */
+.btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%);
+  transform-origin: 50% 50%;
+}
+
+.btn:focus:not(:active)::after {
+  animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(20, 20);
+    opacity: 0;
+  }
+}
+
+/* Иконки в кнопках */
+.btn .bi {
+  transition: transform 0.2s ease;
+}
+
+.btn:hover .bi {
+  transform: scale(1.1);
+}
+
+/* Убираем стандартный outline и добавляем кастомный */
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 45, 114, 0.3);
+}
+
+/* Скролл таблицы */
+.table-responsive {
+  scrollbar-width: thin;
+  scrollbar-color: #002d72 #f1f1f1;
+}
+
+.table-responsive::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background-color: #002d72;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+}
+
+/* Анимация загрузки */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.table tbody tr {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+/* Иконки для кнопок */
+.bi {
+  font-size: 1rem;
+}
+
+/* Ссылки */
+.text-primary {
+  color: #002d72 !important;
+}
+
+a.text-primary:hover {
+  color: #001a3d !important;
+  text-decoration: underline;
+}
+
+/* Пагинация */
 .page-link {
+  border-radius: 50px !important;
+  margin: 0 2px;
   min-width: 36px;
   text-align: center;
 }
 
+.page-item.active .page-link {
+  background-color: #002d72;
+  border-color: #002d72;
+}
+
+/* Форма выбора */
 .input-group-text {
   border-right: none;
+  background-color: white;
 }
 
 .form-select {
@@ -401,8 +594,30 @@ watch(subObjectId, async () => {
 }
 
 .input-group:focus-within {
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  box-shadow: 0 0 0 0.25rem rgba(0, 45, 114, 0.25);
   border-radius: 0.375rem;
+}
+
+/* Адаптивность */
+@media (max-width: 992px) {
+  .d-flex.align-items-center {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .position-absolute {
+    position: relative !important;
+    left: auto !important;
+    transform: none !important;
+    margin: 1rem 0;
+    width: 100% !important;
+    text-align: center;
+  }
+
+  .flex-grow-1 {
+    width: 100%;
+    max-width: 100% !important;
+  }
 }
 
 @media (max-width: 768px) {
@@ -412,7 +627,10 @@ watch(subObjectId, async () => {
 
   .btn-sm {
     padding: 0.25rem 0.5rem;
-    font-size: 0.7rem;
+  }
+
+  .table td, .table th {
+    padding: 0.5rem;
   }
 }
 </style>

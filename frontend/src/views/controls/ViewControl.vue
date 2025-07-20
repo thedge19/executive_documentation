@@ -1,50 +1,64 @@
 <template>
   <Navbar/>
-  <div class="container-fluid px-5 py-4">
-    <div class="card shadow-sm border-0">
-      <div class="card-header text-primary py-3 mt-3">
-        <h1 class="mb-0 text-center">Входной контроль</h1>
-      </div>
+  <div class="container py-4">
+    <div class="row justify-content-center mt-5">
+      <div class="col-12">
+        <!-- Заголовок и кнопки с правильным центрированием -->
+        <div class="d-flex align-items-center mb-4 position-relative">
+          <!-- Кнопки слева -->
+          <div class="d-flex">
+            <button @click="generateLogPdf" class="btn btn-info mx-2 shadow-sm rounded-pill" :disabled="isLoading">
+              <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить журнал в PDF
+            </button>
+          </div>
 
-      <div class="card-body p-0">
-        <!-- Кнопка выгрузки -->
-        <div class="d-flex justify-content-start px-4 py-3">
-          <button @click="generateLogPdf" class="btn btn-primary rounded-pill px-4" :disabled="isLoading">
-            <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить журнал в PDF
-          </button>
+          <!-- Заголовок по центру оставшегося пространства -->
+          <h1 class="text-light position-absolute start-50" style="width: max-content;">
+            Входной контроль
+          </h1>
         </div>
 
-        <!-- Таблица -->
-        <div class="table-responsive" style="height: calc(100vh - 220px); overflow-y: auto;">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="sticky-top bg-dark">
-            <tr>
-              <th style="width: 5%; background-color: #000000; color: white;">№</th>
-              <th style="width: 7%; background-color: #000000; color: white;">Дата</th>
-              <th class="text-white fw-normal" style="width: 20%; background-color: #000000; color: white;">Материалы
-              </th>
-              <th class="text-white fw-normal" style="width: 30%; background-color: #000000; color: white;">Документы
-              </th>
-              <th class="text-white fw-normal" style="width: 10%; background-color: #000000; color: white;">Автор
-                серта
-              </th>
-              <th class="text-white fw-normal" style="width: 15%; background-color: #000000; color: white;">ГОСТ, ТУ
-              </th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr v-for="control in controls" :key="control.id">
-              <td>{{ control.controlNumber }}</td>
-              <td>{{ control.date }}</td>
-              <td>
-                {{ control.materials }}
-              </td>
-              <td>{{ control.documents }}</td>
-              <td>{{ control.author }}</td>
-              <td>{{ control.standard }}</td>
-            </tr>
-            </tbody>
-          </table>
+        <!-- Error message -->
+        <div v-if="error" class="alert alert-danger mb-4">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+        </div>
+
+        <!-- Table -->
+        <div class="card shadow-sm border-0">
+          <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 85vh;">
+              <table class="table table-hover mb-0">
+                <thead class="sticky-top" style="background-color: #002d72;">
+                <tr>
+                  <th class="text-center text-white fw-normal" style="width: 5%; background-color: #000000;">№</th>
+                  <th class="text-center text-white fw-normal" style="width: 7%; background-color: #000000;">Дата</th>
+                  <th class="text-center text-white fw-normal" style="width: 20%; background-color: #000000;">
+                    Материалы
+                  </th>
+                  <th class="text-center text-white fw-normal" style="width: 30%; background-color: #000000;">
+                    Документы
+                  </th>
+                  <th class="text-center text-white fw-normal" style="width: 10%; background-color: #000000;">
+                    Автор серта
+                  </th>
+                  <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">
+                    ГОСТ, ТУ
+                  </th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="(control, index) in controls" :key="control.id" :class="{'table-light': index % 2 === 0}">
+                  <td class="text-center align-middle">{{ control.controlNumber }}</td>
+                  <td class="text-center align-middle">{{ control.date }}</td>
+                  <td class="align-middle">{{ control.materials }}</td>
+                  <td class="align-middle">{{ control.documents }}</td>
+                  <td class="text-center align-middle">{{ control.author }}</td>
+                  <td class="text-center align-middle">{{ control.standard }}</td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -149,25 +163,123 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.card {
-  border-radius: 10px;
-  overflow: hidden;
+/* Основные стили */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Стили для таблицы */
 .table {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .table th {
   font-weight: 500;
+  letter-spacing: 1px;
 }
 
 .table-hover tbody tr:hover {
   background-color: rgba(0, 45, 114, 0.05);
 }
 
+/* Стили для карточки */
+.card {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Стили для кнопок с эффектами */
 .btn {
-  transition: all 0.2s;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
+  position: relative;
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem 1.25rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* Внутренняя граница */
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50px;
+  pointer-events: none;
+}
+
+/* Эффект нажатия */
+.btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Эффект наведения */
+.btn:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Специфичные цвета для кнопок */
+.btn-info {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+}
+
+/* Эффект "волны" при клике */
+.btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%);
+  transform-origin: 50% 50%;
+}
+
+.btn:focus:not(:active)::after {
+  animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(20, 20);
+    opacity: 0;
+  }
+}
+
+/* Иконки в кнопках */
+.btn .bi {
+  transition: transform 0.2s ease;
+}
+
+.btn:hover .bi {
+  transform: scale(1.1);
+}
+
+/* Убираем стандартный outline и добавляем кастомный */
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 45, 114, 0.3);
+}
+
+/* Скролл таблицы */
+.table-responsive {
+  scrollbar-width: thin;
+  scrollbar-color: #002d72 #f1f1f1;
 }
 
 .table-responsive::-webkit-scrollbar {
@@ -184,9 +296,24 @@ onMounted(() => {
   background-color: #f1f1f1;
 }
 
-@media (max-width: 768px) {
-  .table-responsive {
-    font-size: 0.8rem;
+/* Анимация загрузки */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.table tbody tr {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+/* Иконки для кнопок */
+.bi {
+  font-size: 1rem;
 }
 </style>
