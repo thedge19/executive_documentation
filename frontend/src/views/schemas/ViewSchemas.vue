@@ -14,7 +14,7 @@
         <!-- Table -->
         <div class="card shadow-sm border-0">
           <div class="card-body p-0">
-            <div class="table-responsive" style="max-height: 83vh;">
+            <div class="table-responsive" style="max-height: 81vh;">
               <table class="table table-hover mb-0">
                 <thead class="sticky-top" style="background-color: #002d72;">
                 <tr>

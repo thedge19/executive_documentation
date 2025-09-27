@@ -3,16 +3,16 @@ package com.executive_documentation.acts.controller;
 import com.executive_documentation.acts.dto.act.ActLogResponseDto;
 import com.executive_documentation.acts.dto.act.ActResponseDto;
 import com.executive_documentation.acts.dto.entrance.EntranceControlResponseDto;
+import com.executive_documentation.acts.dto.registry.RegistryMapper;
+import com.executive_documentation.acts.dto.registry.RegistryPeriodDto;
+import com.executive_documentation.acts.dto.registry.RegistryRequestDto;
 import com.executive_documentation.acts.dto.worklog.WorkLogDto;
 import com.executive_documentation.acts.model.ExecutiveSchema;
 import com.executive_documentation.acts.pdf.service.ActPdfService;
 import com.executive_documentation.acts.pdf.service.ControlLogPdfService;
+import com.executive_documentation.acts.pdf.service.RegistryPdfService;
 import com.executive_documentation.acts.pdf.service.WorkLogPdfService;
 import com.executive_documentation.acts.service.ActService;
-import com.executive_documentation.acts.dto.registry.RegistryMapper;
-import com.executive_documentation.acts.dto.registry.RegistryPeriodDto;
-import com.executive_documentation.acts.dto.registry.RegistryRequestDto;
-import com.executive_documentation.acts.pdf.service.RegistryPdfService;
 import com.itextpdf.text.DocumentException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -102,7 +102,6 @@ public class ActController {
     public ResponseEntity<ActResponseDto> createAct(
             @RequestParam Map<String, String> formData,
             @RequestPart(required = false) MultipartFile file) {
-        log.info("startDate: {}, endDate: {}", formData.get("startDate"), formData.get("endDate"));
         actService.create(formData, file);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -116,8 +115,13 @@ public class ActController {
     }
 
     @PatchMapping("/{id}")
-    public ActResponseDto updateAct(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
-        return actService.actUpdate(id, file);
+    public ActResponseDto updateAct(
+            @PathVariable Long id,
+            @RequestParam("works") String works, // Добавляем параметр works
+            @RequestParam(value = "file", required = false) MultipartFile file) { // file теперь необязательный
+
+        log.info("Обновление акта № {} с works: {}", id, works);
+        return actService.actUpdate(id, works, file);
     }
 
     @DeleteMapping("/{id}")
@@ -150,7 +154,7 @@ public class ActController {
         return actService.getWorkLog6();
     }
 
-    @GetMapping("worklog/{section}/pdf")
+    @GetMapping("/worklog/{section}/pdf")
     public void generateWorkLogPdf(
             @PathVariable int section,
             HttpServletResponse response) throws IOException {

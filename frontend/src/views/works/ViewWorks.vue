@@ -222,43 +222,32 @@ const getWorks = async () => {
   try {
     const headers = getAuthHeaders();
     const page = parseInt(route.query.page) || 0;
-    works.value.number = page;
 
     const response = await fetch(
         `http://localhost:8080/workings/${subObjectId.value}?page=${page}&size=${pageSize.value}`,
         {headers}
-    )
+    );
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        handleUnauthorized()
-        return
-      }
-      error.value = 'Ошибка загрузки данных';
-      return;
-    }
+    if (!response.ok) throw new Error('Ошибка загрузки данных');
 
     const data = await response.json();
+
     works.value = {
-      ...data,
-      number: page
-    }
+      content: data.content,
+      number: data.metadata.number,
+      size: data.metadata.size,
+      totalElements: data.metadata.totalElements,
+      totalPages: data.metadata.totalPages,
+      first: data.metadata.number === 0,
+      last: data.metadata.number === data.metadata.totalPages - 1
+    };
 
-    if (!route.query.page && page !== 0) {
-      await router.replace({query: {...route.query, page}})
-    }
-
-    await fetchTotalAmountBySubObject();
   } catch (err) {
-    console.error('Ошибка:', err)
-    error.value = err.message || 'Ошибка загрузки данных';
-    if (err.message.includes('авторизация')) {
-      handleUnauthorized()
-    }
+    error.value = err.message;
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const deleteWork = async (id) => {
   if (!confirm('Вы действительно хотите удалить эту работу?')) return

@@ -1,9 +1,13 @@
 package com.executive_documentation.acts.pdf.service;
 
 import com.executive_documentation.acts.dto.font.Fonts;
+import com.executive_documentation.acts.model.Act;
 import com.executive_documentation.acts.model.EntranceControl;
 import com.executive_documentation.acts.pdf.utils.PdfCellCreator;
 import com.executive_documentation.acts.pdf.utils.PdfUtils;
+import com.executive_documentation.acts.repository.ActRepository;
+import com.executive_documentation.materials.model.Material;
+import com.executive_documentation.materials.repository.MaterialRepository;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Font;
@@ -15,15 +19,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class ControlPdfService {
+    private final MaterialRepository materialRepository;
 
     private static final String FONT_PATH = "/fonts/times.ttf"; // Путь в ресурсах
 
     private final PdfCellCreator creator;
+    private final ActRepository actRepository;
 
     private Font f1;
     private Font fontToFillInControl;
@@ -63,19 +71,27 @@ public class ControlPdfService {
 
 // entrance control acts
     private void addControlTableData(PdfPTable controlTable, EntranceControl control) {
+        Act act = actRepository.findById(control.getAct().getId()).orElseThrow();
         String controlDate = control.getDate().toString();
         String[] controlDateList = controlDate.split("-");
         controlDate = controlDateList[2] + " " + PdfUtils.getMonth(controlDateList[1]) + " " + controlDateList[0] + " г.";
+        Material material = materialRepository.findById(control.getMaterial().getId()).orElseThrow();
+        String controlMaterial = material.getName() + " - " + decimalFormat(control.getQuantity()) + " " + control.getMaterial().getUnits();
+        String materialDocuments = material.getCertificateName();
+        String standard = material.getStandard();
+        String projectName = act.getProject().getName();
+        String actNumber = act.getActNumber();
+        String subObjectName = act.getSubObject().getName();
 
         controlTable.addCell(creator.createCell("ООО «ЭНЕРГОМОНТАЖ»", "CBB", fontToFillInControl, 9, 1, 0.0F));
         controlTable.addCell(creator.createCell("(наименование строительной организации)", "cTNB", subscript, 9, 1, 0.0F));
-        controlTable.addCell(creator.createCell(clearProjectNameForControls(control.getAct().getProject().getName(), 1), "CBB", fontToFillInControl, 9, 1, 0.0F));
+        controlTable.addCell(creator.createCell(clearProjectNameForControls(projectName, 1), "CBB", fontToFillInControl, 9, 1, 0.0F));
         controlTable.addCell(creator.createCell("(наименование объекта)", "cTNB", subscript, 9, 1, 0.0F));
         controlTable.addCell(creator.createCell("АКТ №", "rBNB", f1, 4, 1, 30F));
-        controlTable.addCell(creator.createCell(control.getAct().getActNumber(), "lBBB", fontToFillInControl, 2, 1, 30F));
+        controlTable.addCell(creator.createCell(actNumber, "lBBB", fontToFillInControl, 2, 1, 30F));
         controlTable.addCell(creator.createCell("", "CNB", fontToFillInControl, 3, 1, 30F));
         controlTable.addCell(creator.createCell("результатов входного контроля МТР и оборудования", "cBNB", f1, 9, 1, 30F));
-        PdfUtils.longString(control.getMaterials(), 98, controlTable, creator, fontToFillInControl, 9);
+        PdfUtils.longString(controlMaterial, 98, controlTable, creator, fontToFillInControl, 9);
         controlTable.addCell(creator.createCell("((наименование МТР)", "cTNB", subscript, 9, 1, 0.0F));
         controlTable.addCell(creator.createCell("от", "rBNB", f1, 4, 1, 0.0F));
         controlTable.addCell(creator.createCell(controlDate, "cBBB", fontToFillInControl, 2, 1, 0.0F));
@@ -104,26 +120,26 @@ public class ControlPdfService {
         controlTable.addCell(creator.createCell("", "lCNB", f1, 2, 1, 0.0F));
         controlTable.addCell(creator.createCell("(сплошной, выборочный)", "cTNB", subscript, 2, 1, 0.0F));
         controlTable.addCell(creator.createCell("", "lCNB", f1, 5, 1, 0.0F));
-        PdfUtils.longString(control.getMaterials(), 98, controlTable, creator, fontToFillInControl, 9);
+        PdfUtils.longString(controlMaterial, 98, controlTable, creator, fontToFillInControl, 9);
         controlTable.addCell(creator.createCell("(наименование)", "cTNB", subscript, 9, 1, 0.0F));
         controlTable.addCell(creator.createCell("предназначенных проектной документацией", "lCNB", f1, 4, 1, 0.0F));
-        controlTable.addCell(creator.createCell(clearProjectNameForControls(control.getAct().getProject().getName(), 2), "CBB", fontToFillInControl, 5, 1, 0.0F));
+        controlTable.addCell(creator.createCell(clearProjectNameForControls(projectName, 2), "CBB", fontToFillInControl, 5, 1, 0.0F));
         controlTable.addCell(creator.createCell("", "lCNB", f1, 4, 1, 0.0F));
         controlTable.addCell(creator.createCell("(шифр, раздел, номер изменения проектной документации)", "cTNB", subscript, 5, 1, 0.0F));
         controlTable.addCell(creator.createCell("для строительства на участке", "lCNB", f1, 9, 1, 0.0F));
-        PdfUtils.longString(control.getSubObjectName(), 98, controlTable, creator, fontToFillInControl, 9);
+        PdfUtils.longString(subObjectName, 98, controlTable, creator, fontToFillInControl, 9);
         controlTable.addCell(creator.createCell("(участок линейной части (км/ПК), подобъект НПС/ЛПДС)", "cTNB", subscript, 9, 1, 0.0F));
         controlTable.addCell(creator.createCell("1. Осмотром геометрических размеров, маркировки МТР и оборудования", "lCNB", f1, 9, 1, 0.0F));
-        PdfUtils.longString(control.getMaterials(), 98, controlTable, creator, fontToFillInControl, 9);
+        PdfUtils.longString(controlMaterial, 98, controlTable, creator, fontToFillInControl, 9);
         controlTable.addCell(creator.createCell("(наименование, заводской номер)", "cTNB", subscript, 9, 1, 0.0F));
         controlTable.addCell(creator.createCell("сопроводительной документации", "lCNB", f1, 9, 1, 0.0F));
-        PdfUtils.longString(control.getDocuments(), 98, controlTable, creator, fontToFillInControl, 9);
+        PdfUtils.longString(materialDocuments, 98, controlTable, creator, fontToFillInControl, 9);
         controlTable.addCell(creator.createCell("(паспорта, сертификаты)", "cTNB", subscript, 9, 1, 0.0F));
         controlTable.addCell(creator.createCell("установлено, что данный МТР и оборудование по своим техническим параметрам", "lCNB", f1, 9, 1, 0.0F));
         controlTable.addCell(creator.createCell("Внешний вид, количество", "CBB", fontToFillInControl, 9, 1, 0.0F));
         controlTable.addCell(creator.createCell("(контролируемые параметры)", "cTNB", subscript, 9, 1, 0.0F));
         controlTable.addCell(creator.createCell("номеру технических условий", "lCNB", f1, 3, 1, 0.0F));
-        controlTable.addCell(creator.createCell(control.getStandard(), "CBB", fontToFillInControl, 6, 1, 0.0F));
+        controlTable.addCell(creator.createCell(standard, "CBB", fontToFillInControl, 6, 1, 0.0F));
         controlTable.addCell(creator.createCell("", "lCNB", f1, 3, 1, 0.0F));
         controlTable.addCell(creator.createCell("(контролируемые параметры)", "cTNB", subscript, 6, 1, 0.0F));
         controlTable.addCell(creator.createCell("техническим характеристикам", "lCNB", f1, 3, 1, 0.0F));
@@ -135,7 +151,7 @@ public class ControlPdfService {
         controlTable.addCell(creator.createCell("(соответствует/не соответствует)", "cTNB", subscript, 6, 1, 0.0F));
         controlTable.addCell(creator.createCell("", "lCNB", f1, 3, 1, 0.0F));
         controlTable.addCell(creator.createCell("2. Сопроводительная документация на МТР и оборудование", "lCNB", f1, 9, 1, 0.0F));
-        PdfUtils.longString(control.getDocuments(), 98, controlTable, creator, fontToFillInControl, 9);
+        PdfUtils.longString(materialDocuments, 98, controlTable, creator, fontToFillInControl, 9);
         controlTable.addCell(creator.createCell("(паспорта, сертификаты)", "cTNB", subscript, 9, 1, 0.0F));
         controlTable.addCell(creator.createCell("имеется в полном комплекте.", "lCNB", f1, 9, 1, 0.0F));
         controlTable.addCell(creator.createCell("3. МТР и оборудование", "lCNB", f1, 2, 1, 0.0F));
@@ -195,5 +211,14 @@ public class ControlPdfService {
         }
 
         return projectName;
+    }
+
+    private String decimalFormat(BigDecimal quantity) {
+        DecimalFormat df = new DecimalFormat();
+        df.setMaximumFractionDigits(3);
+        df.setMinimumFractionDigits(0);
+        df.setGroupingUsed(false);
+
+        return df.format(quantity);
     }
 }

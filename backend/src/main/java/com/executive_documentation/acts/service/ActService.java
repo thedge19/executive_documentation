@@ -3,6 +3,7 @@ package com.executive_documentation.acts.service;
 import com.executive_documentation.acts.dto.act.ActLogResponseDto;
 import com.executive_documentation.acts.dto.act.ActResponseDto;
 import com.executive_documentation.acts.dto.entrance.EntranceControlResponseDto;
+import com.executive_documentation.acts.dto.materials.MaterialDto;
 import com.executive_documentation.acts.dto.worklog.WorkLogDto;
 import com.executive_documentation.acts.model.Act;
 import com.executive_documentation.acts.model.ExecutiveSchema;
@@ -13,8 +14,6 @@ import java.util.Map;
 
 public interface ActService {
     ActResponseDto get(Long id);
-
-    Act findActOrThrow(long id);
 
     ExecutiveSchema getExecutiveSchema(long id);
 
@@ -32,7 +31,7 @@ public interface ActService {
 
     void create(Map<String, String> formData, MultipartFile file);
 
-    ActResponseDto actUpdate(long id, MultipartFile file);
+    ActResponseDto actUpdate(long id, String works, MultipartFile file);
 
     void delete(Long actId);
 

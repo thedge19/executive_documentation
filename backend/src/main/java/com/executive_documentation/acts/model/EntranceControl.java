@@ -1,10 +1,10 @@
 package com.executive_documentation.acts.model;
 
 import com.executive_documentation.materials.model.Material;
-import com.executive_documentation.projects.model.Project;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Table(name = "entrance_controls")
@@ -21,11 +21,8 @@ public class EntranceControl {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "control_project_id")
-    private Project project;
-
-    @Column(name = "control_subobject_name")
-    private String subObjectName;
+    @JoinColumn(name = "control_act_id")
+    private Act act;
 
     @Column(name = "control_number")
     private String controlNumber;
@@ -33,26 +30,10 @@ public class EntranceControl {
     @Column(name = "control_date")
     private LocalDate date;
 
-    @Column(name = "control_materials")
-    private String materials;
-
-    @Column(name = "control_documents")
-    private String documents;
-
-    @Column(name = "control_document_author")
-    private String author;
-
-    @Column(name = "control_standard")
-    private String standard;
-
-    @ManyToOne
-    @JoinColumn(name = "control_act_id")
-    private Act act;
-
-    @Column(name = "control_sheet_numbers")
-    private Integer controlSheetNumbers;
-
     @JoinColumn(name = "material_id")
     @OneToOne(cascade = CascadeType.ALL)
     private Material material;
+
+    @Column(name = "quantity", precision = 15, scale = 3)
+    private BigDecimal quantity;
 }

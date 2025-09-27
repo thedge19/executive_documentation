@@ -9,7 +9,9 @@ import com.executive_documentation.workings.repository.WorkingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +36,21 @@ public class WorkingServiceImplementation implements WorkingService {
     }
 
     @Override
-    public Page<WorkingResponseDto> getAll(long id, Pageable pageable) {
+    public Page<WorkingResponseDto> getAll(long id, int page, int size, String[] sort) {
+        // Создаем объект сортировки
+        Sort sorting = Sort.by(
+                sort[0].contains(",") ?
+                        sort[0].split(",")[0] :
+                        sort[0]
+        );
+
+        if (sort[0].contains(",")) {
+            sorting = sort[0].split(",")[1].equalsIgnoreCase("desc") ?
+                    sorting.descending() :
+                    sorting.ascending();
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sorting);
         return workingRepository.findAllBySubObjectIdOrderByIdAsc(id, pageable)
                 .map(workingMapper::toDto);
     }

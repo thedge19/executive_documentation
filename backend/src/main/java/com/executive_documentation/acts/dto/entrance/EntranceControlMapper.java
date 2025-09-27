@@ -20,11 +20,6 @@ public class EntranceControlMapper {
                 .id(entranceControl.getId())
                 .controlNumber(entranceControl.getControlNumber())
                 .date(entranceControl.getDate()) // оставляем как LocalDate
-                .materials(entranceControl.getMaterials())
-                .documents(entranceControl.getDocuments())
-                .author(entranceControl.getAuthor())
-                .standard(entranceControl.getStandard())
-                .controlSheetNumbers(entranceControl.getControlSheetNumbers())
                 .build();
     }
 
@@ -36,8 +31,6 @@ public class EntranceControlMapper {
         return EntranceControlExportDto.builder()
                 .id(entranceControl.getId())
                 .date(formatDate(entranceControl.getDate()))
-                .materials(entranceControl.getMaterials())
-                .documents(entranceControl.getDocuments())
                 .build();
     }
 

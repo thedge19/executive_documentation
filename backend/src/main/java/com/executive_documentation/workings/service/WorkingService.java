@@ -13,7 +13,7 @@ import java.util.Map;
 public interface WorkingService {
     WorkingResponseDto get(Long id);
 
-    Page<WorkingResponseDto> getAll(long id, Pageable pageable);
+    Page<WorkingResponseDto> getAll(long id, int page, int size, String[] sort);
 
     List<WorkingResponseDto> getAllByPositiveDone(long id);
 

@@ -31,4 +31,10 @@ public interface ActRepository extends JpaRepository<Act, Long> {
 
     @Query("SELECT COUNT(a) FROM Act a")
     long countAllActs();
+
+    @Query("SELECT DISTINCT a FROM Act a " +
+            "JOIN a.materials am " +
+            "WHERE am IS NULL " +
+            "ORDER BY a.startDate")
+    List<Act> findActsWithNonEmptyMaterialsOrderByStartDate();
 }

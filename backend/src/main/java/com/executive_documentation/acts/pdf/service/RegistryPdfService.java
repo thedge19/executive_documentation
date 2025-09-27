@@ -3,18 +3,16 @@ package com.executive_documentation.acts.pdf.service;
 import com.executive_documentation.acts.dto.act.ActMapper;
 import com.executive_documentation.acts.dto.act.ActResponseDto;
 import com.executive_documentation.acts.dto.font.Fonts;
+import com.executive_documentation.acts.dto.registry.RegistryPeriodDto;
 import com.executive_documentation.acts.model.Act;
 import com.executive_documentation.acts.model.EntranceControl;
+import com.executive_documentation.acts.model.Registry;
 import com.executive_documentation.acts.pdf.utils.PdfCellCreator;
 import com.executive_documentation.acts.pdf.utils.PdfUtils;
 import com.executive_documentation.acts.repository.ActRepository;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.executive_documentation.fileStorage.service.FileStorageService;
-import com.executive_documentation.materials.model.Certificate;
 import com.executive_documentation.materials.model.Material;
-import com.executive_documentation.materials.repository.CertificateRepository;
-import com.executive_documentation.acts.dto.registry.RegistryPeriodDto;
-import com.executive_documentation.acts.model.Registry;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
 import jakarta.annotation.PostConstruct;
@@ -25,7 +23,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -55,11 +56,11 @@ public class RegistryPdfService {
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private final WorkLogPdfService workLogPdfService;
     private final ControlLogPdfService controlLogPdfService;
-    private final CertificateRepository certificateRepository;
 
     private final static String ENERGY = "ООО «Энергомонтаж»";
     private final Path fileStorageLocation;
-    @Value("${file.upload-dir}") String uploadDir;
+    @Value("${file.upload-dir}")
+    String uploadDir;
 
     private Font f1;
     private Font f2;
@@ -122,8 +123,10 @@ public class RegistryPdfService {
             // 3.2. Добавляем акты и связанные документы
             for (Act act : acts) {
                 // Обработка акта
+                log.info(act.getExecutiveSchema().getSchemaPath());
                 Registry actRegistry = createActRegistryEntry(act);
                 ActResponseDto dto = actMapper.actToActResponseDto(act);
+                log.info(act.getActNumber());
                 dto.setExecutiveSchemaUrl(
                         fileStorageService.getFilePublicUrl(act.getExecutiveSchema().getSchemaPath())
                 );
@@ -149,21 +152,21 @@ public class RegistryPdfService {
                 for (EntranceControl control : controls) {
                     Registry controlRegistry = createControlRegistryEntry(control);
 
+                    Material material = control.getMaterial();
+
                     ByteArrayOutputStream controlPdf = controlPdfService.generateControlPdf(control);
                     int controlPages = addDocumentToMerge(copy, new ByteArrayInputStream(controlPdf.toByteArray()));
                     controlRegistry.setNumberOfSheets(controlPages);
 
                     // Обработка сертификатов
 
-                    for (Certificate certificate : getCertificates(control.getMaterial())) {
-                        if (control.getMaterial() != null) {
-                            Registry certRegistry = createCertificateRegistryEntry(control);
-                            try {
-                                int certPages = addRemoteDocumentToMerge(copy, fileStorageService.getStorageBaseUrl(certificate.getPath()));
-                                certRegistry.setNumberOfSheets(certPages);
-                            } catch (Exception e) {
-                                log.warn("Не удалось добавить сертификат: {}", e.getMessage());
-                            }
+                    if (control.getMaterial() != null) {
+                        Registry certRegistry = createCertificateRegistryEntry(control);
+                        try {
+                            int certPages = addRemoteDocumentToMerge(copy, fileStorageService.getFilePublicUrl(material.getPath()));
+                            certRegistry.setNumberOfSheets(certPages);
+                        } catch (Exception e) {
+                            log.warn("Не удалось добавить сертификат: {}", e.getMessage());
                         }
                     }
                 }
@@ -180,6 +183,8 @@ public class RegistryPdfService {
                     periodDto.getMonthId(), periodDto.getYear());
             String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8)
                     .replace("+", "%20");
+
+            log.info("Имя файла {}", encodedFilename);
 
             response.setHeader("Content-Disposition",
                     "inline; filename=\"registry.pdf\"; filename*=UTF-8''" + encodedFilename);
@@ -382,13 +387,11 @@ public class RegistryPdfService {
                 Registry controlRegistry = createControlRegistryEntry(control);
                 registries.add(controlRegistry);
 
-                // Добавляем сертификаты (если есть)
+                // Добавляем сертификат (если есть)
 
-                for (Certificate certificate : getCertificates(control.getMaterial())) {
-                    if (control.getMaterial() != null && certificate.getPath() != null) {
-                        Registry certRegistry = createCertificateRegistryEntry(control);
-                        registries.add(certRegistry);
-                    }
+                if (control.getMaterial() != null && control.getMaterial().getPath() != null) {
+                    Registry certRegistry = createCertificateRegistryEntry(control);
+                    registries.add(certRegistry);
                 }
             }
         }
@@ -434,7 +437,7 @@ public class RegistryPdfService {
     private Registry createControlRegistryEntry(EntranceControl control) {
         Registry registry = new Registry();
         registry.setDocumentName("Акт результатов входного контроля МТР и оборудования " +
-                (control.getMaterials() != null ? control.getMaterials() : ""));
+                (control.getMaterial() != null ? control.getMaterial().getName() : ""));
 
         String numberWithDate = control.getControlNumber() + " от " + formatter.format(control.getDate()) + " г.";
         registry.setDocumentNumber(numberWithDate);
@@ -448,17 +451,16 @@ public class RegistryPdfService {
 
     private Registry createCertificateRegistryEntry(EntranceControl control) {
         Material material = control.getMaterial();
-        Certificate certificate = certificateRepository.findCertificateByMaterial(material);
         Registry registry = new Registry();
-
-        String certificateType = certificate.getName().split("№")[0];
-        String certificateNumber = certificate.getName().split("№")[1];
+        String[] certificateArray = material.getCertificateName().split("№");
+        String certificateType = certificateArray[0];
+        String certificateNumber = certificateArray[1];
         registry.setDocumentName(certificateType.trim() + " на " + (material.getName() != null ? material.getName() : "материал"));
         registry.setDocumentNumber(certificateNumber != null ? certificateNumber : "б/н");
-        registry.setDocumentAuthor(certificate.getAuthor() != null ? certificate.getAuthor() : "Производитель не указан");
+        registry.setDocumentAuthor(material.getAuthor() != null ? material.getAuthor() : "Производитель не указан");
         registry.setDocumentDate(LocalDate.now());
 
-        registry.setNumberOfSheets(certificate.getNumberOfPages());
+        registry.setNumberOfSheets(material.getNumberOfPages());
         registry.setAddingTime(LocalDateTime.now());
         registry.setCurrentActId(control.getAct().getId());
         return registry;
@@ -527,10 +529,6 @@ public class RegistryPdfService {
         journals.add(controlLog);
 
         return journals;
-    }
-
-    private List<Certificate> getCertificates(Material material) {
-        return certificateRepository.findAllByMaterial(material);
     }
 
     /**

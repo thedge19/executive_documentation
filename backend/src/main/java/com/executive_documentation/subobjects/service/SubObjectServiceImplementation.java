@@ -1,6 +1,5 @@
 package com.executive_documentation.subobjects.service;
 
-import com.executive_documentation.exception.NotFoundException;
 import com.executive_documentation.subobjects.dto.SubObjectMapper;
 import com.executive_documentation.subobjects.dto.SubObjectRequestDto;
 import com.executive_documentation.subobjects.dto.SubObjectResponseDto;
@@ -49,7 +48,6 @@ public class SubObjectServiceImplementation implements SubObjectService {
                 .collect(Collectors.toList());
     }
 
-
     @Transactional
     @Override
     public SubObject create(SubObjectRequestDto dto) {
@@ -59,13 +57,15 @@ public class SubObjectServiceImplementation implements SubObjectService {
     @Transactional
     @Override
     public SubObject update(long id, SubObject subObject) {
-        SubObject updatedSubObject = findSubObjectOrNot(id);
+        SubObject updatedSubObject = subObjectRepository.findById(id).orElse(null);
 
         if (subObject.getName() != null) {
+            assert updatedSubObject != null;
             updatedSubObject.setName(subObject.getName());
         }
 
         if (subObject.getTitle() != null) {
+            assert updatedSubObject != null;
             updatedSubObject.setTitle(subObject.getTitle());
         }
 
@@ -75,17 +75,13 @@ public class SubObjectServiceImplementation implements SubObjectService {
     @Transactional
     @Override
     public void delete(long id) {
-        SubObject subObject = findSubObjectOrNot(id);
+        SubObject subObject = subObjectRepository.findById(id).orElse(null);
 
         // Удаляем все связанные работы
         workingRepository.deleteAllBySubObjectId(id);
 
         // Теперь можно безопасно удалить подобъект
+        assert subObject != null;
         subObjectRepository.delete(subObject);
-    }
-
-    @Override
-    public SubObject findSubObjectOrNot(long id) {
-        return subObjectRepository.findById(id).orElseThrow(() -> new NotFoundException("Подобъект не найден"));
     }
 }

@@ -10,12 +10,15 @@ import com.executive_documentation.acts.repository.ActRepository;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.executive_documentation.acts.service.ActService;
 import com.executive_documentation.fileStorage.service.FileStorageService;
-import com.executive_documentation.materials.model.Certificate;
-import com.executive_documentation.materials.repository.CertificateRepository;
+import com.executive_documentation.materials.model.Material;
+import com.executive_documentation.materials.repository.MaterialRepository;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Font;
-import com.itextpdf.text.pdf.*;
+import com.itextpdf.text.pdf.PdfCopy;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.PdfWriter;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,7 +26,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -43,7 +49,7 @@ public class ActPdfService {
     private final EntranceControlRepository entranceControlRepository;
     private final ActRepository actRepository;
     private final PdfCellCreator creator;
-    private final CertificateRepository certificateRepository;
+    private final MaterialRepository materialRepository;
 
     private Font fontToFillIn;
     private Font subscript;
@@ -107,17 +113,15 @@ public class ActPdfService {
                     addDocumentToMerge(copy, new ByteArrayInputStream(controlPdf.toByteArray()));
 
                     // 4.4. Добавляем сертификат (если есть у контроля)
-                    List<Certificate> certificates = certificateRepository.findAllByMaterial(control.getMaterial());
-                    for (Certificate certificate : certificates) {
+                    Material material = materialRepository.findById(control.getMaterial().getId()).orElseThrow(null);
+                    if (material.getPath() != null) {
+                        log.info(material.getPath());
 
-                        if (certificate.getPath() != null) {
-
-                            try {
-                                addRemoteDocumentToMerge(copy, fileStorageService.getStorageBaseUrl(
-                                        certificate.getPath()));
-                            } catch (Exception e) {
-                                log.warn("Не удалось добавить сертификат: {}", e.getMessage());
-                            }
+                        try {
+                            addRemoteDocumentToMerge(copy, fileStorageService.getStorageBaseUrl(
+                                    material.getPath()));
+                        } catch (Exception e) {
+                            log.warn("Не удалось добавить сертификат: {}", e.getMessage());
                         }
                     }
                 }
@@ -490,4 +494,3 @@ public class ActPdfService {
         return new String[]{day, month, year};
     }
 }
-

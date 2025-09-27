@@ -20,6 +20,4 @@ public interface SubObjectService {
     SubObject update(long id, SubObject subObject);
 
     void delete(long id);
-
-    SubObject findSubObjectOrNot(long id);
 }

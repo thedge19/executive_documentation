@@ -5,7 +5,6 @@ import ViewProjects from "@/views/projects/ViewProjects.vue";
 import ViewStandards from "@/views/standards/ViewStandards.vue";
 import ViewSubObjects from "@/views/subObjects/ViewSubObjects.vue";
 import ViewWorks from "@/views/works/ViewWorks.vue";
-import ViewControl from "@/views/controls/ViewControl.vue";
 import ViewSchemas from "@/views/schemas/ViewSchemas.vue";
 import Login from "@/views/Login.vue";
 import Dashboard from "@/views/Dashboard.vue";
@@ -142,12 +141,6 @@ const router = createRouter({
       path: '/editWork/:id',
       name: 'editWork',
       component: () => import('../views/works/UpdateWork.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/controls',
-      name: 'viewControls',
-      component: ViewControl,
       meta: { requiresAuth: true }
     },
     {

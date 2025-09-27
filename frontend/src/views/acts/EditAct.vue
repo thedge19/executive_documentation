@@ -1,126 +1,266 @@
-<script setup>
-import Navbar from "@/components/Navbar.vue";
-</script>
 <template>
   <Navbar/>
-  <div style="position: absolute; top: 0; bottom: 0; left: 0; right: 0;">
-    <div class="my-5 py-lg-5 mx-auto w-50">
-      <div class="mx-auto py-lg-5">
-        <h2 class="text-center mb-3">Редактирование акта № {{ act.actNumber }}</h2>
-        <h2 class="text-center mb-3">{{ act.works }}</h2>
+  <div class="container py-5">
+    <div class="card shadow-sm border-0 mx-auto" style="max-width: 800px;">
+      <div class="card-header bg-white py-4">
+        <h2 class="h4 mb-0 text-center text-primary">Редактирование акта № {{ act.actNumber }}</h2>
+      </div>
+
+      <div class="card-body">
         <form @submit.prevent="updateAct">
-          <h2 v-if="act.executiveSchemaId != null">Исполнительная схема добавлена.</h2>
-          <div v-if="act.executiveSchemaId == null" class="mb-3 ">
-            <label for="formFile" class="form-label">Добавьте схему</label>
-            <input @change="updateAct" class="form-control border border-primary" type="file" id="formFile">
+          <!-- Ошибки -->
+          <div v-if="errors.length" class="alert alert-danger mb-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Исправьте следующие ошибки:</strong>
+            <ul class="mb-0 mt-2">
+              <li v-for="error in errors">{{ error }}</li>
+            </ul>
           </div>
-          <div class="row">
-            <div class="col-md-12 form-group" style="width: 50%">
-              <input class="btn btn-primary w-30" type="submit" value="Submit">
+
+          <!-- Поле для редактирования works -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-pencil-square me-2"></i>Выполненные работы
+            </label>
+            <textarea
+                class="form-control"
+                v-model="act.works"
+                placeholder="Введите описание выполненных работ"
+                rows="3"
+                required
+            ></textarea>
+            <div class="form-text">Описание работ, которые были выполнены</div>
+          </div>
+
+          <!-- Статус исполнительной схемы -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold d-block mb-3">
+              <i class="bi bi-file-earmark-pdf me-2"></i>Исполнительная схема
+            </label>
+
+            <div v-if="act.executiveSchemaId != null" class="alert alert-success mb-3">
+              <i class="bi bi-check-circle-fill me-2"></i>
+              Исполнительная схема уже добавлена.
+            </div>
+
+            <div v-else>
+              <div class="btn-group w-100 mb-3" role="group">
+                <input type="radio" class="btn-check" id="schemaNo"
+                       value="Нет" v-model="executiveSchema">
+                <label class="btn btn-outline-secondary" for="schemaNo">Нет</label>
+
+                <input type="radio" class="btn-check" id="schemaYes"
+                       value="Есть" v-model="executiveSchema">
+                <label class="btn btn-outline-secondary" for="schemaYes">Есть</label>
+              </div>
+
+              <div v-if="executiveSchema === 'Есть'" class="mb-3">
+                <label class="form-label">Загрузить PDF</label>
+                <input type="file" class="form-control" accept=".pdf"
+                       @change="handleFileUpload" ref="fileInput">
+                <div class="form-text">Разрешены только файлы в формате PDF</div>
+              </div>
             </div>
           </div>
 
+          <!-- Кнопки -->
+          <div class="d-flex gap-3 mt-4">
+            <button type="submit" class="btn btn-primary flex-grow-1 py-2" :disabled="isLoading">
+              <template v-if="isLoading">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Обновление...
+              </template>
+              <template v-else>
+                <i class="bi bi-check-circle me-2"></i>Обновить акт
+              </template>
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary py-2"
+                    @click="router.push('/')" :disabled="isLoading">
+              <i class="bi bi-arrow-left me-2"></i>Назад
+            </button>
+          </div>
         </form>
       </div>
     </div>
   </div>
 </template>
-<script>
 
-export default {
-  name: 'EditAct',
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import Navbar from '@/components/Navbar.vue'
 
-  data() {
-    return {
-      act: {
-        id: '',
-        actNumber: null,
-        works: '',
-        executiveSchemaId: null,
-      },
-      selectedFile: null,
-    }
-  },
+const route = useRoute()
+const router = useRouter()
 
-  mounted() {
-    this.getAct();
-  },
+const act = ref({
+  id: '',
+  actNumber: null,
+  works: '',
+  executiveSchemaId: null,
+})
 
-  methods: {
-    getAct() {
-      fetch(`http://localhost:8080/acts/${this.$route.params.id}`,)
-          .then(res => res.json())
-          .then(data => {
-            this.act = data
-            console.log(data)
-          })
-    },
+const executiveSchema = ref('Нет')
+const selectedFile = ref(null)
+const fileInput = ref(null)
+const errors = ref([])
+const isLoading = ref(false)
 
-    updateAct(event) {
-      this.selectedFile = event.target.files[0];
-      const formData = new FormData();
-      console.log(this.selectedFile);
-      formData.append("file", this.selectedFile);
-      fetch(`http://localhost:8080/acts/${this.$route.params.id}`, {
-        method: 'PATCH',
-        // headers: {
-        //   'Accept': 'application/json',
-        //   'Content-Type': 'multipart/form-data'
-        // },
-        body: formData
-      })
-          .then(data => {
-            console.log(data);
-            this.$router.push('/');
-          })
-    },
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+  if (!token) {
+    throw new Error('Требуется авторизация')
+  }
+  return {
+    'Authorization': `Bearer ${token}`
   }
 }
 
+const handleUnauthorized = () => {
+  localStorage.removeItem('token')
+  sessionStorage.removeItem('token')
+  router.push('/login')
+}
+
+const getAct = async () => {
+  try {
+    const headers = getAuthHeaders()
+    const response = await fetch(`http://localhost:8080/acts/${route.params.id}`, {
+      headers
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) handleUnauthorized()
+      throw new Error('Ошибка загрузки акта')
+    }
+
+    const data = await response.json()
+    act.value = data
+
+    if (data.executiveSchemaId != null) {
+      executiveSchema.value = 'Есть'
+    }
+  } catch (error) {
+    console.error('Ошибка:', error)
+    errors.value.push(error.message)
+  }
+}
+
+const handleFileUpload = (event) => {
+  selectedFile.value = event.target.files[0]
+  if (selectedFile.value && selectedFile.value.type !== 'application/pdf') {
+    errors.value.push('Пожалуйста, загрузите файл в формате PDF')
+    selectedFile.value = null
+    fileInput.value.value = ''
+  }
+}
+
+const validateForm = () => {
+  errors.value = []
+
+  if (!act.value.works || act.value.works.trim() === '') {
+    errors.value.push('Поле "Выполненные работы" обязательно для заполнения.')
+  }
+
+  if (executiveSchema.value === 'Есть' && !selectedFile.value && !act.value.executiveSchemaId) {
+    errors.value.push('Загрузите исполнительную схему (PDF файл).')
+  }
+
+  if (selectedFile.value && selectedFile.value.type !== 'application/pdf') {
+    errors.value.push('Разрешены только файлы в формате PDF.')
+  }
+
+  return errors.value.length === 0
+}
+
+const updateAct = async (event) => {
+  event.preventDefault()
+
+  if (!validateForm()) {
+    return
+  }
+
+  isLoading.value = true
+
+  try {
+    const formData = new FormData()
+    formData.append('works', act.value.works)
+
+    if (selectedFile.value) {
+      formData.append('file', selectedFile.value)
+    }
+
+    const headers = getAuthHeaders()
+    delete headers['Content-Type']
+
+    const response = await fetch(`http://localhost:8080/acts/${route.params.id}`, {
+      method: 'PATCH',
+      headers,
+      body: formData
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) handleUnauthorized()
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `Ошибка сервера: ${response.status}`)
+    }
+
+    router.push('/')
+  } catch (error) {
+    console.error('Ошибка обновления:', error)
+    errors.value.push(error.message || 'Не удалось обновить акт')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(async () => {
+  await getAct()
+})
 </script>
 
 <style scoped>
-body {
-  background-color: #FFEBEE
+.card {
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-label.radio input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  visibility: hidden;
-  pointer-events: none
+.form-control, .form-select {
+  border-radius: 8px;
+  padding: 10px 15px;
 }
 
-label.radio span {
-  padding: 7px 14px;
-  border: 2px solid #eee;
-  display: inline-block;
-  color: #039be5;
-  border-radius: 10px;
-  width: 100%;
-  height: 48px;
-  line-height: 27px
+.form-label {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
 }
 
-label.radio input:checked + span {
-  border-color: #039BE5;
-  background-color: #81D4FA;
-  color: #fff;
-  border-radius: 9px;
-  height: 48px;
-  line-height: 27px
+.btn {
+  border-radius: 8px;
+  transition: all 0.2s;
 }
 
-.form-control {
-  margin-top: 10px;
-  height: 48px;
-  border: 2px solid #eee;
-  border-radius: 10px
+.alert {
+  border-radius: 8px;
 }
 
-.form-control:focus {
-  box-shadow: none;
-  border: 2px solid #039BE5
+/* Стили для textarea */
+textarea.form-control {
+  min-height: 120px;
+  resize: vertical;
+}
+
+@media (max-width: 768px) {
+  .d-flex {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .btn-group .btn {
+    flex: 1 0 45%;
+    margin-bottom: 8px;
+  }
 }
 </style>

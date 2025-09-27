@@ -9,9 +9,6 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
 
-      # Упрощённые настройки Hikari (уберите сложные параметры)
-      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "10"
-
       # JPA настройки
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       SPRING_JPA_SHOW_SQL: "true"
@@ -19,6 +16,7 @@ services:
 
       FILE_UPLOAD_DIR: /app/uploads/pdf  # Путь внутри контейнера
       APP_BASE_URL: http://storage:80  # Базовый URL для доступа к файлам
+
     volumes:
       - uploads_volume:/app/uploads  # Монтирование тома для загрузок
       - ./application.properties:/app/config/application.properties  # Монтирование конфига
@@ -31,20 +29,20 @@ services:
       timeout: 10s
       retries: 3
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "80:80"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    environment:
-      VITE_API_URL: http://backend:8080
-      NODE_ENV: development
-    depends_on:
-      - backend
+#  frontend:
+#    build:
+#      context: ./frontend
+#      dockerfile: Dockerfile
+#    ports:
+#      - "80:80"
+#    volumes:
+#      - ./frontend:/app
+#      - /app/node_modules
+#    environment:
+#      VITE_API_URL: http://backend:8080
+#      NODE_ENV: development
+#    depends_on:
+#      - backend
 
   storage:
     image: nginx:alpine

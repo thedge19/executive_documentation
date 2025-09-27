@@ -5,9 +5,6 @@ import com.executive_documentation.workings.service.WorkingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,44 +31,14 @@ public class WorkingController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Page<WorkingResponseDto>> getAllWorksBySubObject(
+    public ResponseEntity<PageDto<WorkingResponseDto>> getAllWorksBySubObject(
             @PathVariable Long id,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String[] sort) {
 
-        log.info("Get all works for subObjectId: {}, page: {}, size: {}, sort: {}",
-                id, page, size, Arrays.toString(sort));
-
-        try {
-            // Создаем объект сортировки
-            Sort sorting = Sort.by(
-                    sort[0].contains(",") ?
-                            sort[0].split(",")[0] :
-                            sort[0]
-            );
-
-            if (sort[0].contains(",")) {
-                sorting = sort[0].split(",")[1].equalsIgnoreCase("desc") ?
-                        sorting.descending() :
-                        sorting.ascending();
-            }
-
-            Pageable pageable = PageRequest.of(page, size, sorting);
-            Page<WorkingResponseDto> worksPage = workingService.getAll(id, pageable);
-
-            log.info("Found {} works out of {}",
-                    worksPage.getNumberOfElements(),
-                    worksPage.getTotalElements());
-
-            log.info(worksPage.toString());
-
-            return ResponseEntity.ok(worksPage);
-
-        } catch (Exception e) {
-            log.error("Error fetching works for subObjectId {}: {}", id, e.getMessage());
-            return ResponseEntity.internalServerError().build();
-        }
+        Page<WorkingResponseDto> pageResult = workingService.getAll(id, page, size, sort);
+        return ResponseEntity.ok(new PageDto<>(pageResult));
     }
 
     @GetMapping("/count-by-subobject")

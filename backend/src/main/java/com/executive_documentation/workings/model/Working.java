@@ -15,7 +15,6 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @AllArgsConstructor
-@ToString
 @Builder
 public class Working {
     @Id
@@ -60,4 +59,15 @@ public class Working {
 
     @Column(name = "final_quantity", insertable = false, updatable = false)
     private BigDecimal finalQuantity;
+
+    @Override
+    public String toString() {
+        return "Working{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", units='" + units + '\'' +
+                ", quantity=" + quantity +
+                ", done=" + done +
+                '}';
+    }
 }

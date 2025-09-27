@@ -1,11 +1,13 @@
 package com.executive_documentation.acts.pdf.service;
 
-import com.executive_documentation.acts.dto.entrance.EntranceControlExportDto;
 import com.executive_documentation.acts.dto.entrance.EntranceControlMapper;
 import com.executive_documentation.acts.dto.font.Fonts;
+import com.executive_documentation.acts.model.EntranceControl;
 import com.executive_documentation.acts.pdf.utils.PdfCellCreator;
 import com.executive_documentation.acts.pdf.utils.PdfUtils;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
+import com.executive_documentation.materials.model.Material;
+import com.executive_documentation.materials.repository.MaterialRepository;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -28,6 +31,7 @@ public class ControlLogPdfService {
     private final EntranceControlRepository entranceControlRepository;
     private final PdfCellCreator creator;
     private final EntranceControlMapper entranceControlMapper;
+    private final MaterialRepository materialRepository;
 
     private Font f1;
     private Font f3;
@@ -58,10 +62,8 @@ public class ControlLogPdfService {
     }
 
     public ByteArrayOutputStream generateControlLogPdf(boolean addPage) throws DocumentException {
-        List<EntranceControlExportDto> controls = entranceControlRepository
-                .findAllByOrderByDateAsc()
-                .stream()
-                .map(entranceControlMapper::toExportDto).toList();
+        List<EntranceControl> controls = entranceControlRepository
+                .findAllByOrderByDateAsc();
 
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4.rotate());
@@ -94,19 +96,23 @@ public class ControlLogPdfService {
         return output;
     }
 
-    private void addEntranceControlLogTableData(PdfPTable table, List<EntranceControlExportDto> controls) {
+    private void addEntranceControlLogTableData(PdfPTable table, List<EntranceControl> controls) {
         addEntranceControlLogTitle(table);
 
         addEntranceControlLogTableHeader(table);
 
         int counter = 1;
 
-        for (EntranceControlExportDto control : controls) {
+        for (EntranceControl control : controls) {
             table.addCell(creator.createCell(counter + "", "CB", f3, 1, 1, 0.0F));
             table.addCell(creator.createCell(String.valueOf(control.getDate()), "CB", f3, 1, 1, 0.0F));
-            table.addCell(creator.createCell(control.getMaterials().split(" - ")[0], "CB", f3, 1, 1, 0.0F));
-            table.addCell(creator.createCell(control.getMaterials().split(" - ")[1], "CB", f3, 1, 1, 0.0F));
-            table.addCell(creator.createCell(control.getDocuments(), "CB", f3, 1, 1, 0.0F));
+
+            Material material = control.getMaterial();
+            BigDecimal quantity = control.getQuantity();
+
+            table.addCell(creator.createCell(material.getName(), "CB", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(quantity + " " + material.getUnits(), "CB", f3, 1, 1, 0.0F));
+            table.addCell(creator.createCell(material.getCertificateName(), "CB", f3, 1, 1, 0.0F));
             table.addCell(creator.createCell("Скл. хран.", "CB", f3, 1, 1, 0.0F));
             table.addCell(creator.createCell("", "CB", f3, 1, 1, 0.0F));
             table.addCell(creator.createCell("", "CB", f3, 1, 1, 0.0F));

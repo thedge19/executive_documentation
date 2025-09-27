@@ -1,3 +1,17 @@
+-- CREATE DATABASE exec_doc_db
+--     WITH
+--     OWNER = postgres
+--     ENCODING = 'UTF8'
+--     LC_COLLATE = 'en_US.UTF-8'
+--     LC_CTYPE = 'en_US.UTF-8'
+--     CONNECTION LIMIT = -1;
+
+
+
+
+
+
+
 -- CREATE TABLE IF NOT EXISTS projects
 -- (
 --     project_id   BIGSERIAL PRIMARY KEY,

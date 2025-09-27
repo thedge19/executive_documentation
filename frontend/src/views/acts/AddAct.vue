@@ -316,6 +316,10 @@ const onChangeSubObject = async () => {
 
 const onChangeWork = async () => {
   await getWork()
+  // Автоматически заполняем поле workDone значением из currentWork
+  if (currentWork.value && currentWork.value.finalQuantity) {
+    workDone.value = currentWork.value.finalQuantity.toString()
+  }
 }
 
 const onChangeMaterial = async (index) => {
@@ -480,7 +484,13 @@ const addAct = async () => {
     formData.append('startDate', formatDate(startDate.value))
     formData.append('endDate', formatDate(endDate.value))
     formData.append('executiveSchema', executiveSchema.value)
-    formData.append('materials', JSON.stringify(materialsData))
+
+    materialsData.forEach((material, index) => {
+      formData.append(`materials[${index}].materialId`, material.materialId)
+      formData.append(`materials[${index}].quantity`, material.quantity)
+    })
+
+    // formData.append('materials', JSON.stringify(materialsData))
 
     if (materialQuantity.value > 0) {
       formData.append('controlDate', formatDate(setControlDate.value))

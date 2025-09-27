@@ -1,8 +1,12 @@
 package com.executive_documentation.materials.dto;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -17,7 +21,12 @@ public class MaterialRequestDto {
     @NotBlank(message = "ГОСТ/ТУ обязателен")
     private String standard;
 
-    // Список данных о сертификатах
-    @NotNull(message = "Данные сертификатов обязательны")
-    private List<CertificateRequestDto> certificates;
+    @Transient
+    private MultipartFile file;
+
+    @NotBlank(message = "Данные о сертификате обязательны")
+    private String certificateName;
+
+    @NotBlank(message = "Владелец сертификата?")
+    private String author;
 }

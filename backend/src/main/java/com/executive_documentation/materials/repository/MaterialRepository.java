@@ -15,13 +15,13 @@ public interface MaterialRepository extends JpaRepository<Material, Long> {
     @Query("SELECT m FROM Material m WHERE m.id = :id")
     Optional<Material> findByIdWithCertificates(@Param("id") Long id);
 
-    @EntityGraph(attributePaths = {"certificates"})
-    @Query("SELECT DISTINCT m FROM Material m LEFT JOIN m.certificates")
-    Set<Material> findAllWithCertificates(); // Возвращаем Set
+//    @EntityGraph(attributePaths = {"certificates"})
+//    @Query("SELECT DISTINCT m FROM Material m LEFT JOIN m.certificates")
+//    Set<Material> findAllWithCertificates(); // Возвращаем Set
 
     List<Material> findAllByOrderByName();
 
-    @EntityGraph(attributePaths = {"certificates"})
-    @Query("SELECT DISTINCT m FROM Material m LEFT JOIN FETCH m.certificates WHERE m.id IN :materialIds")
-    List<Material> findAllWithCertificatesByIdIn(@Param("materialIds") List<Long> materialIds);
+//    @EntityGraph(attributePaths = {"certificates"})
+//    @Query("SELECT DISTINCT m FROM Material m LEFT JOIN FETCH m.certificates WHERE m.id IN :materialIds")
+//    List<Material> findAllWithCertificatesByIdIn(@Param("materialIds") List<Long> materialIds);
 }
