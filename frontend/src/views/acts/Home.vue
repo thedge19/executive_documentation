@@ -3,44 +3,8 @@
   <div class="container-fluid px-4 py-1">
     <div class="card shadow-sm border-0">
       <div class="card-body p-0">
-        <!-- Date selection form -->
-        <div v-if="!showDates" class="px-4 py-3">
-          <div class="d-flex flex-wrap align-items-center gap-3">
-            <div class="flex-grow-1">
-              <label class="form-label"><i class="bi bi-calendar-month me-2"></i>Дата начала периода</label>
-              <VDatePicker v-model="startDate" mode="date" class="form-control"/>
-            </div>
-            <div class="flex-grow-1">
-              <label class="form-label"><i class="bi bi-calendar-month me-2"></i>Дата окончания периода</label>
-              <VDatePicker v-model="endDate" mode="date" class="form-control"/>
-            </div>
-          </div>
-          <div class="d-flex gap-2 mt-3">
-            <button
-                @click.prevent="addDates"
-                class="btn btn-success rounded-pill px-4"
-                :disabled="isGeneratingRegistry"
-            >
-              <template v-if="isGeneratingRegistry">
-                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Формирование...
-              </template>
-              <template v-else>
-                <i class="bi bi-file-earmark-pdf me-2"></i>Сформировать реестр
-              </template>
-            </button>
-            <button
-                @click.prevent="showRegistryDates"
-                class="btn btn-outline-danger rounded-pill px-4"
-                :disabled="isGeneratingRegistry"
-            >
-              <i class="bi bi-x me-1"></i>Отмена
-            </button>
-          </div>
-        </div>
-
         <!-- Table with black header -->
-        <div v-if="showDates" class="table-responsive mt-5" style="max-height: 94vh;">
+        <div class="table-responsive mt-5" style="max-height: 94vh;">
           <table class="table table-hover align-middle mb-0">
             <thead class="sticky-top">
             <tr>
@@ -92,6 +56,50 @@
     </div>
   </div>
 
+  <div
+      v-if="isDatePanelOpen"
+      class="floating-date-overlay"
+      @click="toggleDatePanel"
+  ></div>
+  <!-- Floating date pickers -->
+  <div class="floating-date-pickers" :class="{ 'floating-date-pickers--open': isDatePanelOpen }">
+    <div class="floating-date-item">
+      <label class="floating-date-label">
+        <i class="bi bi-calendar-plus me-2"></i>Начало периода
+      </label>
+      <VDatePicker v-model="startDate" mode="date" class="floating-date-picker" />
+    </div>
+
+    <div class="floating-date-item">
+      <label class="floating-date-label">
+        <i class="bi bi-calendar-check me-2"></i>Окончание периода
+      </label>
+      <VDatePicker v-model="endDate" mode="date" class="floating-date-picker" />
+    </div>
+
+    <div class="floating-date-actions">
+      <button
+          @click.prevent="addDates"
+          class="btn btn-success rounded-pill px-3 btn-sm"
+          :disabled="isGeneratingRegistry"
+      >
+        <template v-if="isGeneratingRegistry">
+          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          Формирование...
+        </template>
+        <template v-else>
+          <i class="bi bi-file-earmark-pdf me-2"></i>Сформировать
+        </template>
+      </button>
+      <button
+          @click.prevent="toggleDatePanel"
+          class="btn btn-danger rounded-pill px-3 btn-sm"
+      >
+        <i class="bi bi-x me-1"></i>Отмена
+      </button>
+    </div>
+  </div>
+
   <!-- Floating action buttons -->
   <div class="floating-buttons">
     <!-- Journal button -->
@@ -108,10 +116,10 @@
     <!-- Registry button -->
     <button
         class="btn btn-outline-secondary floating-btn registry-btn"
-        @click="showRegistryDates"
+        @click="toggleDatePanel"
     >
       <i class="bi bi-border-width"></i>
-      <span class="floating-btn-text">{{ showDates ? 'Сформировать комплект ИД за выбранный период' : 'Вернуться к таблице' }}</span>
+      <span class="floating-btn-text">{{ isDatePanelOpen ? 'Скрыть даты' : 'Сформировать комплект ИД' }}</span>
     </button>
 
     <!-- Add act button -->
@@ -133,7 +141,7 @@ const acts = ref([])
 const path = ref('http://localhost:8080/acts')
 const startDate = ref(new Date())
 const endDate = ref(new Date())
-const showDates = ref(true)
+const isDatePanelOpen = ref(false)
 const isLoading = ref(false)
 const error = ref(null)
 const isGeneratingRegistry = ref(false)
@@ -284,6 +292,8 @@ const addDates = async () => {
     window.URL.revokeObjectURL(url)
     document.body.removeChild(a)
 
+    toggleDatePanel();
+
   } catch (err) {
     console.error('Ошибка:', err)
     error.value = 'Не удалось сформировать реестр'
@@ -327,8 +337,8 @@ const generateLogPdf = async () => {
   }
 }
 
-const showRegistryDates = () => {
-  showDates.value = !showDates.value
+const toggleDatePanel = () => {
+  isDatePanelOpen.value = !isDatePanelOpen.value
 }
 
 onMounted(() => {
@@ -373,7 +383,6 @@ onMounted(() => {
   font-size: 0.8rem;
 }
 
-/* Стили для спиннера */
 .spinner-border-sm {
   width: 1rem;
   height: 1rem;
@@ -384,7 +393,6 @@ onMounted(() => {
   pointer-events: none;
 }
 
-/* Стили для ссылок PDF в таблице */
 .pdf-link {
   color: inherit;
   transition: color 0.2s ease;
@@ -401,6 +409,127 @@ onMounted(() => {
 
 .pdf-link:hover .bi {
   color: #dc3545;
+}
+
+/* Floating Date Pickers Styles */
+.floating-date-pickers {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  padding: 2rem;
+  z-index: 1070;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 320px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  height: 850px;
+}
+
+.floating-date-pickers--open {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.floating-date-item {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.floating-date-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Центрируем по горизонтали */
+  text-align: center;
+  width: 100%;
+  max-width: 300px;
+}
+
+.floating-date-picker {
+  width: 300px; /* Фиксированная ширина */
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 0.875rem 1rem;
+  font-size: 0.9rem;
+  background: #f8f9fa;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.floating-date-picker:hover {
+  border-color: #adb5bd;
+  background: white;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.floating-date-picker:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+  outline: none;
+  background: white;
+}
+
+.floating-date-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.floating-date-actions .btn {
+  width: 160px; /* Фиксированная ширина для обеих кнопок */
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+/* Overlay for floating date pickers */
+.floating-date-pickers::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: none; /* Полностью убираем затемненный фон */
+}
+
+.floating-date-pickers--open::before {
+  opacity: 1;
+}
+
+/* Overlay для закрытия date pickers */
+.floating-date-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  z-index: 1069; /* На 1 меньше чем у date pickers */
+  cursor: pointer;
 }
 
 /* Floating buttons styles */
@@ -446,7 +575,6 @@ onMounted(() => {
   transition: all 0.1s ease;
 }
 
-/* Эффект волны при нажатии */
 .floating-btn::after {
   content: '';
   position: absolute;
@@ -467,7 +595,6 @@ onMounted(() => {
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-/* Эффект свечения при нажатии */
 .floating-btn:active {
   filter: brightness(1.3);
 }
@@ -590,7 +717,6 @@ onMounted(() => {
   }
 }
 
-/* Pulse animation for loading state */
 .btn-pulse {
   animation: pulse 1.5s ease-in-out infinite;
 }
@@ -607,7 +733,6 @@ onMounted(() => {
   }
 }
 
-/* Анимация появления подсказки */
 .floating-btn:hover .floating-btn-text {
   animation: tooltipFadeIn 0.3s ease-out;
 }
@@ -625,6 +750,20 @@ onMounted(() => {
 
 /* Адаптивность */
 @media (max-width: 768px) {
+  .floating-date-pickers {
+    width: 90%;
+    min-width: unset;
+    padding: 1.5rem;
+  }
+
+  .floating-date-actions {
+    flex-direction: column;
+  }
+
+  .floating-date-actions .btn {
+    width: 100%;
+  }
+
   .floating-buttons {
     bottom: 20px;
     right: 20px;
@@ -645,8 +784,22 @@ onMounted(() => {
   }
 }
 
-/* Убедимся, что кнопки поверх всего контента */
-.floating-buttons * {
-  z-index: inherit;
+/* Стилизация календаря */
+:deep(.vc-container) {
+  border: none !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 12px !important;
+}
+
+:deep(.vc-header) {
+  margin-bottom: 1rem;
+  background: transparent !important;
+  color: white !important;
+  padding: 1.5rem !important;
+}
+
+:deep(.vc-title) {
+  font-weight: 600 !important;
+  font-size: 1.1rem !important;
 }
 </style>

@@ -216,9 +216,9 @@ public class ActServiceImplementation implements ActService {
                         .append(material.getCertificateName())
                         .append("; ");
             }
+            createdAct.setMaterials(addedMaterials.substring(0, addedMaterials.length() - 2));
         }
 
-        createdAct.setMaterials(addedMaterials.substring(0, addedMaterials.length() - 2));
         log.info("materials {}", createdAct.getMaterials());
         createdAct.setExecutiveSchema(addExecutiveSchema(actNumber, file));
 
