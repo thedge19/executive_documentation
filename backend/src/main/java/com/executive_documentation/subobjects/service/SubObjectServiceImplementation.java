@@ -3,16 +3,19 @@ package com.executive_documentation.subobjects.service;
 import com.executive_documentation.subobjects.dto.SubObjectMapper;
 import com.executive_documentation.subobjects.dto.SubObjectRequestDto;
 import com.executive_documentation.subobjects.dto.SubObjectResponseDto;
+import com.executive_documentation.subobjects.dto.SubObjectUpdateDto;
 import com.executive_documentation.subobjects.model.SubObject;
 import com.executive_documentation.subobjects.repository.SubObjectRepository;
 import com.executive_documentation.workings.repository.WorkingRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -56,17 +59,17 @@ public class SubObjectServiceImplementation implements SubObjectService {
 
     @Transactional
     @Override
-    public SubObject update(long id, SubObject subObject) {
+    public SubObject update(long id, SubObjectUpdateDto updateDto) {
         SubObject updatedSubObject = subObjectRepository.findById(id).orElse(null);
 
-        if (subObject.getName() != null) {
+        if (updateDto.getName() != null) {
             assert updatedSubObject != null;
-            updatedSubObject.setName(subObject.getName());
+            updatedSubObject.setName(updateDto.getName());
         }
 
-        if (subObject.getTitle() != null) {
+        if (updateDto.getTitle() != null) {
             assert updatedSubObject != null;
-            updatedSubObject.setTitle(subObject.getTitle());
+            updatedSubObject.setTitle(updateDto.getTitle());
         }
 
         return updatedSubObject;

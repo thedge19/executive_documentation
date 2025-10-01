@@ -36,23 +36,9 @@ public class WorkingServiceImplementation implements WorkingService {
     }
 
     @Override
-    public Page<WorkingResponseDto> getAll(long id, int page, int size, String[] sort) {
-        // Создаем объект сортировки
-        Sort sorting = Sort.by(
-                sort[0].contains(",") ?
-                        sort[0].split(",")[0] :
-                        sort[0]
-        );
-
-        if (sort[0].contains(",")) {
-            sorting = sort[0].split(",")[1].equalsIgnoreCase("desc") ?
-                    sorting.descending() :
-                    sorting.ascending();
-        }
-
-        Pageable pageable = PageRequest.of(page, size, sorting);
-        return workingRepository.findAllBySubObjectIdOrderByIdAsc(id, pageable)
-                .map(workingMapper::toDto);
+    public List<WorkingResponseDto> getAll(long id) {
+        return workingRepository.findAllBySubObjectIdOrderByIdAsc(id).stream()
+                .map(workingMapper::toDto).toList();
     }
 
     @Override

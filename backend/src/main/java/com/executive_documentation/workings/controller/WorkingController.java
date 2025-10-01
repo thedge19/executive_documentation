@@ -31,14 +31,9 @@ public class WorkingController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PageDto<WorkingResponseDto>> getAllWorksBySubObject(
-            @PathVariable Long id,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id,asc") String[] sort) {
-
-        Page<WorkingResponseDto> pageResult = workingService.getAll(id, page, size, sort);
-        return ResponseEntity.ok(new PageDto<>(pageResult));
+    public ResponseEntity<List<WorkingResponseDto>> getAllWorksBySubObject(@PathVariable Long id) {
+        List<WorkingResponseDto> works = workingService.getAll(id);
+        return ResponseEntity.ok(works);
     }
 
     @GetMapping("/count-by-subobject")

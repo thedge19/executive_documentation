@@ -61,27 +61,9 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/addProject',
-      name: 'addProject',
-      component: () => import('../views/projects/AddProject.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/editProject/:id',
-      name: 'editProject',
-      component: () => import('../views/projects/UpdateProject.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
       path: '/materials',
       name: 'viewMaterials',
       component: ViewMaterials,
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/addMaterial',
-      name: 'addMaterial',
-      component: () => import('../views/materials/AddMaterial.vue'),
       meta: { requiresAuth: true }
     },
     {
@@ -97,44 +79,15 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/addStandard',
-      name: 'addStandard',
-      component: () => import('../views/standards/AddStandard.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/editStandard/:id',
-      name: 'editStandard',
-      component: () => import('../views/standards/UpdateStandard.vue')
-    },
-    {
       path: '/subObjects/:id',
       name: 'viewSubObjects',
       component: ViewSubObjects,
       meta: { requiresAuth: true }
     },
     {
-      path: '/addSubObject',
-      name: 'addSubObject',
-      component: () => import('../views/subObjects/AddSubObject.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/editSubObject/:id',
-      name: 'editSubObject',
-      component: () => import('../views/subObjects/UpdateSubObject.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
       path: '/works/:id',
       name: 'viewWorks',
       component: ViewWorks,
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/addWork/:id',
-      name: 'addWork',
-      component: () => import('../views/works/AddWork.vue'),
       meta: { requiresAuth: true }
     },
     {
