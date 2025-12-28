@@ -25,6 +25,16 @@
           <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
         </div>
 
+        <div v-if="importMessage" class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+          <i class="bi bi-check-circle-fill me-2"></i>{{ importMessage }}
+          <button type="button" class="btn-close" @click="closeImportMessages"></button>
+        </div>
+
+        <div v-if="importError" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ importError }}
+          <button type="button" class="btn-close" @click="closeImportMessages"></button>
+        </div>
+
         <!-- Loading indicator -->
         <div v-if="isLoading" class="text-center mb-4">
           <div class="spinner-border text-primary" role="status">
@@ -57,7 +67,7 @@
                     :key="work.id"
                     :class="{'table-light': index % 2 === 0}">
                   <td class="text-center align-middle fw-semibold">{{ work.id }}</td>
-                  <td class="align-middle" :class="{ 'fw-bold': work.unitPrice > 0 }">
+                  <td class="align-middle" :class="{ 'fw-bold': work.done < work.quantity }">
                     {{ work.name }}
                     <span v-if="work.standard" class="badge bg-secondary ms-1">{{ work.standard.name }}</span>
                   </td>
@@ -105,6 +115,20 @@
       <i class="bi bi-arrow-left"></i>
       <span class="floating-btn-text">В подобъекты</span>
     </button>
+
+<!--    <button-->
+<!--        class="btn btn-success floating-btn import-btn"-->
+<!--        @click="importFromExcel"-->
+<!--        :disabled="isImporting"-->
+<!--    >-->
+<!--      <template v-if="isImporting">-->
+<!--        <span class="spinner-border spinner-border-sm me-1"></span>-->
+<!--      </template>-->
+<!--      <template v-else>-->
+<!--        <i class="bi bi-file-earmark-excel"></i>-->
+<!--      </template>-->
+<!--      <span class="floating-btn-text">Импорт из Excel</span>-->
+<!--    </button>-->
 
     <!-- Add work button -->
     <button
@@ -239,6 +263,9 @@ const totalAmountBySubObject = ref(0)
 const showAddForm = ref(false)
 const isSubmitting = ref(false)
 const formError = ref(null)
+const isImporting = ref(false)
+const importMessage = ref(null)
+const importError = ref(null)
 
 // Form data
 const workData = ref({
@@ -352,6 +379,62 @@ const getStandards = async () => {
       handleUnauthorized()
     }
   }
+}
+
+const importFromExcel = async () => {
+  if (!confirm('Импортировать работы из файла KOR.xlsx?')) return
+
+  try {
+    isImporting.value = true
+    importMessage.value = null
+    importError.value = null
+
+    const headers = getAuthHeaders()
+
+    const response = await fetch(
+        `http://localhost:8080/workings/import-excel/${subObjectId.value}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': headers.Authorization
+          }
+        }
+    )
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
+      }
+
+      const errorText = await response.text()
+      importError.value = `Ошибка импорта: ${errorText}`
+      return
+    }
+
+    const result = await response.text()
+    importMessage.value = result
+
+    // Обновляем список работ
+    await getWorks()
+    await fetchTotalAmountBySubObject()
+
+    // Показываем сообщение об успехе
+    setTimeout(() => {
+      importMessage.value = null
+    }, 3000)
+
+  } catch (err) {
+    console.error('Ошибка импорта:', err)
+    importError.value = 'Не удалось импортировать работы'
+  } finally {
+    isImporting.value = false
+  }
+}
+
+const closeImportMessages = () => {
+  importMessage.value = null
+  importError.value = null
 }
 
 const fetchTotalAmountBySubObject = async () => {
@@ -968,5 +1051,22 @@ a.text-primary:hover {
   .table td, .table th {
     padding: 0.5rem;
   }
+}
+
+.import-btn {
+  animation: floatUp 0.5s ease-out 0.3s both;
+  z-index: 1001;
+  background: linear-gradient(135deg, #198754 0%, #157347 100%) !important;
+  border: none !important;
+}
+
+.import-btn:active {
+  background: linear-gradient(135deg, #157347 0%, #146c43 100%) !important;
+  box-shadow: 0 2px 15px rgba(25, 135, 84, 0.6) !important;
+}
+
+.import-btn:hover .floating-btn-text {
+  opacity: 1;
+  transform: translateX(0);
 }
 </style>

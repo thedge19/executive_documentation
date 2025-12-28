@@ -18,8 +18,9 @@ services:
       APP_BASE_URL: http://storage:80  # Базовый URL для доступа к файлам
 
     volumes:
-      - uploads_volume:/app/uploads  # Монтирование тома для загрузок
-      - ./application.properties:/app/config/application.properties  # Монтирование конфига
+      - uploads_volume:/app/uploads
+      - ./application.properties:/app/config/application.properties
+      - ./backend:/app
     depends_on:
       postgres:
         condition: service_healthy

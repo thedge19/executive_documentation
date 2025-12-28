@@ -12,5 +12,4 @@ public class RegistryPeriodDto {
     private int year;
     private LocalDate startDate;
     private LocalDate endDate;
-    // getters/setters
 }

@@ -89,7 +89,7 @@ public class ActServiceImplementation implements ActService {
                     ActResponseDto dto = actMapper.actToActResponseDto(act);
                     if (act.getExecutiveSchema() != null) {
                         dto.setExecutiveSchemaUrl(
-                                fileStorageService.getFilePublicUrl(act.getExecutiveSchema().getSchemaPath())
+                                fileStorageService.getStorageBaseUrl(act.getExecutiveSchema().getSchemaPath())
                         );
                     }
                     return dto;
@@ -116,7 +116,7 @@ public class ActServiceImplementation implements ActService {
         return executiveSchemaRepository.findAllByOrderBySchemasActNumberAsc()
                 .stream()
                 .peek(schema -> {
-                    String path = fileStorageService.getFilePublicUrl(schema.getSchemaPath());
+                    String path = fileStorageService.getStorageBaseUrl(schema.getSchemaPath());
                     schema.setSchemaPath(path);
                 }).collect(Collectors.toList());
     }

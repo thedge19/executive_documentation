@@ -6,6 +6,7 @@ import com.executive_documentation.acts.dto.entrance.EntranceControlResponseDto;
 import com.executive_documentation.acts.dto.registry.RegistryMapper;
 import com.executive_documentation.acts.dto.registry.RegistryPeriodDto;
 import com.executive_documentation.acts.dto.registry.RegistryRequestDto;
+import com.executive_documentation.acts.dto.registry.SelectedActsRequestDto;
 import com.executive_documentation.acts.dto.worklog.WorkLogDto;
 import com.executive_documentation.acts.model.ExecutiveSchema;
 import com.executive_documentation.acts.pdf.service.ActPdfService;
@@ -111,7 +112,13 @@ public class ActController {
                             RegistryRequestDto registryRequestDto, HttpServletResponse response) throws DocumentException, IOException {
 
         RegistryPeriodDto dto = registryMapper.requestDtoToPeriodDto(registryRequestDto);
-        registryPdfService.createRegistryForPeriod(dto, response);
+        registryPdfService.getPeriodList(dto, response);
+    }
+
+    @PostMapping("/registries/selected")
+    public void generateSelectedActsPdf(@RequestBody SelectedActsRequestDto request, HttpServletResponse response) throws DocumentException, IOException {
+
+        registryPdfService.getSelectedList(request, response);
     }
 
     @PatchMapping("/{id}")

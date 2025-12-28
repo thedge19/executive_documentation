@@ -3,11 +3,63 @@
   <div class="container-fluid px-4 py-1">
     <div class="card shadow-sm border-0">
       <div class="card-body p-0">
+        <!-- Bulk actions panel -->
+        <div v-if="selectedActs.length > 0" class="bulk-actions-panel sticky-top bg-light py-2 px-3 border-bottom shadow-sm">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+              <span class="me-3">
+                <i class="bi bi-check2-circle text-primary me-1"></i>
+                Выбрано актов: <strong>{{ selectedActs.length }}</strong>
+              </span>
+              <button
+                  class="btn btn-sm btn-outline-secondary me-2"
+                  @click="toggleSelectAll"
+              >
+                <template v-if="selectedActs.length === acts.length">
+                  <i class="bi bi-check2-square me-1"></i>Снять выделение
+                </template>
+                <template v-else>
+                  <i class="bi bi-check-square me-1"></i>Выбрать все
+                </template>
+              </button>
+              <button
+                  class="btn btn-sm btn-link text-danger"
+                  @click="clearSelection"
+              >
+                <i class="bi bi-x-circle me-1"></i>Очистить
+              </button>
+            </div>
+            <div class="d-flex align-items-center">
+              <button
+                  class="btn btn-success btn-sm me-2"
+                  @click="generateSelectedPdf"
+                  :disabled="isGeneratingSelected"
+              >
+                <template v-if="isGeneratingSelected">
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Формирование...
+                </template>
+                <template v-else>
+                  <i class="bi bi-file-earmark-pdf me-1"></i>Выгрузить выбранные
+                </template>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Table with black header -->
         <div class="table-responsive mt-5" style="max-height: 94vh;">
           <table class="table table-hover align-middle mb-0">
             <thead class="sticky-top">
             <tr>
+              <th class="text-white text-center" style="width: 4%; background-color: #000000">
+                <input
+                    type="checkbox"
+                    class="form-check-input"
+                    :checked="selectedActs.length === acts.length && acts.length > 0"
+                    @change="toggleSelectAll"
+                />
+              </th>
               <th class="text-white text-center" style="width: 7%; background-color: #000000">№</th>
               <th class="text-white text-center" style="width: 5%; background-color: #000000">Дата</th>
               <th class="text-white text-center" style="width: 15%; background-color: #000000">Объект</th>
@@ -26,6 +78,14 @@
             </thead>
             <tbody>
             <tr v-for="act in acts" :key="act.id">
+              <td class="text-center">
+                <input
+                    type="checkbox"
+                    class="form-check-input"
+                    :checked="isSelected(act.id)"
+                    @change="toggleSelection(act.id)"
+                />
+              </td>
               <td class="text-center">{{ act.actNumber }}</td>
               <td class="text-center" :style="[act.executiveSchemaId != null ? `color:blue` : `color:red`]">
                 {{ act.endDate }}
@@ -122,6 +182,18 @@
       <span class="floating-btn-text">{{ isDatePanelOpen ? 'Скрыть даты' : 'Сформировать комплект ИД' }}</span>
     </button>
 
+    <!-- Selected acts button -->
+    <button
+        class="btn btn-warning floating-btn selected-btn"
+        @click="scrollToTop"
+        v-if="selectedActs.length > 0"
+    >
+      <i class="bi bi-check-circle"></i>
+      <span class="floating-btn-text">
+        Выбрано: {{ selectedActs.length }}
+      </span>
+    </button>
+
     <!-- Add act button -->
     <a
         href="/addAct"
@@ -138,11 +210,13 @@ import {ref, onMounted} from 'vue'
 import Navbar from '../../components/Navbar.vue'
 
 const acts = ref([])
+const selectedActs = ref([]) // Массив для хранения ID выбранных актов
 const path = ref('http://localhost:8080/acts')
 const startDate = ref(new Date())
 const endDate = ref(new Date())
 const isDatePanelOpen = ref(false)
 const isLoading = ref(false)
+const isGeneratingSelected = ref(false)
 const error = ref(null)
 const isGeneratingRegistry = ref(false)
 
@@ -190,6 +264,100 @@ const getActs = async () => {
   }
 }
 
+// Проверка, выбран ли акт
+const isSelected = (actId) => {
+  return selectedActs.value.includes(actId)
+}
+
+// Переключение выбора акта
+const toggleSelection = (actId) => {
+  const index = selectedActs.value.indexOf(actId)
+  if (index > -1) {
+    // Удаляем из выбранных
+    selectedActs.value.splice(index, 1)
+  } else {
+    // Добавляем в выбранные
+    selectedActs.value.push(actId)
+  }
+}
+
+// Выбрать/снять выделение со всех актов
+const toggleSelectAll = () => {
+  if (selectedActs.value.length === acts.value.length) {
+    // Если уже все выбраны - снимаем выделение
+    selectedActs.value = []
+  } else {
+    // Выбираем все акты
+    selectedActs.value = acts.value.map(act => act.id)
+  }
+}
+
+// Очистить выделение
+const clearSelection = () => {
+  selectedActs.value = []
+}
+
+// Прокрутка к верху (для панели выбранных актов)
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// Генерация PDF для выбранных актов
+const generateSelectedPdf = async () => {
+  if (selectedActs.value.length === 0) {
+    alert('Выберите хотя бы один акт для выгрузки')
+    return
+  }
+
+  try {
+    isGeneratingSelected.value = true
+    error.value = null
+
+    const token = localStorage.getItem('token')
+    if (!token) {
+      handleUnauthorized()
+      return
+    }
+
+    const response = await fetch('http://localhost:8080/acts/registries/selected', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        actIds: selectedActs.value
+      })
+    })
+
+    if (response.status === 401) {
+      handleUnauthorized()
+      return
+    }
+
+    if (!response.ok) {
+      error.value = 'Ошибка сервера при формировании PDF';
+      return;
+    }
+
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `выбранные-акты-${new Date().toISOString().slice(0, 10)}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+
+  } catch (err) {
+    console.error('Ошибка при генерации PDF для выбранных актов:', err)
+    error.value = 'Не удалось сформировать PDF для выбранных актов'
+  } finally {
+    isGeneratingSelected.value = false
+  }
+}
+
 const deleteAct = async (id) => {
   if (!confirm('Вы уверены, что хотите удалить этот акт?')) return
 
@@ -207,6 +375,12 @@ const deleteAct = async (id) => {
     if (!response.ok) {
       error.value = 'Ошибка удаления акта';
       return;
+    }
+
+    // Удаляем акт из списка выбранных, если он там был
+    const index = selectedActs.value.indexOf(id)
+    if (index > -1) {
+      selectedActs.value.splice(index, 1)
     }
 
     await getActs()
@@ -411,6 +585,46 @@ onMounted(() => {
   color: #dc3545;
 }
 
+/* Bulk actions panel styles */
+.bulk-actions-panel {
+  z-index: 1030;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 2px solid #0d6efd;
+}
+
+.bulk-actions-panel .btn-outline-secondary {
+  border-color: #6c757d;
+}
+
+.bulk-actions-panel .btn-outline-secondary:hover {
+  background-color: #6c757d;
+  color: white;
+}
+
+.bulk-actions-panel .btn-link {
+  text-decoration: none;
+}
+
+.bulk-actions-panel .btn-link:hover {
+  text-decoration: underline;
+}
+
+/* Checkbox styles */
+.form-check-input {
+  cursor: pointer;
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.form-check-input:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.form-check-input:focus {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
 /* Floating Date Pickers Styles */
 .floating-date-pickers {
   position: fixed;
@@ -452,14 +666,14 @@ onMounted(() => {
   margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
-  justify-content: center; /* Центрируем по горизонтали */
+  justify-content: center;
   text-align: center;
   width: 100%;
   max-width: 300px;
 }
 
 .floating-date-picker {
-  width: 300px; /* Фиксированная ширина */
+  width: 300px;
   border: 2px solid #e9ecef;
   border-radius: 12px;
   padding: 0.875rem 1rem;
@@ -493,7 +707,7 @@ onMounted(() => {
 }
 
 .floating-date-actions .btn {
-  width: 160px; /* Фиксированная ширина для обеих кнопок */
+  width: 160px;
   height: 38px;
   display: flex;
   align-items: center;
@@ -513,7 +727,7 @@ onMounted(() => {
   z-index: -1;
   opacity: 0;
   transition: opacity 0.3s ease;
-  display: none; /* Полностью убираем затемненный фон */
+  display: none;
 }
 
 .floating-date-pickers--open::before {
@@ -528,7 +742,7 @@ onMounted(() => {
   width: 100vw;
   height: 100vh;
   background: transparent;
-  z-index: 1069; /* На 1 меньше чем у date pickers */
+  z-index: 1069;
   cursor: pointer;
 }
 
@@ -706,6 +920,26 @@ onMounted(() => {
   opacity: 0.6;
 }
 
+/* Selected acts button */
+.selected-btn {
+  animation: floatUp 0.5s ease-out 0.15s both;
+  z-index: 1001;
+  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%) !important;
+  border: none !important;
+  color: #212529 !important;
+}
+
+.selected-btn:hover {
+  background: linear-gradient(135deg, #e0a800 0%, #d39e00 100%) !important;
+  transform: translateY(-4px) scale(1.08);
+  box-shadow: 0 10px 30px rgba(255, 193, 7, 0.35) !important;
+}
+
+.selected-btn:active {
+  background: linear-gradient(135deg, #d39e00 0%, #c69500 100%) !important;
+  box-shadow: 0 2px 15px rgba(255, 193, 7, 0.6) !important;
+}
+
 @keyframes floatUp {
   from {
     opacity: 0;
@@ -781,6 +1015,17 @@ onMounted(() => {
     white-space: normal;
     width: 140px;
     text-align: center;
+  }
+
+  .bulk-actions-panel {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .bulk-actions-panel > div {
+    width: 100%;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
   }
 }
 

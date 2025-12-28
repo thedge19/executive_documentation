@@ -5,6 +5,7 @@ import com.executive_documentation.workings.service.WorkingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -85,5 +86,18 @@ public class WorkingController {
         log.info("Delete Working: {}", id);
         workingService.delete(id);
         log.info("Working with id: {} deleted", id);
+    }
+
+    @PostMapping("/import-excel/{subObjectId}")
+    public ResponseEntity<String> importFromExcel(@PathVariable Long subObjectId) {
+        log.info("Importing works from Excel for subObject: {}", subObjectId);
+        try {
+            int importedCount = workingService.importFromExcel(subObjectId);
+            return ResponseEntity.ok("Успешно импортировано " + importedCount + " работ");
+        } catch (Exception e) {
+            log.error("Error importing from Excel", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ошибка при импорте: " + e.getMessage());
+        }
     }
 }

@@ -3,7 +3,7 @@
   <div class="container py-5">
     <div class="card shadow-sm border-0 mx-auto" style="max-width: 800px;">
       <div class="card-header bg-white py-4">
-        <h2 class="h4 mb-0 text-center text-primary">Добавить акт выполненных работ</h2>
+        <h2 class="h4 mb-0 text-center text-primary">Добавить АОСР</h2>
       </div>
 
       <div class="card-body">

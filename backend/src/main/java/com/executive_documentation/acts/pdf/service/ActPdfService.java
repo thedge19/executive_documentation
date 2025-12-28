@@ -114,6 +114,7 @@ public class ActPdfService {
 
                     // 4.4. Добавляем сертификат (если есть у контроля)
                     Material material = materialRepository.findById(control.getMaterial().getId()).orElseThrow(null);
+
                     if (material.getPath() != null) {
                         log.info(material.getPath());
 

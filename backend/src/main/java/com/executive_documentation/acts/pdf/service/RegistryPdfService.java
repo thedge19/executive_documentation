@@ -4,6 +4,7 @@ import com.executive_documentation.acts.dto.act.ActMapper;
 import com.executive_documentation.acts.dto.act.ActResponseDto;
 import com.executive_documentation.acts.dto.font.Fonts;
 import com.executive_documentation.acts.dto.registry.RegistryPeriodDto;
+import com.executive_documentation.acts.dto.registry.SelectedActsRequestDto;
 import com.executive_documentation.acts.model.Act;
 import com.executive_documentation.acts.model.EntranceControl;
 import com.executive_documentation.acts.model.Registry;
@@ -27,6 +28,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -76,7 +79,28 @@ public class RegistryPdfService {
         this.fontForPageNumbers = fonts.fontForPageNumbers();
     }
 
-    public void createRegistryForPeriod(RegistryPeriodDto periodDto, HttpServletResponse response)
+    public void getPeriodList(RegistryPeriodDto periodDto, HttpServletResponse response) throws DocumentException, IOException {
+        List<Act> acts = actRepository.findByEndDateBetween(
+                periodDto.getStartDate(),
+                periodDto.getEndDate()
+        );
+
+        createRegistry(acts, periodDto, response);
+    }
+
+    public void getSelectedList(SelectedActsRequestDto selectedDto, HttpServletResponse response) throws DocumentException, IOException {
+        List<Act> acts = actRepository.findAllByIdInOrderByEndDateAscActNumberAsc(selectedDto.getActIds());
+
+        Act firstAct = acts.getFirst();
+        Act lastAct = acts.getLast();
+
+        LocalDate startDate = firstAct.getEndDate();
+        LocalDate endDate = lastAct.getEndDate();
+        RegistryPeriodDto periodDto = createPeriodDtoFromSortedActs(startDate, endDate);
+        createRegistry(acts, periodDto, response);
+    }
+
+    private void createRegistry(List<Act> acts, RegistryPeriodDto periodDto, HttpServletResponse response)
             throws IOException, DocumentException {
 
         // Сброс счетчика перед созданием нового реестра
@@ -84,12 +108,6 @@ public class RegistryPdfService {
 
         // 1. Создаем запись реестра
         Registry registryHeader = createRegistryHeader(periodDto);
-
-        // 2. Получаем акты за период
-        List<Act> acts = actRepository.findByEndDateBetween(
-                periodDto.getStartDate(),
-                periodDto.getEndDate()
-        );
 
         List<Registry> journalRegistries = createJournalRegistryEntries();
 
@@ -116,6 +134,7 @@ public class RegistryPdfService {
 
         try {
             // 3.1. Добавляем реестр
+
             ByteArrayOutputStream registryPdf = generateRegistryPdf(registryHeader, acts, journalRegistries);
             int registryPages = addDocumentToMerge(copy, new ByteArrayInputStream(registryPdf.toByteArray()));
             registryHeader.setNumberOfSheets(registryPages);
@@ -123,13 +142,13 @@ public class RegistryPdfService {
             // 3.2. Добавляем акты и связанные документы
             for (Act act : acts) {
                 // Обработка акта
-                log.info(act.getExecutiveSchema().getSchemaPath());
                 Registry actRegistry = createActRegistryEntry(act);
                 ActResponseDto dto = actMapper.actToActResponseDto(act);
-                log.info(act.getActNumber());
+                String filePath = act.getExecutiveSchema().getSchemaPath();
                 dto.setExecutiveSchemaUrl(
-                        fileStorageService.getFilePublicUrl(act.getExecutiveSchema().getSchemaPath())
+                        filePath
                 );
+
 
                 ByteArrayOutputStream actPdf = actPdfService.generateActPdf(dto);
                 int actPages = addDocumentToMerge(copy, new ByteArrayInputStream(actPdf.toByteArray()));
@@ -139,11 +158,12 @@ public class RegistryPdfService {
                 if (act.getExecutiveSchema().getSchemaPath() != null) {
                     Registry schemaRegistry = createSchemaRegistryEntry(act);
                     try {
+                        log.info("HERE");
                         int schemaPages = addRemoteDocumentToMerge(copy,
                                 fileStorageService.getFilePublicUrl(dto.getExecutiveSchemaUrl()));
                         schemaRegistry.setNumberOfSheets(schemaPages);
                     } catch (Exception e) {
-                        log.warn("Не удалось добавить исполнительную схему: {}", e.getMessage());
+                        log.warn("!!!Не удалось добавить исполнительную схему: {}", e.getMessage());
                     }
                 }
 
@@ -164,9 +184,10 @@ public class RegistryPdfService {
                         Registry certRegistry = createCertificateRegistryEntry(control);
                         try {
                             int certPages = addRemoteDocumentToMerge(copy, fileStorageService.getFilePublicUrl(material.getPath()));
+                            log.info("СТраниц {}", certPages);
                             certRegistry.setNumberOfSheets(certPages);
                         } catch (Exception e) {
-                            log.warn("Не удалось добавить сертификат: {}", e.getMessage());
+                            log.warn("!!!!!Не удалось добавить сертификат: {}", e.getMessage());
                         }
                     }
                 }
@@ -214,7 +235,6 @@ public class RegistryPdfService {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Document document = new Document();
         PdfWriter writer = null;
-
         try {
             // 1. Инициализация PDF-документа
             writer = PdfWriter.getInstance(document, outputStream);
@@ -222,6 +242,7 @@ public class RegistryPdfService {
             document.open();
 
             // 2. Подготовка данных для таблицы
+
             List<Registry> registries = prepareRegistryData(registryHeader, acts, journalRegistries);
 
             // 3. Создаем временный PDF для подсчета страниц всего реестра
@@ -298,7 +319,6 @@ public class RegistryPdfService {
 
             String documentNumber = registry.getDocumentNumber();
 
-            log.info("Документ {}, {}, {}", registry.getDocumentName(), registry.getDocumentNumber(), registry.getNumberOfSheets());
             table.addCell(creator.createCell(String.valueOf(registry.getRowNumber()), "CB", f1, 1, 1, 0.0F));
             table.addCell(creator.createCell(String.valueOf(registry.getDocumentName()), "CB", f1, 1, 1, 0.0F));
             table.addCell(creator.createCell(documentNumber, "CB", f1, 1, 1, 0.0F));
@@ -377,10 +397,10 @@ public class RegistryPdfService {
 
             // Добавляем исполнительную схему (если есть)
             if (act.getExecutiveSchema() != null) {
+                log.info(act.getActNumber());
                 Registry schemaRegistry = createSchemaRegistryEntry(act);
                 registries.add(schemaRegistry);
             }
-
             // Добавляем акты входного контроля
             List<EntranceControl> controls = entranceControlRepository.findAllByAct(act);
             for (EntranceControl control : controls) {
@@ -390,6 +410,7 @@ public class RegistryPdfService {
                 // Добавляем сертификат (если есть)
 
                 if (control.getMaterial() != null && control.getMaterial().getPath() != null) {
+            log.info(act.getActNumber());
                     Registry certRegistry = createCertificateRegistryEntry(control);
                     registries.add(certRegistry);
                 }
@@ -486,7 +507,6 @@ public class RegistryPdfService {
 
                 // Добавляем PDF и получаем количество страниц
                 int pages = addDocumentToMerge(copy, new ByteArrayInputStream(pdfStream.toByteArray())) / 2;
-
                 // Обновляем количество листов в записи реестра
                 journalRegistry.setNumberOfSheets(pages);
 
@@ -581,8 +601,11 @@ public class RegistryPdfService {
     private int addRemoteDocumentToMerge(PdfCopy copy, String documentUrl)
             throws IOException, DocumentException {
 
+
+        log.info("{}!!!!!", documentUrl);
         Path filePath = getFilePathFromUrl(documentUrl);
         if (!Files.exists(filePath)) {
+            log.info(filePath.toString());
             throw new IOException("Файл не найден: " + filePath);
         }
 
@@ -626,7 +649,7 @@ public class RegistryPdfService {
         public void onEndPage(PdfWriter writer, Document document) {
             int currentPhysicalPage = writer.getPageNumber();
 
-            // Нумеруем только нечётные физические страницы
+            // Нумеру��м только нечётные физические страницы
             if (currentPhysicalPage % 2 != 0) {
                 int logicalPageNumber = globalPageCounter.incrementAndGet();
                 addPageNumber(writer, document, logicalPageNumber);
@@ -648,5 +671,24 @@ public class RegistryPdfService {
                     0
             );
         }
+    }
+
+    private RegistryPeriodDto createPeriodDtoFromSortedActs(LocalDate startDate, LocalDate endDate) {
+
+        // Используем дату последнего акта для месяца/года в заголовке
+        LocalDate referenceDate = endDate != null ? endDate :
+                startDate != null ? startDate :
+                        LocalDate.now();
+
+        // Проверяем, что даты не null (или обрабатываем по-другому)
+        if (startDate == null) startDate = referenceDate;
+        if (endDate == null) endDate = referenceDate;
+
+        return RegistryPeriodDto.builder()
+                .monthId(referenceDate.getMonthValue())
+                .year(referenceDate.getYear())
+                .startDate(startDate)
+                .endDate(endDate)
+                .build();
     }
 }

@@ -36,7 +36,6 @@ public class Working {
     @Column(name = "work_done")
     private BigDecimal done;
 
-    @NotNull
     @Column(name = "unit_price", precision = 19, scale = 2)
     private BigDecimal unitPrice;
 
