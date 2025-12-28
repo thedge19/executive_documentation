@@ -2,59 +2,66 @@
   <Navbar/>
   <div class="container py-4">
     <div class="row justify-content-center">
-      <div class="col-12 mt-5">
-        <h1 class="text-center mb-4 text-light">Общий журнал работ. Раздел 6</h1>
-
+      <div class="col-12">
         <!-- Кнопки действий -->
-        <div class="d-flex justify-content-start mb-4">
-          <button @click="fillInTheLog"
-                  class="btn btn-success mx-2 shadow-sm rounded-pill position-relative overflow-hidden">
-            <span
-                class="position-absolute top-0 start-0 w-100 h-100 border-2 border-white border-opacity-25 rounded-pill"></span>
-            <i class="bi bi-file-earmark-plus me-2"></i>Сформировать 6 раздел
-          </button>
+        <div class="row justify-content-center mt-5">
+          <div class="col-12">
+            <!-- Заголовок по центру -->
+            <div class="d-flex align-items-center position-relative justify-content-center">
+              <h1 class="text-light" style="width: max-content;">
+                Общий журнал работ. Раздел 6
+              </h1>
+            </div>
 
-          <button @click="generatePdf"
-                  class="btn btn-info mx-2 shadow-sm rounded-pill position-relative overflow-hidden">
-            <span
-                class="position-absolute top-0 start-0 w-100 h-100 border-2 border-white border-opacity-25 rounded-pill"></span>
-            <i class="bi bi-file-earmark-pdf me-2"></i>Выгрузить в PDF
-          </button>
-        </div>
-
-        <!-- Таблица -->
-        <div class="card shadow-sm border-0">
-          <div class="card-body p-0">
-            <div class="table-responsive" style="max-height: 75vh;">
-              <table class="table table-hover mb-0">
-                <thead class="sticky-top" style="background-color: #002d72;">
-                <tr>
-                  <th class="text-center text-white fw-normal" style="width: 5%; background-color: #000000;">№ п/п</th>
-                  <th class="text-center text-white fw-normal" style="width: 60%; background-color: #000000;">
-                    Наименование исполнительной документации
-                  </th>
-                  <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">Дата
-                    подписания акта
-                  </th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-for="(act, index) in acts" :key="act.id"
-                    :class="{'table-light': index % 2 === 0}">
-                  <td class="text-center align-middle">{{ index + 1 }}</td>
-                  <td class="align-middle">Акт освидетельствования скрытых работ № {{ act.actNumber }} {{
-                      act.works
-                    }}
-                  </td>
-                  <td class="text-center align-middle">{{ act.endDate }}</td>
-                </tr>
-                </tbody>
-              </table>
+            <!-- Таблица -->
+            <div class="card shadow-sm border-0">
+              <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 84vh;">
+                  <table class="table table-hover mb-0">
+                    <thead class="sticky-top" style="background-color: #002d72;">
+                    <tr>
+                      <th class="text-center text-white fw-normal" style="width: 5%; background-color: #000000;">№ п/п
+                      </th>
+                      <th class="text-center text-white fw-normal" style="width: 60%; background-color: #000000;">
+                        Наименование исполнительной документации
+                      </th>
+                      <th class="text-center text-white fw-normal" style="width: 15%; background-color: #000000;">Дата
+                        подписания акта
+                      </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="(act, index) in acts" :key="act.id"
+                        :class="{'table-light': index % 2 === 0}">
+                      <td class="text-center align-middle">{{ index + 1 }}</td>
+                      <td class="align-middle">Акт освидетельствования скрытых работ № {{ act.actNumber }} {{
+                          act.works
+                        }}
+                      </td>
+                      <td class="text-center align-middle">{{ act.endDate }}</td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Floating action button -->
+  <div class="floating-buttons">
+    <!-- Generate PDF button -->
+    <button
+        class="btn btn-info floating-btn generate-pdf-btn"
+        @click="generatePdf"
+        :disabled="isLoading"
+    >
+      <i class="bi bi-file-earmark-pdf"></i>
+      <span class="floating-btn-text">Выгрузить в PDF</span>
+    </button>
   </div>
 </template>
 
@@ -80,25 +87,13 @@ const getAuthHeaders = () => {
 // Получение актов
 const getActs = async () => {
   try {
-    const response = await fetch('http://localhost:8080/worklog/6', {
+    const response = await fetch('http://localhost:8080/acts/worklog/6', {
       mode: 'cors',
       headers: getAuthHeaders()
     })
     acts.value = await response.json()
   } catch (error) {
     console.error('Ошибка при загрузке актов:', error)
-  }
-}
-
-
-// Формирование раздела
-const fillInTheLog = async () => {
-  try {
-    await fetch('http://localhost:8080/worklog/fill')
-    console.log("Запрос отправлен")
-    await getActs() // Обновляем список после формирования
-  } catch (error) {
-    console.error('Ошибка при формировании раздела:', error)
   }
 }
 
@@ -120,7 +115,7 @@ const generatePdf = async () => {
     const pdfWindow = window.open('', '_blank');
 
     // Делаем запрос с заголовками авторизации
-    const response = await fetch(`http://localhost:8080/worklog/6/pdf`, {
+    const response = await fetch(`http://localhost:8080/acts/worklog/6/pdf`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -177,98 +172,6 @@ body {
   overflow: hidden;
 }
 
-/* Стили для кнопок с эффектами */
-.btn {
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: translateY(0);
-  position: relative;
-  overflow: hidden;
-  border: none;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-  padding: 0.5rem 1.25rem;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-}
-
-/* Внутренняя граница */
-.btn::before {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  right: 2px;
-  bottom: 2px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50px;
-  pointer-events: none;
-}
-
-/* Эффект нажатия */
-.btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Эффект наведения */
-.btn:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* Специфичные цвета для кнопок */
-.btn-success {
-  background: linear-gradient(135deg, #28a745 0%, #218838 100%);
-}
-
-.btn-info {
-  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-}
-
-/* Эффект "волны" при клике */
-.btn::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 5px;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.5);
-  opacity: 0;
-  border-radius: 100%;
-  transform: scale(1, 1) translate(-50%);
-  transform-origin: 50% 50%;
-}
-
-.btn:focus:not(:active)::after {
-  animation: ripple 0.6s ease-out;
-}
-
-@keyframes ripple {
-  0% {
-    transform: scale(0, 0);
-    opacity: 0.5;
-  }
-  100% {
-    transform: scale(20, 20);
-    opacity: 0;
-  }
-}
-
-/* Иконки в кнопках */
-.btn .bi {
-  transition: transform 0.2s ease;
-}
-
-.btn:hover .bi {
-  transform: scale(1.1);
-}
-
-/* Убираем стандартный outline и добавляем кастомный */
-.btn:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 45, 114, 0.3);
-}
-
 /* Скролл таблицы */
 .table-responsive {
   scrollbar-width: thin;
@@ -308,5 +211,189 @@ body {
 /* Иконки для кнопок */
 .bi {
   font-size: 1rem;
+}
+
+/* Floating buttons styles */
+.floating-buttons {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: flex-end;
+}
+
+.floating-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: visible;
+  font-size: 1.2rem;
+  border: none;
+  z-index: 1001;
+  opacity: 1;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.floating-btn:hover {
+  transform: translateY(-4px) scale(1.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  z-index: 1002;
+  opacity: 1;
+}
+
+.floating-btn:active {
+  transform: translateY(2px) scale(0.95);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  transition: all 0.1s ease;
+}
+
+/* Эффект волны при нажатии */
+.floating-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.floating-btn:active::after {
+  transform: translate(-50%, -50%) scale(2);
+  opacity: 1;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+/* Эффект свечения при нажатии */
+.floating-btn:active {
+  filter: brightness(1.3);
+}
+
+.floating-btn-text {
+  position: absolute;
+  right: 100%;
+  margin-right: 15px;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(10px);
+  transition: all 0.3s ease;
+  pointer-events: none;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1003;
+}
+
+.floating-btn:hover .floating-btn-text {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.floating-btn-text::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  margin-top: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent transparent rgba(0, 0, 0, 0.9);
+}
+
+/* Generate PDF button */
+.generate-pdf-btn {
+  animation: floatUp 0.5s ease-out 0.2s both;
+  z-index: 1001;
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
+  border: none !important;
+  color: white !important;
+}
+
+.generate-pdf-btn:active {
+  background: linear-gradient(135deg, #138496 0%, #117a8b 100%) !important;
+  box-shadow: 0 2px 15px rgba(23, 162, 184, 0.6) !important;
+}
+
+.generate-pdf-btn:disabled {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%) !important;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.generate-pdf-btn:disabled:hover {
+  transform: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+@keyframes floatUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Анимация появления подсказки */
+.floating-btn:hover .floating-btn-text {
+  animation: tooltipFadeIn 0.3s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .floating-buttons {
+    bottom: 20px;
+    right: 20px;
+  }
+
+  .floating-btn {
+    width: 55px;
+    height: 55px;
+    font-size: 1.1rem;
+  }
+
+  .floating-btn-text {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    white-space: normal;
+    width: 140px;
+    text-align: center;
+  }
+}
+
+/* Убедимся, что кнопки поверх всего контента */
+.floating-buttons * {
+  z-index: inherit;
 }
 </style>

@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/files")
 @CrossOrigin(origins = {"http://localhost:5173", "http://frontend"})
-public class FileStorageController {
+public class
+FileStorageController {
 
     private final FileStorageService fileStorageService;
 

@@ -2,7 +2,6 @@ package com.executive_documentation.fileStorage.service;
 
 import com.executive_documentation.fileStorage.dto.FileStorageResponse;
 import com.itextpdf.text.pdf.PdfReader;
-import com.itextpdf.text.pdf.RandomAccessFileOrArray;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -63,17 +62,18 @@ public class FileStorageService {
             Path targetLocation = pdfDir.resolve(newFileName);
             int pageCount = 0;
 
+            // Читаем файл в память для подсчета страниц
+            byte[] fileBytes = file.getBytes();
+
+            // Подсчет страниц из байтов
+            pageCount = countPdfPagesFromBytes(fileBytes);
+
+            // Сохраняем файл
             try (InputStream inputStream = file.getInputStream()) {
-                // Сохраняем во временный файл
-                Path tempFile = Files.createTempFile("pdf_", ".tmp");
-                Files.copy(inputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
-
-                // Подсчет страниц
-                pageCount = countPdfPages(tempFile);
-
-                // Переносим в постоянное хранилище
-                Files.move(tempFile, targetLocation, StandardCopyOption.REPLACE_EXISTING);
+                Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
             }
+
+            log.info("Файл: {}, листов: {}", newFileName, pageCount);
 
             return new FileStorageResponse(newFileName, pageCount);
 
@@ -131,40 +131,29 @@ public class FileStorageService {
         }
     }
 
-    private int countPdfPages(Path pdfFile) throws IOException {
-        RandomAccessFileOrArray raf = null;
+    private int countPdfPagesFromBytes(byte[] pdfBytes) throws IOException {
         PdfReader reader = null;
 
         try {
-            raf = new RandomAccessFileOrArray(pdfFile.toString());
-            reader = new PdfReader(raf, null);
+            reader = new PdfReader(pdfBytes);
             int pages = reader.getNumberOfPages();
 
-            // Проверка на чётность
             if (pages % 2 != 0) {
                 throw new IllegalStateException(
                         "PDF должен содержать чётное количество страниц. Найдено: " + pages
                 );
             }
 
-            return pages / 2; // Возвращаем количество листов (каждый лист = 2 страницы)
-
+            return pages / 2;
         } catch (Exception e) {
             if (e instanceof IllegalStateException) {
-                throw e; // Пробрасываем нашу проверку на чётность выше
+                throw e;
             }
-            log.warn("Failed to count PDF pages, assuming 1", e);
+            log.warn("Failed to count PDF pages from bytes, assuming 1", e);
             return 1;
         } finally {
-            try {
-                if (reader != null) {
-                    reader.close();
-                }
-                if (raf != null) {
-                    raf.close();
-                }
-            } catch (IOException e) {
-                log.warn("Error closing PDF resources", e);
+            if (reader != null) {
+                reader.close();
             }
         }
     }

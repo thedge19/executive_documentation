@@ -1,9 +1,13 @@
 package com.executive_documentation.acts.service;
 
-import com.executive_documentation.acts.dto.ActMapper;
-import com.executive_documentation.acts.dto.ActResponseDto;
-import com.executive_documentation.acts.dto.EntranceControlMapper;
-import com.executive_documentation.acts.dto.EntranceControlResponseDto;
+import com.executive_documentation.acts.dto.act.ActLogDto;
+import com.executive_documentation.acts.dto.act.ActLogResponseDto;
+import com.executive_documentation.acts.dto.act.ActMapper;
+import com.executive_documentation.acts.dto.act.ActResponseDto;
+import com.executive_documentation.acts.dto.entrance.EntranceControlMapper;
+import com.executive_documentation.acts.dto.entrance.EntranceControlResponseDto;
+import com.executive_documentation.acts.dto.materials.MaterialDto;
+import com.executive_documentation.acts.dto.worklog.WorkLogDto;
 import com.executive_documentation.acts.model.Act;
 import com.executive_documentation.acts.model.EntranceControl;
 import com.executive_documentation.acts.model.ExecutiveSchema;
@@ -15,9 +19,7 @@ import com.executive_documentation.exception.ValidationException;
 import com.executive_documentation.fileStorage.dto.FileStorageResponse;
 import com.executive_documentation.fileStorage.service.FileStorageService;
 import com.executive_documentation.materials.dto.MaterialQuantityDto;
-import com.executive_documentation.materials.model.Certificate;
 import com.executive_documentation.materials.model.Material;
-import com.executive_documentation.materials.repository.CertificateRepository;
 import com.executive_documentation.materials.repository.MaterialRepository;
 import com.executive_documentation.projects.model.Project;
 import com.executive_documentation.projects.repository.ProjectRepository;
@@ -36,7 +38,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -54,7 +57,6 @@ public class ActServiceImplementation implements ActService {
     private final ExecutiveSchemaRepository executiveSchemaRepository;
     private final WorkingRepository workingRepository;
     private final MaterialRepository materialRepository;
-    private final CertificateRepository certificateRepository;
 
     private static final String CONTROL_ACT = "Акт результатов входного контроля МТР и оборудования №";
     private static final String EXECUTIVE_SCHEMA = "Исполнительная схема №";
@@ -87,7 +89,7 @@ public class ActServiceImplementation implements ActService {
                     ActResponseDto dto = actMapper.actToActResponseDto(act);
                     if (act.getExecutiveSchema() != null) {
                         dto.setExecutiveSchemaUrl(
-                                fileStorageService.getFilePublicUrl(act.getExecutiveSchema().getSchemaPath())
+                                fileStorageService.getStorageBaseUrl(act.getExecutiveSchema().getSchemaPath())
                         );
                     }
                     return dto;
@@ -114,7 +116,7 @@ public class ActServiceImplementation implements ActService {
         return executiveSchemaRepository.findAllByOrderBySchemasActNumberAsc()
                 .stream()
                 .peek(schema -> {
-                    String path = fileStorageService.getFilePublicUrl(schema.getSchemaPath());
+                    String path = fileStorageService.getStorageBaseUrl(schema.getSchemaPath());
                     schema.setSchemaPath(path);
                 }).collect(Collectors.toList());
     }
@@ -191,31 +193,52 @@ public class ActServiceImplementation implements ActService {
         createdAct.setWorkDone(parseBigDecimal(formData.get("workDone")));
         createdAct.setSubmittedDocuments(addSubmittedDocuments(formData, actNumber));
 
-        String materials = formData.get("materials");
-
-        createdAct.setMaterials(getMaterials(materials));
-        createdAct.setExecutiveSchema(addExecutiveSchema(actNumber, file));
-
-        actRepository.save(createdAct);
+        List<MaterialDto> materials = extractMaterialsFromFormData(formData);
 
         String controlDate = formData.get("controlDate");
 
-        if (getMaterials(materials) != null) {
+        if (!materials.isEmpty()) {
             addEntranceControl(createdAct, materials, controlDate);
         }
+
+        StringBuilder addedMaterials = new StringBuilder();
+
+        if (!materials.isEmpty()) {
+            for (MaterialDto dto : materials) {
+                Material material = materialRepository.findById(dto.getMaterialId()).orElseThrow();
+                String quantity = String.valueOf(dto.getQuantity());
+                addedMaterials.append(material.getName())
+                        .append(" - ")
+                        .append(quantity)
+                        .append(" ")
+                        .append(material.getUnits())
+                        .append(", ")
+                        .append(material.getCertificateName())
+                        .append("; ");
+            }
+            createdAct.setMaterials(addedMaterials.substring(0, addedMaterials.length() - 2));
+        }
+
+        log.info("materials {}", createdAct.getMaterials());
+        createdAct.setExecutiveSchema(addExecutiveSchema(actNumber, file));
+
+        actRepository.save(createdAct);
 
         log.info("Акт: {}", createdAct);
     }
 
     @Transactional
     @Override
-    public ActResponseDto actUpdate(long id, MultipartFile file) {
-        Act act = findActOrThrow(id);
-        String oldSubmittedDocuments = act.getSubmittedDocuments();
-        String newSubmittedDocuments = "Исполнительная схема №" + act.getActNumber() + " от "
-         + dateToString(act.getEndDate()) + " г.; " + oldSubmittedDocuments;
-        act.setSubmittedDocuments(newSubmittedDocuments);
-        act.setExecutiveSchema(addExecutiveSchema(act.getActNumber(), file));
+    public ActResponseDto actUpdate(long id, String works, MultipartFile file) {
+        Act act = actRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Act not found with id: " + id));
+
+        act.setWorks(works);
+
+        if (file != null) {
+            act.setExecutiveSchema(addExecutiveSchema(act.getActNumber(), file));
+        }
+
         return actMapper.actToActResponseDto(actRepository.save(act));
     }
 
@@ -249,20 +272,13 @@ public class ActServiceImplementation implements ActService {
         actRepository.delete(act);
     }
 
-    @Override
-    public Act findActOrThrow(long id) {
-        return actRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Act not found with id: " + id));
-    }
-
     @Transactional
     @Override
     public void deleteSchema(long id) {
         ExecutiveSchema schema = executiveSchemaRepository.findById(id).orElseThrow(() -> new NotFoundException("ExecutiveSchema not found with id: " + id));
 
-        Act act = actRepository.findByExecutiveSchema(schema).orElseThrow(() -> new NotFoundException("Act not found with id: " + id));
+        actRepository.findByExecutiveSchema(schema).ifPresent(act -> act.setExecutiveSchema(null));
 
-        act.setExecutiveSchema(null);
         executiveSchemaRepository.deleteById(id);
         fileStorageService.deleteFile(schema.getSchemaPath());
     }
@@ -304,13 +320,78 @@ public class ActServiceImplementation implements ActService {
         return 100 * actRepository.countAllActs() / workingRepository.countAllWorkings();
     }
 
+    @Override
+    public List<WorkLogDto> getWorkLog3() {
+
+        List<ActLogDto> acts = actRepository.findAllByOrderByStartDateAscActNumberAsc()
+                .stream()
+                .map(ActMapper::actToActLogDto)
+                .toList();
+        List<LocalDate> workLogDates = new ArrayList<>();
+        Map<LocalDate, Map<String, List<String>>> logRows = new HashMap<>();
+
+        for (ActLogDto act : acts) {
+            ArrayList<LocalDate> actDates = new ArrayList<>();
+            for (LocalDate d = act.getStartDate(); !d.isAfter(act.getEndDate()); d = d.plusDays(1)) {
+                actDates.add(d);
+                if (!workLogDates.contains(d)) {
+                    workLogDates.add(d);
+                }
+            }
+
+            String subObjectName = act.getWorks().split(":", 2)[0].trim();
+            double workDone = act.getWorkDone().doubleValue();
+
+            String currentWork = getCurrentWork(act.getWorks())[0];
+
+            double rowWorkDone = workDone / actDates.size();
+
+            for (int k = 0; k < actDates.size(); k++) {
+                LocalDate rowDate = actDates.get(k);
+
+                if (actDates.size() > 1) {
+                    if (k != actDates.size() - 1) {
+                        workDone = workDone - rowWorkDone;
+                    } else {
+                        rowWorkDone = workDone;
+                    }
+                }
+                String rowCurrentWork = currentWork + " - " + String.format("%.2f", rowWorkDone) + " " + getCurrentWork(act.getWorks())[1];
+
+                if (logRows.get(rowDate) == null) {
+                    Map<String, List<String>> row = new HashMap<>();
+                    List<String> rowWorks = new ArrayList<>();
+                    rowWorks.add(rowCurrentWork);
+                    row.put(subObjectName, rowWorks);
+                    logRows.put(actDates.get(k), row);
+                } else {
+                    if (logRows.get(rowDate).get(subObjectName) == null) {
+                        List<String> rowWorks = new ArrayList<>();
+                        rowWorks.add(rowCurrentWork);
+                        logRows.get(rowDate).put(subObjectName, rowWorks);
+                    } else {
+                        logRows.get(rowDate).get(subObjectName).add(rowCurrentWork);
+                    }
+                }
+            }
+        }
+
+        return getWorkLogs(workLogDates, logRows);
+    }
+
+    @Override
+    public List<ActLogResponseDto> getWorkLog6() {
+        List<Act> acts = actRepository.findAllByOrderByEndDateAscActNumberAsc();
+
+        return acts.stream().map(ActMapper::actToActLogResponseDto).toList();
+    }
+
     // Вспомогательные методы
     private void validateFile(MultipartFile file) {
         if (!Objects.requireNonNull(file.getContentType()).equalsIgnoreCase("application/pdf")) {
             throw new ValidationException("Only PDF files are allowed");
         }
     }
-
 
     private static Long parseLong(String value) {
         if (value == null || value.isEmpty()) {
@@ -446,83 +527,27 @@ public class ActServiceImplementation implements ActService {
         return String.join("; ", submittedDocuments);
     }
 
-    private String getMaterials(String materials) {
-        List<MaterialQuantityDto> materialsDto = parseMaterials(materials);
-        if (materialsDto.isEmpty()) {
-            return null;
-        }
+    private void addEntranceControl(Act act, List<MaterialDto> materialsList, String strControlDate) {
 
-        // Получаем все материалы и их сертификаты одним запросом
-        List<Long> materialIds = materialsDto.stream()
-                .map(MaterialQuantityDto::getMaterialId)
-                .collect(Collectors.toList());
-
-        Map<Long, Material> materialsMap = materialRepository.findAllWithCertificatesByIdIn(materialIds)
-                .stream()
-                .collect(Collectors.toMap(Material::getId, Function.identity()));
-
-        // Формируем строку с материалами
-        return materialsDto.stream()
-                .map(dto -> {
-                    Material material = materialsMap.get(dto.getMaterialId());
-                    if (material == null) {
-                        return null;
-                    }
-
-                    String certificates = material.getCertificates().stream()
-                            .map(Certificate::getName)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.joining("; "));
-
-                    return String.format("%s - %s %s, %s",
-                            material.getName(),
-                            dto.getQuantity(),
-                            material.getUnits(),
-                            certificates);
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.joining("; "));
-    }
-
-    private void addEntranceControl(Act act, String strMaterials, String strControlDate) {
-
-        List<Long> materialIds = getMaterialIds(strMaterials);
-        List<BigDecimal> materialQuantities = getMaterialQuantities(strMaterials);
-
-        List<Material> materials = materialRepository.findAllById(materialIds);
         int counter = 1;
 
         LocalDate controlDate = parseDate(strControlDate);
 
-        for (int count = 0; count < materials.size(); count++) {
+        for (MaterialDto dto : materialsList) {
             EntranceControl entranceControl = new EntranceControl();
 
-            Material material = materials.get(count);
+            Long materialId = dto.getMaterialId();
 
-            String addedMaterial = material.getName() + " - " + materialQuantities.get(count) + " " + materials.get(count).getUnits();
+            Material material = materialRepository.findById(materialId).orElse(null);
 
-            List<Certificate> certificates = certificateRepository.findAllByMaterial(material);
-
-            String addedDocuments = certificates.stream()
-                    .map(Certificate::getName)  // Извлекаем только имена
-                    .filter(Objects::nonNull)   // Фильтруем null значения (если нужно)
-                    .collect(Collectors.joining("; "));
-            String controlActNumber = materials.size() == 1 ? act.getActNumber() : act.getActNumber() + "-" + counter;
-            int totalPages = certificates.stream()
-                    .mapToInt(cert -> cert.getNumberOfPages() != null ? cert.getNumberOfPages() : 0)
-                    .sum();
+            log.info("Фйдишник материала {}", materialId);
+            String controlActNumber = materialsList.size() == 1 ? act.getActNumber() : act.getActNumber() + "-" + counter;
 
             entranceControl.setAct(act);
-            entranceControl.setProject(act.getProject());
-            entranceControl.setSubObjectName(act.getSubObject().getName());
             entranceControl.setControlNumber(controlActNumber);
             entranceControl.setDate(controlDate);
-            entranceControl.setMaterials(addedMaterial);
-            entranceControl.setDocuments(addedDocuments);
-            entranceControl.setStandard(material.getStandard());
-            entranceControl.setControlSheetNumbers(totalPages);
-            entranceControl.setAuthor(certificates.getFirst().getAuthor());
             entranceControl.setMaterial(material);
+            entranceControl.setQuantity(dto.getQuantity());
 
             counter++;
 
@@ -536,23 +561,11 @@ public class ActServiceImplementation implements ActService {
         }
     }
 
-    private List<Long> getMaterialIds(String materials) {
-        return parseMaterials(materials).stream()
-                .map(MaterialQuantityDto::getMaterialId)
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
-    private List<BigDecimal> getMaterialQuantities(String materials) {
-        return parseMaterials(materials).stream()
-                .map(MaterialQuantityDto::getQuantity)
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
     private ExecutiveSchema addExecutiveSchema(String actNumber, MultipartFile file) {
         if (file != null && !file.isEmpty()) {
+
             validateFile(file); // Добавили валидацию файла
+            log.info("Add ExecutiveSchema: {}", actNumber);
 
             // Сохранение нового файла
             FileStorageResponse response = fileStorageService.storeFile(file);
@@ -576,5 +589,80 @@ public class ActServiceImplementation implements ActService {
         schema.setSchemasActNumber(actNumber);
         schema.setSchemaPath(fileName);
         return schema;
+    }
+
+    private String[] getCurrentWork(String currentWork) {
+        currentWork = currentWork.split(":", 2)[1].trim();
+
+        String[] works = currentWork.split(" ");
+        int worksSize = works.length;
+
+        StringBuilder workString = new StringBuilder();
+        String units = works[worksSize - 1];
+
+        for (int j = 0; j < worksSize - 3; j++) {
+            workString.append(works[j]);
+            workString.append(" ");
+        }
+
+        return new String[]{workString.toString().trim(), units.trim()};
+    }
+
+    private List<WorkLogDto> getWorkLogs(List<LocalDate> workLogDates, Map<LocalDate, Map<String, List<String>>> logRows) {
+        int i = 1;
+
+        List<WorkLogDto> workLogs = new ArrayList<>();
+
+        for (LocalDate d : workLogDates) {
+
+            WorkLogDto workLog = new WorkLogDto();
+
+            workLog.setWorkDate(d);
+            Set<String> rowKeySet = logRows.get(d).keySet();
+            StringBuilder workLogName = new StringBuilder();
+
+            for (String rowKey : rowKeySet) {
+                workLogName.append(rowKey).append(": ");
+                for (String work : logRows.get(d).get(rowKey)) {
+                    workLogName.append(work).append("; ");
+                }
+            }
+            workLog.setName(workLogName.toString());
+            workLog.setWorkLogNumber(i);
+
+            workLogs.add(workLog);
+
+            i++;
+        }
+        return workLogs;
+    }
+
+    public List<MaterialDto> extractMaterialsFromFormData(Map<String, String> formData) {
+        Pattern pattern = Pattern.compile("materials\\[(\\d+)\\]\\.(materialId|quantity)");
+        Map<Integer, MaterialDto> materialMap = new HashMap<>();
+
+        for (Map.Entry<String, String> entry : formData.entrySet()) {
+            Matcher matcher = pattern.matcher(entry.getKey());
+            if (matcher.matches()) {
+                int index = Integer.parseInt(matcher.group(1));
+                String field = matcher.group(2);
+
+                MaterialDto material = materialMap.getOrDefault(index, new MaterialDto());
+
+                if ("materialId".equals(field)) {
+                    material.setMaterialId(Long.valueOf(entry.getValue()));
+                } else if ("quantity".equals(field)) {
+                    material.setQuantity(new BigDecimal(entry.getValue()));
+                }
+
+                materialMap.put(index, material);
+            }
+        }
+
+        return materialMap.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(Map.Entry::getValue)
+                .filter(m -> m.getMaterialId() != null && m.getQuantity() != null)
+                .collect(Collectors.toList());
     }
 }

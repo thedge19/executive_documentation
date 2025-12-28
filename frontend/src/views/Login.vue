@@ -44,8 +44,8 @@
 
           <!-- Кнопка входа -->
           <div class="d-grid">
-            <button type="submit" class="btn btn-primary py-2" :disabled="loading">
-              <template v-if="loading">
+            <button type="submit" class="btn btn-primary py-2" :disabled="loading || redirecting">
+              <template v-if="loading || redirecting">
                 <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                 Вход...
               </template>
@@ -69,10 +69,12 @@ const email = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
+const redirecting = ref(false)
 
 const handleLogin = async () => {
   try {
     loading.value = true
+    redirecting.value = false
     error.value = ''
 
     const response = await fetch('http://localhost:8080/api/auth/login', {
@@ -101,6 +103,10 @@ const handleLogin = async () => {
     }
 
     localStorage.setItem('token', token)
+    redirecting.value = true
+
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
     await router.push('/')
   } catch (err) {
     error.value = err.message || 'Произошла ошибка при входе в систему'

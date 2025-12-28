@@ -2,6 +2,7 @@ package com.executive_documentation.subobjects.controller;
 
 import com.executive_documentation.subobjects.dto.SubObjectRequestDto;
 import com.executive_documentation.subobjects.dto.SubObjectResponseDto;
+import com.executive_documentation.subobjects.dto.SubObjectUpdateDto;
 import com.executive_documentation.subobjects.model.SubObject;
 import com.executive_documentation.subobjects.service.SubObjectService;
 import lombok.RequiredArgsConstructor;
@@ -46,9 +47,8 @@ public class SubObjectController {
 
     @PatchMapping("/{id}")
     public SubObject update(@PathVariable long id,
-                            @RequestBody SubObject subObject) {
-        log.info("Update SubObject: {}", subObject.getName());
-        SubObject subObjectUpdated = subObjectService.update(id, subObject);
+                            @RequestBody SubObjectUpdateDto updateDto) {
+        SubObject subObjectUpdated = subObjectService.update(id, updateDto);
         log.info("Update SubObject: {}", subObjectUpdated);
         return subObjectUpdated;
     }

@@ -5,7 +5,6 @@ import ViewProjects from "@/views/projects/ViewProjects.vue";
 import ViewStandards from "@/views/standards/ViewStandards.vue";
 import ViewSubObjects from "@/views/subObjects/ViewSubObjects.vue";
 import ViewWorks from "@/views/works/ViewWorks.vue";
-import ViewControl from "@/views/controls/ViewControl.vue";
 import ViewSchemas from "@/views/schemas/ViewSchemas.vue";
 import Login from "@/views/Login.vue";
 import Dashboard from "@/views/Dashboard.vue";
@@ -62,27 +61,9 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/addProject',
-      name: 'addProject',
-      component: () => import('../views/projects/AddProject.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/editProject/:id',
-      name: 'editProject',
-      component: () => import('../views/projects/UpdateProject.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
       path: '/materials',
       name: 'viewMaterials',
       component: ViewMaterials,
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/addMaterial',
-      name: 'addMaterial',
-      component: () => import('../views/materials/AddMaterial.vue'),
       meta: { requiresAuth: true }
     },
     {
@@ -98,32 +79,9 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/addStandard',
-      name: 'addStandard',
-      component: () => import('../views/standards/AddStandard.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/editStandard/:id',
-      name: 'editStandard',
-      component: () => import('../views/standards/UpdateStandard.vue')
-    },
-    {
       path: '/subObjects/:id',
       name: 'viewSubObjects',
       component: ViewSubObjects,
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/addSubObject',
-      name: 'addSubObject',
-      component: () => import('../views/subObjects/AddSubObject.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/editSubObject/:id',
-      name: 'editSubObject',
-      component: () => import('../views/subObjects/UpdateSubObject.vue'),
       meta: { requiresAuth: true }
     },
     {
@@ -133,21 +91,9 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/addWork/:id',
-      name: 'addWork',
-      component: () => import('../views/works/AddWork.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
       path: '/editWork/:id',
       name: 'editWork',
       component: () => import('../views/works/UpdateWork.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/controls',
-      name: 'viewControls',
-      component: ViewControl,
       meta: { requiresAuth: true }
     },
     {
@@ -173,7 +119,7 @@ const router = createRouter({
 
 // Глобальный навигационный хук
 router.beforeEach((to, from, next) => {
-  console.log('Navigation:', to.path, 'Token exists:', !!localStorage.getItem('token'))
+  console.log('Navigation:', to.path, 'Token exists:', !!localStorage.getItem('accessToken'))
 
   if (!to.meta.requiresAuth) {
     next()

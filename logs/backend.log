@@ -1,0 +1,28 @@
+2025-06-05 00:43:15.496 [main] INFO  c.e.ExecutiveDocumentationApplication - Starting ExecutiveDocumentationApplication using Java 21.0.7 with PID 17956 (C:\Users\User\IdeaProjects\executive_documentation\backend\target\classes started by User in C:\Users\User\IdeaProjects\executive_documentation)
+2025-06-05 00:43:15.500 [main] DEBUG c.e.ExecutiveDocumentationApplication - Running with Spring Boot v3.4.5, Spring v6.2.6
+2025-06-05 00:43:15.501 [main] INFO  c.e.ExecutiveDocumentationApplication - No active profile set, falling back to 1 default profile: "default"
+2025-06-05 00:43:17.379 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2025-06-05 00:43:17.393 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-06-05 00:43:17.394 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.40]
+2025-06-05 00:43:17.450 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-06-05 00:43:17.451 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1902 ms
+2025-06-05 00:43:17.621 [main] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'actController' defined in file [C:\Users\User\IdeaProjects\executive_documentation\backend\target\classes\com\executive_documentation\acts\controller\ActController.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'actServiceImplementation' defined in file [C:\Users\User\IdeaProjects\executive_documentation\backend\target\classes\com\executive_documentation\acts\service\ActServiceImplementation.class]: Unsatisfied dependency expressed through constructor parameter 1: No qualifying bean of type 'com.executive_documentation.acts.repository.ActRepository' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+2025-06-05 00:43:17.625 [main] INFO  o.a.catalina.core.StandardService - Stopping service [Tomcat]
+2025-06-05 00:43:17.643 [main] INFO  o.s.b.a.l.ConditionEvaluationReportLogger - 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2025-06-05 00:43:17.664 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 1 of constructor in com.executive_documentation.acts.service.ActServiceImplementation required a bean of type 'com.executive_documentation.acts.repository.ActRepository' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'com.executive_documentation.acts.repository.ActRepository' in your configuration.
+

@@ -2,7 +2,6 @@ package com.executive_documentation.workings.dto;
 
 import com.executive_documentation.standard.model.Standard;
 import com.executive_documentation.standard.repository.StandardRepository;
-import com.executive_documentation.subobjects.model.SubObject;
 import com.executive_documentation.subobjects.repository.SubObjectRepository;
 import com.executive_documentation.workings.model.Working;
 import lombok.RequiredArgsConstructor;

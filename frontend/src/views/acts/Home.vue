@@ -1,52 +1,65 @@
 <template>
   <Navbar/>
-  <div class="container-fluid px-4 py-4">
+  <div class="container-fluid px-4 py-1">
     <div class="card shadow-sm border-0">
       <div class="card-body p-0">
-        <h1 class="text-center text-primary my-4 mt-5">АОСР</h1>
-
-        <!-- Action buttons -->
-        <div class="d-flex justify-content-start px-4">
-          <div>
-            <a href="/addAct" class="btn btn-primary rounded-pill px-4">
-              <i class="bi bi-plus-lg me-2"></i>Добавить акт
-            </a>
-          </div>
-          <div class="mx-4">
-            <button v-if="showDates" @click.prevent="showRegistryDates"
-                    class="btn btn-outline-dark rounded-pill px-4">
-              <i class="bi bi-border-width me-2"></i>Реестр
-            </button>
-          </div>
-        </div>
-
-        <!-- Date selection form -->
-        <div v-if="!showDates" class="px-4 py-3">
-          <div class="d-flex flex-wrap align-items-center gap-3">
-            <div>
-              <label class="input-group-text"><i class="bi bi-calendar-month me-2"></i>Дата начала периода</label>
-              <VDatePicker v-model="startDate" mode="date"/>
+        <!-- Bulk actions panel -->
+        <div v-if="selectedActs.length > 0" class="bulk-actions-panel sticky-top bg-light py-2 px-3 border-bottom shadow-sm">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+              <span class="me-3">
+                <i class="bi bi-check2-circle text-primary me-1"></i>
+                Выбрано актов: <strong>{{ selectedActs.length }}</strong>
+              </span>
+              <button
+                  class="btn btn-sm btn-outline-secondary me-2"
+                  @click="toggleSelectAll"
+              >
+                <template v-if="selectedActs.length === acts.length">
+                  <i class="bi bi-check2-square me-1"></i>Снять выделение
+                </template>
+                <template v-else>
+                  <i class="bi bi-check-square me-1"></i>Выбрать все
+                </template>
+              </button>
+              <button
+                  class="btn btn-sm btn-link text-danger"
+                  @click="clearSelection"
+              >
+                <i class="bi bi-x-circle me-1"></i>Очистить
+              </button>
             </div>
-            <div>
-              <label class="input-group-text"><i class="bi bi-calendar-month me-2"></i>Дата окончания периода</label>
-              <VDatePicker v-model="endDate" mode="date"/>
+            <div class="d-flex align-items-center">
+              <button
+                  class="btn btn-success btn-sm me-2"
+                  @click="generateSelectedPdf"
+                  :disabled="isGeneratingSelected"
+              >
+                <template v-if="isGeneratingSelected">
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Формирование...
+                </template>
+                <template v-else>
+                  <i class="bi bi-file-earmark-pdf me-1"></i>Выгрузить выбранные
+                </template>
+              </button>
             </div>
-          </div>
-          <div class="d-flex mt-3">
-            <button @click.prevent="addDates" class="btn btn-outline-success rounded-pill px-4 me-2">
-              <i class="bi bi-file-earmark-pdf me-2 text-danger"></i>Сформировать реестр
-            </button>
-            <button @click.prevent="showRegistryDates" class="btn btn-outline-danger rounded-pill px-4">
-              <i class="bi bi-x"></i>Отмена
-            </button>
           </div>
         </div>
 
         <!-- Table with black header -->
-        <div class="table-responsive mt-3" style="max-height: 78vh;">
+        <div class="table-responsive mt-5" style="max-height: 94vh;">
           <table class="table table-hover align-middle mb-0">
             <thead class="sticky-top">
             <tr>
+              <th class="text-white text-center" style="width: 4%; background-color: #000000">
+                <input
+                    type="checkbox"
+                    class="form-check-input"
+                    :checked="selectedActs.length === acts.length && acts.length > 0"
+                    @change="toggleSelectAll"
+                />
+              </th>
               <th class="text-white text-center" style="width: 7%; background-color: #000000">№</th>
               <th class="text-white text-center" style="width: 5%; background-color: #000000">Дата</th>
               <th class="text-white text-center" style="width: 15%; background-color: #000000">Объект</th>
@@ -65,6 +78,14 @@
             </thead>
             <tbody>
             <tr v-for="act in acts" :key="act.id">
+              <td class="text-center">
+                <input
+                    type="checkbox"
+                    class="form-check-input"
+                    :checked="isSelected(act.id)"
+                    @change="toggleSelection(act.id)"
+                />
+              </td>
               <td class="text-center">{{ act.actNumber }}</td>
               <td class="text-center" :style="[act.executiveSchemaId != null ? `color:blue` : `color:red`]">
                 {{ act.endDate }}
@@ -94,6 +115,94 @@
       </div>
     </div>
   </div>
+
+  <div
+      v-if="isDatePanelOpen"
+      class="floating-date-overlay"
+      @click="toggleDatePanel"
+  ></div>
+  <!-- Floating date pickers -->
+  <div class="floating-date-pickers" :class="{ 'floating-date-pickers--open': isDatePanelOpen }">
+    <div class="floating-date-item">
+      <label class="floating-date-label">
+        <i class="bi bi-calendar-plus me-2"></i>Начало периода
+      </label>
+      <VDatePicker v-model="startDate" mode="date" class="floating-date-picker" />
+    </div>
+
+    <div class="floating-date-item">
+      <label class="floating-date-label">
+        <i class="bi bi-calendar-check me-2"></i>Окончание периода
+      </label>
+      <VDatePicker v-model="endDate" mode="date" class="floating-date-picker" />
+    </div>
+
+    <div class="floating-date-actions">
+      <button
+          @click.prevent="addDates"
+          class="btn btn-success rounded-pill px-3 btn-sm"
+          :disabled="isGeneratingRegistry"
+      >
+        <template v-if="isGeneratingRegistry">
+          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          Формирование...
+        </template>
+        <template v-else>
+          <i class="bi bi-file-earmark-pdf me-2"></i>Сформировать
+        </template>
+      </button>
+      <button
+          @click.prevent="toggleDatePanel"
+          class="btn btn-danger rounded-pill px-3 btn-sm"
+      >
+        <i class="bi bi-x me-1"></i>Отмена
+      </button>
+    </div>
+  </div>
+
+  <!-- Floating action buttons -->
+  <div class="floating-buttons">
+    <!-- Journal button -->
+    <button
+        class="btn floating-btn journal-btn"
+        @click="generateLogPdf"
+        :disabled="isLoading"
+        :class="{ 'btn-pulse': isLoading }"
+    >
+      <i class="bi bi-file-earmark-pdf"></i>
+      <span class="floating-btn-text">Сформировать журнал входного контроля</span>
+    </button>
+
+    <!-- Registry button -->
+    <button
+        class="btn btn-outline-secondary floating-btn registry-btn"
+        @click="toggleDatePanel"
+    >
+      <i class="bi bi-border-width"></i>
+      <span class="floating-btn-text">{{ isDatePanelOpen ? 'Скрыть даты' : 'Сформировать комплект ИД' }}</span>
+    </button>
+
+    <!-- Selected acts button -->
+    <button
+        class="btn btn-warning floating-btn selected-btn"
+        @click="scrollToTop"
+        v-if="selectedActs.length > 0"
+    >
+      <i class="bi bi-check-circle"></i>
+      <span class="floating-btn-text">
+        Выбрано: {{ selectedActs.length }}
+      </span>
+    </button>
+
+    <!-- Add act button -->
+    <a
+        href="/addAct"
+        class="btn btn-info floating-btn add-btn"
+    >
+      <i class="bi bi-plus-lg"></i>
+      <span class="floating-btn-text">Добавить новый АОСР</span>
+    </a>
+  </div>
 </template>
 
 <script setup>
@@ -101,12 +210,15 @@ import {ref, onMounted} from 'vue'
 import Navbar from '../../components/Navbar.vue'
 
 const acts = ref([])
+const selectedActs = ref([]) // Массив для хранения ID выбранных актов
 const path = ref('http://localhost:8080/acts')
 const startDate = ref(new Date())
 const endDate = ref(new Date())
-const showDates = ref(true)
+const isDatePanelOpen = ref(false)
 const isLoading = ref(false)
+const isGeneratingSelected = ref(false)
 const error = ref(null)
+const isGeneratingRegistry = ref(false)
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token')
@@ -152,6 +264,100 @@ const getActs = async () => {
   }
 }
 
+// Проверка, выбран ли акт
+const isSelected = (actId) => {
+  return selectedActs.value.includes(actId)
+}
+
+// Переключение выбора акта
+const toggleSelection = (actId) => {
+  const index = selectedActs.value.indexOf(actId)
+  if (index > -1) {
+    // Удаляем из выбранных
+    selectedActs.value.splice(index, 1)
+  } else {
+    // Добавляем в выбранные
+    selectedActs.value.push(actId)
+  }
+}
+
+// Выбрать/снять выделение со всех актов
+const toggleSelectAll = () => {
+  if (selectedActs.value.length === acts.value.length) {
+    // Если уже все выбраны - снимаем выделение
+    selectedActs.value = []
+  } else {
+    // Выбираем все акты
+    selectedActs.value = acts.value.map(act => act.id)
+  }
+}
+
+// Очистить выделение
+const clearSelection = () => {
+  selectedActs.value = []
+}
+
+// Прокрутка к верху (для панели выбранных актов)
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// Генерация PDF для выбранных актов
+const generateSelectedPdf = async () => {
+  if (selectedActs.value.length === 0) {
+    alert('Выберите хотя бы один акт для выгрузки')
+    return
+  }
+
+  try {
+    isGeneratingSelected.value = true
+    error.value = null
+
+    const token = localStorage.getItem('token')
+    if (!token) {
+      handleUnauthorized()
+      return
+    }
+
+    const response = await fetch('http://localhost:8080/acts/registries/selected', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        actIds: selectedActs.value
+      })
+    })
+
+    if (response.status === 401) {
+      handleUnauthorized()
+      return
+    }
+
+    if (!response.ok) {
+      error.value = 'Ошибка сервера при формировании PDF';
+      return;
+    }
+
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `выбранные-акты-${new Date().toISOString().slice(0, 10)}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+
+  } catch (err) {
+    console.error('Ошибка при генерации PDF для выбранных актов:', err)
+    error.value = 'Не удалось сформировать PDF для выбранных актов'
+  } finally {
+    isGeneratingSelected.value = false
+  }
+}
+
 const deleteAct = async (id) => {
   if (!confirm('Вы уверены, что хотите удалить этот акт?')) return
 
@@ -171,6 +377,12 @@ const deleteAct = async (id) => {
       return;
     }
 
+    // Удаляем акт из списка выбранных, если он там был
+    const index = selectedActs.value.indexOf(id)
+    if (index > -1) {
+      selectedActs.value.splice(index, 1)
+    }
+
     await getActs()
   } catch (err) {
     console.error('Ошибка:', err)
@@ -186,15 +398,13 @@ const generatePdf = async (actId) => {
       return;
     }
 
-    // Открываем новое окно заранее, чтобы блокировщики не мешали
     const pdfWindow = window.open('', '_blank');
-
-    // Делаем запрос с заголовками авторизации
     const response = await fetch(`http://localhost:8080/acts/${actId}/pdf`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     });
+
     if (response.status === 401) {
       handleUnauthorized();
       pdfWindow.close();
@@ -206,9 +416,7 @@ const generatePdf = async (actId) => {
       return;
     }
 
-    // Получаем PDF как blob
     const blob = await response.blob();
-    // Отображаем PDF в новом окне
     pdfWindow.location.href = URL.createObjectURL(blob);
 
   } catch (err) {
@@ -219,6 +427,9 @@ const generatePdf = async (actId) => {
 
 const addDates = async () => {
   try {
+    isGeneratingRegistry.value = true;
+    error.value = null;
+
     const formatDate = (date) => {
       const year = date.getFullYear()
       const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -255,14 +466,53 @@ const addDates = async () => {
     window.URL.revokeObjectURL(url)
     document.body.removeChild(a)
 
-  } catch (error) {
-    console.error('Ошибка:', error)
+    toggleDatePanel();
+
+  } catch (err) {
+    console.error('Ошибка:', err)
     error.value = 'Не удалось сформировать реестр'
+  } finally {
+    isGeneratingRegistry.value = false;
   }
 }
 
-const showRegistryDates = () => {
-  showDates.value = !showDates.value
+const generateLogPdf = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      handleUnauthorized();
+      return;
+    }
+
+    const pdfWindow = window.open('', '_blank');
+    const response = await fetch(`http://localhost:8080/acts/pdf/controlLog`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.status === 401) {
+      handleUnauthorized();
+      pdfWindow.close();
+      return;
+    }
+
+    if (!response.ok) {
+      error.value = 'Ошибка сервера';
+      return;
+    }
+
+    const blob = await response.blob();
+    pdfWindow.location.href = URL.createObjectURL(blob);
+
+  } catch (err) {
+    console.error('Ошибка при генерации PDF:', err);
+    error.value = 'Не удалось сформировать PDF';
+  }
+}
+
+const toggleDatePanel = () => {
+  isDatePanelOpen.value = !isDatePanelOpen.value
 }
 
 onMounted(() => {
@@ -307,9 +557,494 @@ onMounted(() => {
   font-size: 0.8rem;
 }
 
-@media (max-width: 768px) {
-  .table-responsive {
-    font-size: 0.8rem;
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+.btn:disabled {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.pdf-link {
+  color: inherit;
+  transition: color 0.2s ease;
+}
+
+.pdf-link:hover {
+  color: #dc3545;
+}
+
+.pdf-link .bi {
+  color: #6c757d;
+  transition: color 0.2s ease;
+}
+
+.pdf-link:hover .bi {
+  color: #dc3545;
+}
+
+/* Bulk actions panel styles */
+.bulk-actions-panel {
+  z-index: 1030;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 2px solid #0d6efd;
+}
+
+.bulk-actions-panel .btn-outline-secondary {
+  border-color: #6c757d;
+}
+
+.bulk-actions-panel .btn-outline-secondary:hover {
+  background-color: #6c757d;
+  color: white;
+}
+
+.bulk-actions-panel .btn-link {
+  text-decoration: none;
+}
+
+.bulk-actions-panel .btn-link:hover {
+  text-decoration: underline;
+}
+
+/* Checkbox styles */
+.form-check-input {
+  cursor: pointer;
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.form-check-input:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.form-check-input:focus {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Floating Date Pickers Styles */
+.floating-date-pickers {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  padding: 2rem;
+  z-index: 1070;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 320px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  height: 850px;
+}
+
+.floating-date-pickers--open {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.floating-date-item {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.floating-date-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  max-width: 300px;
+}
+
+.floating-date-picker {
+  width: 300px;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 0.875rem 1rem;
+  font-size: 0.9rem;
+  background: #f8f9fa;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.floating-date-picker:hover {
+  border-color: #adb5bd;
+  background: white;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.floating-date-picker:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+  outline: none;
+  background: white;
+}
+
+.floating-date-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.floating-date-actions .btn {
+  width: 160px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+/* Overlay for floating date pickers */
+.floating-date-pickers::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: none;
+}
+
+.floating-date-pickers--open::before {
+  opacity: 1;
+}
+
+/* Overlay для закрытия date pickers */
+.floating-date-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  z-index: 1069;
+  cursor: pointer;
+}
+
+/* Floating buttons styles */
+.floating-buttons {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: flex-end;
+}
+
+.floating-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: visible;
+  font-size: 1.2rem;
+  border: none;
+  z-index: 1001;
+  opacity: 1;
+  cursor: pointer;
+}
+
+.floating-btn:hover {
+  transform: translateY(-4px) scale(1.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  z-index: 1002;
+  opacity: 1;
+}
+
+.floating-btn:active {
+  transform: translateY(2px) scale(0.95);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  transition: all 0.1s ease;
+}
+
+.floating-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.floating-btn:active::after {
+  transform: translate(-50%, -50%) scale(2);
+  opacity: 1;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.floating-btn:active {
+  filter: brightness(1.3);
+}
+
+.floating-btn-text {
+  position: absolute;
+  right: 100%;
+  margin-right: 15px;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(10px);
+  transition: all 0.3s ease;
+  pointer-events: none;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1003;
+}
+
+.floating-btn:hover .floating-btn-text {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.floating-btn-text::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  margin-top: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent transparent rgba(0, 0, 0, 0.9);
+}
+
+/* Individual button animations */
+.add-btn {
+  animation: floatUp 0.5s ease-out 0.2s both;
+  z-index: 1001;
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
+  border: none !important;
+}
+
+.add-btn:active {
+  background: linear-gradient(135deg, #138496 0%, #117a8b 100%) !important;
+  box-shadow: 0 2px 15px rgba(23, 162, 184, 0.6) !important;
+}
+
+.registry-btn {
+  animation: floatUp 0.5s ease-out 0.1s both;
+  z-index: 1001;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+  border: 2px solid #6c757d !important;
+  color: #6c757d !important;
+}
+
+.registry-btn:hover {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+  border-color: #495057 !important;
+  color: #495057 !important;
+}
+
+.registry-btn:active {
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%) !important;
+  box-shadow: 0 2px 15px rgba(108, 117, 125, 0.4) !important;
+}
+
+.journal-btn {
+  animation: floatUp 0.5s ease-out both;
+  z-index: 1001;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+  border: 2px solid #6c757d !important;
+  color: #6c757d !important;
+}
+
+.journal-btn:hover {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+  border-color: #dc3545 !important;
+  color: #dc3545 !important;
+}
+
+.journal-btn:active {
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%) !important;
+  border-color: #c82333 !important;
+  color: #c82333 !important;
+  box-shadow: 0 2px 15px rgba(220, 53, 69, 0.4) !important;
+}
+
+.journal-btn .bi {
+  transition: color 0.3s ease;
+}
+
+.journal-btn:hover .bi {
+  color: #dc3545 !important;
+}
+
+.journal-btn:active .bi {
+  color: #c82333 !important;
+}
+
+.journal-btn:disabled {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+  border-color: #6c757d !important;
+  color: #6c757d !important;
+  opacity: 0.6;
+}
+
+/* Selected acts button */
+.selected-btn {
+  animation: floatUp 0.5s ease-out 0.15s both;
+  z-index: 1001;
+  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%) !important;
+  border: none !important;
+  color: #212529 !important;
+}
+
+.selected-btn:hover {
+  background: linear-gradient(135deg, #e0a800 0%, #d39e00 100%) !important;
+  transform: translateY(-4px) scale(1.08);
+  box-shadow: 0 10px 30px rgba(255, 193, 7, 0.35) !important;
+}
+
+.selected-btn:active {
+  background: linear-gradient(135deg, #d39e00 0%, #c69500 100%) !important;
+  box-shadow: 0 2px 15px rgba(255, 193, 7, 0.6) !important;
+}
+
+@keyframes floatUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.8);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.btn-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 4px 20px rgba(220, 53, 69, 0.5);
+  }
+  50% {
+    box-shadow: 0 6px 25px rgba(220, 53, 69, 0.8);
+  }
+  100% {
+    box-shadow: 0 4px 20px rgba(220, 53, 69, 0.5);
+  }
+}
+
+.floating-btn:hover .floating-btn-text {
+  animation: tooltipFadeIn 0.3s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .floating-date-pickers {
+    width: 90%;
+    min-width: unset;
+    padding: 1.5rem;
+  }
+
+  .floating-date-actions {
+    flex-direction: column;
+  }
+
+  .floating-date-actions .btn {
+    width: 100%;
+  }
+
+  .floating-buttons {
+    bottom: 20px;
+    right: 20px;
+  }
+
+  .floating-btn {
+    width: 55px;
+    height: 55px;
+    font-size: 1.1rem;
+  }
+
+  .floating-btn-text {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    white-space: normal;
+    width: 140px;
+    text-align: center;
+  }
+
+  .bulk-actions-panel {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .bulk-actions-panel > div {
+    width: 100%;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Стилизация календаря */
+:deep(.vc-container) {
+  border: none !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 12px !important;
+}
+
+:deep(.vc-header) {
+  margin-bottom: 1rem;
+  background: transparent !important;
+  color: white !important;
+  padding: 1.5rem !important;
+}
+
+:deep(.vc-title) {
+  font-weight: 600 !important;
+  font-size: 1.1rem !important;
 }
 </style>

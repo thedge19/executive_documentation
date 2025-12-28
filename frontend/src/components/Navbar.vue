@@ -7,7 +7,7 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <ul class="navbar-nav me-auto mb-1 mb-lg-0">
           <li class="nav-item">
             <router-link class="nav-link" active-class="active" to="/">Домой</router-link>
           </li>
@@ -19,9 +19,6 @@
           </li>
           <li class="nav-item">
             <router-link class="nav-link" active-class="active" to="/standards">СП</router-link>
-          </li>
-          <li class="nav-item">
-            <router-link class="nav-link" active-class="active" to="/controls">Входняк</router-link>
           </li>
           <li class="nav-item">
             <router-link class="nav-link" active-class="active" to="/workLog3">ОЖР 3 раздел</router-link>

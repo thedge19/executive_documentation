@@ -41,12 +41,11 @@ public class MaterialController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<Material> createMaterial(
             @RequestPart("material") MaterialRequestDto materialDto,
-            @RequestPart("files") List<MultipartFile> files) {
+            @RequestPart("file") MultipartFile file) {
 
         // Связываем файлы с соответствующими сертификатами
-        for (int i = 0; i < files.size() && i < materialDto.getCertificates().size(); i++) {
-            materialDto.getCertificates().get(i).setFile(files.get(i));
-        }
+
+        materialDto.setFile(file);
 
         log.info("Create material: {}", materialDto);
         Material createdMaterial = materialService.create(materialDto);

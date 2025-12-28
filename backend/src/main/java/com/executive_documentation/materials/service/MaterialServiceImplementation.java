@@ -5,9 +5,7 @@ import com.executive_documentation.fileStorage.service.FileStorageService;
 import com.executive_documentation.materials.dto.MaterialMapper;
 import com.executive_documentation.materials.dto.MaterialRequestDto;
 import com.executive_documentation.materials.dto.MaterialResponseDto;
-import com.executive_documentation.materials.model.Certificate;
 import com.executive_documentation.materials.model.Material;
-import com.executive_documentation.materials.repository.CertificateRepository;
 import com.executive_documentation.materials.repository.MaterialRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,9 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -29,7 +24,6 @@ import java.util.stream.Collectors;
 public class MaterialServiceImplementation implements MaterialService {
 
     private final MaterialRepository materialRepository;
-    private final CertificateRepository certificateRepository;
     private final MaterialMapper materialMapper;
     private final FileStorageService fileStorageService;
 
@@ -38,7 +32,7 @@ public class MaterialServiceImplementation implements MaterialService {
 
     @Override
     public MaterialResponseDto get(Long id) {
-        Material material = findMaterialWithCertificatesOrThrow(id);
+        Material material = materialRepository.findById(id).orElseThrow();
         return materialMapper.toResponseDto(material);
     }
 
@@ -54,17 +48,7 @@ public class MaterialServiceImplementation implements MaterialService {
     @Override
     public Material create(MaterialRequestDto dto) {
         Material material = materialMapper.requestDtoToEntity(dto);
-        Material savedMaterial = materialRepository.save(material);
-
-        Set<Certificate> certificates = dto.getCertificates().stream()
-                .map(certDto -> materialMapper.toCertificateEntity(certDto, savedMaterial))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-
-        certificateRepository.saveAll(certificates);
-        savedMaterial.setCertificates(certificates);
-
-        return savedMaterial;
+        return materialRepository.save(material);
     }
 
     @Transactional
@@ -79,35 +63,17 @@ public class MaterialServiceImplementation implements MaterialService {
     @Transactional
     @Override
     public void delete(long id) {
-        Material material = findMaterialWithCertificatesOrThrow(id);
-
-        // Удаляем файлы сертификатов
-        material.getCertificates().forEach(cert ->
-                fileStorageService.deleteFile(cert.getPath()));
-
-        certificateRepository.deleteAllByMaterialId(material.getId());
+        Material material = materialRepository.findById(id).orElseThrow();
+        fileStorageService.deleteFile(material.getPath());
         materialRepository.delete(material);
     }
 
     @Transactional
     @Override
-    public void deleteCertificate(long certificateId) {
-        Certificate certificate = certificateRepository.findById(certificateId)
-                .orElseThrow(() -> new NotFoundException("Certificate not found with id: " + certificateId));
+    public void deleteCertificate(long id) {
+        Material material = materialRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Certificate not found with id: " + id));
 
-        fileStorageService.deleteFile(certificate.getPath());
-        certificateRepository.delete(certificate);
-    }
-
-    // Вспомогательные методы
-    private Material findMaterialWithCertificatesOrThrow(long id) {
-        return materialRepository.findByIdWithCertificates(id)
-                .orElseThrow(() -> new NotFoundException("Material not found with id: " + id));
-    }
-
-    private void updateMaterialFields(Material existing, Material updated) {
-        Optional.ofNullable(updated.getName()).ifPresent(existing::setName);
-        Optional.ofNullable(updated.getUnits()).ifPresent(existing::setUnits);
-        Optional.ofNullable(updated.getStandard()).ifPresent(existing::setStandard);
+        fileStorageService.deleteFile(material.getPath());
     }
 }

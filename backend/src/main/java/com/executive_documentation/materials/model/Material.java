@@ -34,7 +34,17 @@ public class Material {
     @Column(name = "material_standard")
     private String standard;
 
-    @OneToMany(mappedBy = "material", fetch = FetchType.LAZY)
-    @BatchSize(size = 100) // Оптимизация для ленивой загрузки
-    private Set<Certificate> certificates = new HashSet<>();
+    @NotBlank
+    @Column(name="certificate_path")
+    private String path;
+
+    @Column(name="number_of_pages")
+    private Integer numberOfPages;
+
+    @NotBlank
+    @Column(name = "certificate_name")
+    private String certificateName;
+
+    @Column(name = "certificate_author")
+    private String author;
 }

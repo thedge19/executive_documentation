@@ -5,9 +5,7 @@ import com.executive_documentation.workings.service.WorkingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,44 +32,9 @@ public class WorkingController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Page<WorkingResponseDto>> getAllWorksBySubObject(
-            @PathVariable Long id,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id,asc") String[] sort) {
-
-        log.info("Get all works for subObjectId: {}, page: {}, size: {}, sort: {}",
-                id, page, size, Arrays.toString(sort));
-
-        try {
-            // Создаем объект сортировки
-            Sort sorting = Sort.by(
-                    sort[0].contains(",") ?
-                            sort[0].split(",")[0] :
-                            sort[0]
-            );
-
-            if (sort[0].contains(",")) {
-                sorting = sort[0].split(",")[1].equalsIgnoreCase("desc") ?
-                        sorting.descending() :
-                        sorting.ascending();
-            }
-
-            Pageable pageable = PageRequest.of(page, size, sorting);
-            Page<WorkingResponseDto> worksPage = workingService.getAll(id, pageable);
-
-            log.info("Found {} works out of {}",
-                    worksPage.getNumberOfElements(),
-                    worksPage.getTotalElements());
-
-            log.info(worksPage.toString());
-
-            return ResponseEntity.ok(worksPage);
-
-        } catch (Exception e) {
-            log.error("Error fetching works for subObjectId {}: {}", id, e.getMessage());
-            return ResponseEntity.internalServerError().build();
-        }
+    public ResponseEntity<List<WorkingResponseDto>> getAllWorksBySubObject(@PathVariable Long id) {
+        List<WorkingResponseDto> works = workingService.getAll(id);
+        return ResponseEntity.ok(works);
     }
 
     @GetMapping("/count-by-subobject")
@@ -123,5 +86,18 @@ public class WorkingController {
         log.info("Delete Working: {}", id);
         workingService.delete(id);
         log.info("Working with id: {} deleted", id);
+    }
+
+    @PostMapping("/import-excel/{subObjectId}")
+    public ResponseEntity<String> importFromExcel(@PathVariable Long subObjectId) {
+        log.info("Importing works from Excel for subObject: {}", subObjectId);
+        try {
+            int importedCount = workingService.importFromExcel(subObjectId);
+            return ResponseEntity.ok("Успешно импортировано " + importedCount + " работ");
+        } catch (Exception e) {
+            log.error("Error importing from Excel", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ошибка при импорте: " + e.getMessage());
+        }
     }
 }

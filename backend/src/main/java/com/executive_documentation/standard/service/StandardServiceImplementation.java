@@ -1,6 +1,5 @@
 package com.executive_documentation.standard.service;
 
-import com.executive_documentation.exception.NotFoundException;
 import com.executive_documentation.standard.model.Standard;
 import com.executive_documentation.standard.repository.StandardRepository;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +52,6 @@ public class StandardServiceImplementation implements StandardService {
 
     @Override
     public Standard findStandardOrNot(long id) {
-        return standardRepository.findById(id).orElseThrow(() -> new NotFoundException("Подобъект не найден"));
+        return standardRepository.findById(id).orElseThrow();
     }
 }

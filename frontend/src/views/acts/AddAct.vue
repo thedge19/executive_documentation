@@ -3,7 +3,7 @@
   <div class="container py-5">
     <div class="card shadow-sm border-0 mx-auto" style="max-width: 800px;">
       <div class="card-header bg-white py-4">
-        <h2 class="h4 mb-0 text-center text-primary">Добавить акт выполненных работ</h2>
+        <h2 class="h4 mb-0 text-center text-primary">Добавить АОСР</h2>
       </div>
 
       <div class="card-body">
@@ -316,6 +316,10 @@ const onChangeSubObject = async () => {
 
 const onChangeWork = async () => {
   await getWork()
+  // Автоматически заполняем поле workDone значением из currentWork
+  if (currentWork.value && currentWork.value.finalQuantity) {
+    workDone.value = currentWork.value.finalQuantity.toString()
+  }
 }
 
 const onChangeMaterial = async (index) => {
@@ -480,7 +484,13 @@ const addAct = async () => {
     formData.append('startDate', formatDate(startDate.value))
     formData.append('endDate', formatDate(endDate.value))
     formData.append('executiveSchema', executiveSchema.value)
-    formData.append('materials', JSON.stringify(materialsData))
+
+    materialsData.forEach((material, index) => {
+      formData.append(`materials[${index}].materialId`, material.materialId)
+      formData.append(`materials[${index}].quantity`, material.quantity)
+    })
+
+    // formData.append('materials', JSON.stringify(materialsData))
 
     if (materialQuantity.value > 0) {
       formData.append('controlDate', formatDate(setControlDate.value))
