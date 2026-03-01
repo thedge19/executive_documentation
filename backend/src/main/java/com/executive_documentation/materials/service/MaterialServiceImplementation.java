@@ -116,11 +116,10 @@ public class MaterialServiceImplementation implements MaterialService {
         }
 
         // Сохраняем обновленный материал
-        Material updatedMaterial = materialRepository.save(existingMaterial);
         log.info("Material with id {} successfully updated", id);
 
         // Маппим в ResponseDto и возвращаем
-        return materialMapper.toResponseDto(updatedMaterial);
+        return materialMapper.toResponseDto(existingMaterial);
     }
 
     @Transactional
