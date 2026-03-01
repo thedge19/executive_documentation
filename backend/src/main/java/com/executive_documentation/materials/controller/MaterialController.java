@@ -2,8 +2,10 @@ package com.executive_documentation.materials.controller;
 
 import com.executive_documentation.materials.dto.MaterialRequestDto;
 import com.executive_documentation.materials.dto.MaterialResponseDto;
+import com.executive_documentation.materials.dto.MaterialUpdateDto;
 import com.executive_documentation.materials.model.Material;
 import com.executive_documentation.materials.service.MaterialService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -54,9 +56,23 @@ public class MaterialController {
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public Material update(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
-        log.info("Здесь");
-        return materialService.update(id, file);
+    public ResponseEntity<MaterialResponseDto> updateMaterial(
+            @PathVariable Long id,
+            @Valid @RequestPart("material") MaterialUpdateDto materialDto,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
+        log.info("Запрос на обновление материала с ID: {}", id);
+        log.info("Данные для обновления: name={}, units={}, standard={}, author={}, certificateName={}",
+                materialDto.getName(), materialDto.getUnits(), materialDto.getStandard(),
+                materialDto.getAuthor(), materialDto.getCertificateName());
+
+        if (file != null && !file.isEmpty()) {
+            log.info("Получен новый файл: {}, размер: {} байт", file.getOriginalFilename(), file.getSize());
+        } else {
+            log.info("Новый файл не предоставлен, будет использован существующий");
+        }
+
+        MaterialResponseDto updatedMaterial = materialService.update(id, materialDto, file);
+        return ResponseEntity.ok(updatedMaterial);
     }
 
     @DeleteMapping("/{id}")

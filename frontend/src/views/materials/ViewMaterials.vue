@@ -60,9 +60,9 @@
                   <td class="text-center align-middle">{{ material.standard }}</td>
                   <td class="text-center align-middle">
                     <div class="d-flex justify-content-center gap-2">
-                      <a class="btn btn-sm btn-outline-primary" :href="`/editMaterial/${material.id}`">
+                      <button class="btn btn-sm btn-outline-primary" @click="openEditForm(material)">
                         <i class="bi bi-pencil"></i>
-                      </a>
+                      </button>
                       <button class="btn btn-sm btn-outline-danger" @click="deleteMaterial(material.id)">
                         <i class="bi bi-trash"></i>
                       </button>
@@ -223,6 +223,143 @@
       </div>
     </div>
   </div>
+
+  <!-- Floating edit form -->
+  <div class="floating-add-form" :class="{ 'floating-add-form--open': showEditForm }">
+    <div class="floating-form-content">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-warning text-white py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+              <i class="bi bi-pencil-square me-2"></i>Редактировать материал
+            </h5>
+            <button type="button" class="btn-close btn-close-white" @click="closeEditForm"></button>
+          </div>
+        </div>
+
+        <div class="card-body p-4">
+          <form @submit.prevent="updateMaterial">
+            <!-- Наименование -->
+            <div class="mb-3">
+              <label for="edit-name" class="form-label fw-semibold small">
+                <i class="bi bi-tag me-1"></i>Наименование материала
+              </label>
+              <input id="edit-name" type="text" class="form-control form-control-sm"
+                     placeholder="Введите наименование материала"
+                     required v-model="editMaterial.name">
+            </div>
+
+            <!-- Единицы измерения -->
+            <div class="mb-3">
+              <label for="edit-units" class="form-label fw-semibold small">
+                <i class="bi bi-rulers me-1"></i>Ед. изм.
+              </label>
+              <input id="edit-units" type="text" class="form-control form-control-sm"
+                     placeholder="Введите единицы измерения"
+                     required v-model="editMaterial.units">
+            </div>
+
+            <!-- Данные сертификата -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold small">
+                <i class="bi bi-file-earmark-text me-1"></i>Данные сертификата
+              </label>
+
+              <!-- Тип документа -->
+              <div class="mb-2">
+                <label class="form-label small">Тип документа</label>
+                <select class="form-select form-select-sm" v-model="editMaterial.certificateType">
+                  <option value="" disabled>Выберите тип</option>
+                  <option v-for="type in documentTypes" :value="type">{{ type }}</option>
+                </select>
+              </div>
+
+              <!-- Номер и дата -->
+              <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                  <label class="form-label small">Номер документа</label>
+                  <input type="text" class="form-control form-control-sm" placeholder="Номер" v-model="editMaterial.certificateNumber">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Дата документа</label>
+                  <input type="date" class="form-control form-control-sm" v-model="editMaterial.certificateDate">
+                </div>
+              </div>
+
+              <!-- Автор сертификата -->
+              <div class="mb-2">
+                <label class="form-label small">Автор сертификата</label>
+                <input type="text" class="form-control form-control-sm" placeholder="Введите автора сертификата" v-model="editMaterial.author">
+              </div>
+
+              <!-- Информация о текущем сертификате -->
+              <div v-if="editMaterial.currentCertificate" class="alert alert-info mt-2 py-2 small">
+                <i class="bi bi-info-circle me-1"></i>
+                Текущий сертификат: {{ editMaterial.currentCertificate }}
+              </div>
+            </div>
+
+            <!-- ГОСТ, ТУ -->
+            <div class="mb-3">
+              <label for="edit-standard" class="form-label fw-semibold small">
+                <i class="bi bi-file-earmark-check me-1"></i>ГОСТ, ТУ
+              </label>
+              <input id="edit-standard" type="text" class="form-control form-control-sm"
+                     placeholder="Введите ГОСТ или ТУ"
+                     required v-model="editMaterial.standard">
+            </div>
+
+            <!-- Загрузка нового файла (опционально) -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold small">
+                <i class="bi bi-file-earmark-pdf me-1"></i>Новый файл сертификата (PDF)
+              </label>
+              <input @change="handleEditFileUpload" class="form-control form-control-sm"
+                     type="file" accept=".pdf">
+              <small class="text-muted small" v-if="editFile">Выбран файл: {{ editFile.name }}</small>
+              <small class="text-muted d-block mt-1" v-else>
+                <i class="bi bi-info-circle"></i> Оставьте пустым, если не хотите менять файл
+              </small>
+
+              <div v-if="editUploadProgress > 0 && editUploadProgress < 100" class="mt-1">
+                <div class="progress" style="height: 20px;">
+                  <div class="progress-bar progress-bar-striped progress-bar-animated"
+                       :style="{ width: editUploadProgress + '%' }">
+                    {{ editUploadProgress }}%
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="editUploadError" class="alert alert-danger mt-1 py-1 small">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ editUploadError }}
+              </div>
+            </div>
+
+            <!-- Ошибка -->
+            <div v-if="editError" class="alert alert-danger mb-3 py-2">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ editError }}
+            </div>
+
+            <!-- Кнопки отправки -->
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-secondary btn-sm flex-fill" @click="closeEditForm">
+                <i class="bi bi-x-circle me-1"></i>Отмена
+              </button>
+              <button type="submit" class="btn btn-warning btn-sm flex-fill" :disabled="isEditing">
+                <template v-if="isEditing">
+                  <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                  Обновление...
+                </template>
+                <template v-else>
+                  <i class="bi bi-check-circle me-1"></i>Обновить
+                </template>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -235,6 +372,7 @@ const isLoading = ref(false)
 const error = ref(null)
 const materials = ref([])
 const showAddForm = ref(false)
+const showEditForm = ref(false)
 
 // Form data
 const material = ref({
@@ -247,10 +385,28 @@ const material = ref({
   certificateDate: '',
 })
 
+// Edit form data
+const editMaterial = ref({
+  id: null,
+  name: '',
+  units: '',
+  standard: '',
+  author: '',
+  certificateType: '',
+  certificateNumber: '',
+  certificateDate: '',
+  currentCertificate: ''
+})
+
 const file = ref(null)
+const editFile = ref(null)
 const isUploading = ref(false)
+const isEditing = ref(false)
 const uploadProgress = ref(0)
+const editUploadProgress = ref(0)
 const uploadError = ref(null)
+const editUploadError = ref(null)
+const editError = ref(null)
 
 const documentTypes = ref([
   'Декларация о соответствии',
@@ -370,21 +526,89 @@ const handleFileUpload = (event) => {
   uploadError.value = null
 }
 
+const handleEditFileUpload = (event) => {
+  const selectedFile = event.target.files[0]
+  if (!selectedFile) {
+    editFile.value = null
+    return
+  }
+
+  if (selectedFile.type !== 'application/pdf') {
+    editUploadError.value = 'Пожалуйста, загрузите файл в формате PDF'
+    editFile.value = null
+    return
+  }
+
+  editFile.value = selectedFile
+  editUploadError.value = null
+}
+
 const formatDateForDisplay = (isoDate) => {
   if (!isoDate) return ''
   const [year, month, day] = isoDate.split('-')
   return `${day}.${month}.${year}`
 }
 
-const generateCertificateName = () => {
-  const type = material.value.certificateType
-  const number = material.value.certificateNumber
-  const date = material.value.certificateDate
+const formatDateForInput = (displayDate) => {
+  if (!displayDate) return ''
+  // Предполагаем, что дата приходит в формате DD.MM.YYYY
+  const [day, month, year] = displayDate.split('.')
+  return `${year}-${month}-${day}`
+}
+
+const parseCertificateName = (certificateName) => {
+  if (!certificateName) return { type: '', number: '', date: '' }
+
+  // Парсим строку вида: "Тип №Номер от DD.MM.YYYY г."
+  const match = certificateName.match(/(.+?)\s+№([^\s]+)\s+от\s+(\d{2}\.\d{2}\.\d{4})\s+г\./)
+  if (match) {
+    return {
+      type: match[1],
+      number: match[2],
+      date: formatDateForInput(match[3])
+    }
+  }
+  return { type: '', number: '', date: '' }
+}
+
+const generateCertificateName = (certData) => {
+  const type = certData.certificateType
+  const number = certData.certificateNumber
+  const date = certData.certificateDate
 
   if (type && number && date) {
     return `${type} №${number} от ${formatDateForDisplay(date)} г.`
   }
   return ''
+}
+
+const openEditForm = (materialData) => {
+  // Получаем первый сертификат из объекта certificates
+  let currentCertificate = ''
+  let certificateData = { type: '', number: '', date: '' }
+
+  if (materialData.certificates && Object.keys(materialData.certificates).length > 0) {
+    const firstCertName = Object.keys(materialData.certificates)[0]
+    currentCertificate = firstCertName
+    certificateData = parseCertificateName(firstCertName)
+  }
+
+  editMaterial.value = {
+    id: materialData.id,
+    name: materialData.name || '',
+    units: materialData.units || '',
+    standard: materialData.standard || '',
+    author: materialData.author || '',
+    certificateType: certificateData.type,
+    certificateNumber: certificateData.number,
+    certificateDate: certificateData.date,
+    currentCertificate: currentCertificate
+  }
+
+  editFile.value = null
+  editUploadError.value = null
+  editError.value = null
+  showEditForm.value = true
 }
 
 const resetForm = () => {
@@ -403,9 +627,32 @@ const resetForm = () => {
   uploadProgress.value = 0
 }
 
+const resetEditForm = () => {
+  editMaterial.value = {
+    id: null,
+    name: '',
+    units: '',
+    standard: '',
+    author: '',
+    certificateType: '',
+    certificateNumber: '',
+    certificateDate: '',
+    currentCertificate: ''
+  }
+  editFile.value = null
+  editUploadError.value = null
+  editError.value = null
+  editUploadProgress.value = 0
+}
+
 const closeForm = () => {
   showAddForm.value = false
   resetForm()
+}
+
+const closeEditForm = () => {
+  showEditForm.value = false
+  resetEditForm()
 }
 
 const addMaterial = async () => {
@@ -426,7 +673,7 @@ const addMaterial = async () => {
     }
 
     const formData = new FormData()
-    const certificateName = generateCertificateName()
+    const certificateName = generateCertificateName(material.value)
 
     const materialDto = {
       name: material.value.name,
@@ -466,6 +713,71 @@ const addMaterial = async () => {
   } finally {
     isUploading.value = false
     uploadProgress.value = 0
+  }
+}
+
+const updateMaterial = async () => {
+  try {
+    isEditing.value = true
+    editError.value = null
+    editUploadError.value = null
+
+    const token = localStorage.getItem('token')
+    if (!token) {
+      editError.value = 'Токен отсутствует'
+      return
+    }
+
+    const formData = new FormData()
+
+    // Генерируем новое имя сертификата, если заполнены все поля
+    let certificateName = editMaterial.value.currentCertificate
+    if (editMaterial.value.certificateType && editMaterial.value.certificateNumber && editMaterial.value.certificateDate) {
+      certificateName = generateCertificateName(editMaterial.value)
+    }
+
+    const materialDto = {
+      name: editMaterial.value.name,
+      units: editMaterial.value.units,
+      standard: editMaterial.value.standard,
+      author: editMaterial.value.author,
+      certificateName: certificateName,
+    }
+
+    formData.append('material', new Blob([JSON.stringify(materialDto)], {
+      type: 'application/json'
+    }))
+
+    // Добавляем файл только если выбран новый
+    if (editFile.value) {
+      formData.append('file', editFile.value)
+    }
+
+    const response = await fetch(`http://localhost:8080/materials/${editMaterial.value.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      editError.value = errorData.message || `Ошибка ${response.status}: ${response.statusText}`
+      return
+    }
+
+    // Успешное обновление
+    closeEditForm()
+    await getMaterials()
+    alert('Материал успешно обновлен')
+
+  } catch (err) {
+    editError.value = err.message || 'Произошла ошибка при обновлении'
+    console.error('Error:', err)
+  } finally {
+    isEditing.value = false
+    editUploadProgress.value = 0
   }
 }
 
