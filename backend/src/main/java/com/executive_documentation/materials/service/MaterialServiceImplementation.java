@@ -7,6 +7,7 @@ import com.executive_documentation.fileStorage.service.LocalFileStorageService;
 import com.executive_documentation.materials.dto.MaterialMapper;
 import com.executive_documentation.materials.dto.MaterialRequestDto;
 import com.executive_documentation.materials.dto.MaterialResponseDto;
+import com.executive_documentation.materials.dto.MaterialUpdateDto;
 import com.executive_documentation.materials.model.Material;
 import com.executive_documentation.materials.repository.MaterialRepository;
 import lombok.RequiredArgsConstructor;
@@ -56,26 +57,70 @@ public class MaterialServiceImplementation implements MaterialService {
 
     @Transactional
     @Override
-    public Material update(long id, MultipartFile file) {
-        Material existingMaterial = materialRepository.findById(id).orElseThrow(() -> new NotFoundException("Material not found"));
+    public MaterialResponseDto update(long id, MaterialUpdateDto dto, MultipartFile file) {
+        Material existingMaterial = materialRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Material not found with id: " + id));
 
+        log.info("Updating material with id: {}", id);
+        log.info("Update data - name: {}, units: {}, standard: {}, author: {}, certificateName: {}",
+                dto.getName(), dto.getUnits(), dto.getStandard(), dto.getAuthor(), dto.getCertificateName());
+
+        // Обновляем основные поля
+        if (dto.getName() != null && !dto.getName().isEmpty()) {
+            existingMaterial.setName(dto.getName());
+        }
+
+        if (dto.getUnits() != null && !dto.getUnits().isEmpty()) {
+            existingMaterial.setUnits(dto.getUnits());
+        }
+
+        if (dto.getStandard() != null && !dto.getStandard().isEmpty()) {
+            existingMaterial.setStandard(dto.getStandard());
+        }
+
+        // Обновляем автора (может быть null)
+        existingMaterial.setAuthor(dto.getAuthor());
+
+        // Обновляем название сертификата, если оно предоставлено
+        if (dto.getCertificateName() != null && !dto.getCertificateName().isEmpty()) {
+            existingMaterial.setCertificateName(dto.getCertificateName());
+        }
+
+        // Обработка файла
         if (file != null && !file.isEmpty()) {
+            log.info("Processing new certificate file for material {}", existingMaterial.getName());
+
+            // Удаляем старый файл, если он существует
             if (existingMaterial.getPath() != null) {
-                fileStorageService.deleteFile(existingMaterial.getPath());
+                try {
+                    fileStorageService.deleteFile(existingMaterial.getPath());
+                    log.info("Deleted old file: {}", existingMaterial.getPath());
+                } catch (Exception e) {
+                    log.warn("Could not delete old file: {}", e.getMessage());
+                    // Продолжаем выполнение, даже если не удалось удалить старый файл
+                }
             }
 
+            // Валидируем новый файл
             validateFile(file);
-            log.info("Add updated certificate for material {}", existingMaterial.getName());
 
+            // Сохраняем новый файл
             FileStorageResponse response = fileStorageService.storeFile(file);
 
             existingMaterial.setPath(response.fileName());
             existingMaterial.setNumberOfPages(response.pageCount());
+
+            log.info("New file saved: {}, pages: {}", response.fileName(), response.pageCount());
+        } else {
+            log.info("No new file provided, keeping existing file: {}", existingMaterial.getPath());
         }
 
+        // Сохраняем обновленный материал
+        Material updatedMaterial = materialRepository.save(existingMaterial);
+        log.info("Material with id {} successfully updated", id);
 
-
-        return null;
+        // Маппим в ResponseDto и возвращаем
+        return materialMapper.toResponseDto(updatedMaterial);
     }
 
     @Transactional

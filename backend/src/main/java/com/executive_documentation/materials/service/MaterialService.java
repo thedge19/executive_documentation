@@ -2,6 +2,7 @@ package com.executive_documentation.materials.service;
 
 import com.executive_documentation.materials.dto.MaterialRequestDto;
 import com.executive_documentation.materials.dto.MaterialResponseDto;
+import com.executive_documentation.materials.dto.MaterialUpdateDto;
 import com.executive_documentation.materials.model.Material;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,7 +15,7 @@ public interface MaterialService {
 
     Material create(MaterialRequestDto dto);
 
-    Material update(long id, MultipartFile file);
+    MaterialResponseDto update(long id, MaterialUpdateDto dto, MultipartFile file);
 
     void delete(long id);
 
