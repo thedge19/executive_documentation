@@ -124,11 +124,10 @@ public class ActController {
     @PatchMapping("/{id}")
     public ActResponseDto updateAct(
             @PathVariable Long id,
-            @RequestParam("works") String works, // Добавляем параметр works
-            @RequestParam(value = "file", required = false) MultipartFile file) { // file теперь необязательный
+            @RequestParam(value = "file", required = true) MultipartFile file) {
 
-        log.info("Обновление акта № {} с works: {}", id, works);
-        return actService.actUpdate(id, works, file);
+        log.info("Обновление акта № {}", id);
+        return actService.actUpdate(id, file);
     }
 
     @DeleteMapping("/{id}")

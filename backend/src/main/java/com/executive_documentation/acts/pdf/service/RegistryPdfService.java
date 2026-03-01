@@ -12,7 +12,7 @@ import com.executive_documentation.acts.pdf.utils.PdfCellCreator;
 import com.executive_documentation.acts.pdf.utils.PdfUtils;
 import com.executive_documentation.acts.repository.ActRepository;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
-import com.executive_documentation.fileStorage.service.FileStorageService;
+import com.executive_documentation.fileStorage.service.LocalFileStorageService;
 import com.executive_documentation.materials.model.Material;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
@@ -21,18 +21,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -54,7 +50,7 @@ public class RegistryPdfService {
     private final ActPdfService actPdfService;
     private final ControlPdfService controlPdfService;
     private final ActMapper actMapper;
-    private final FileStorageService fileStorageService;
+    private final LocalFileStorageService fileStorageService;
     private final PdfCellCreator creator;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private final WorkLogPdfService workLogPdfService;
@@ -62,7 +58,7 @@ public class RegistryPdfService {
 
     private final static String ENERGY = "ООО «Энергомонтаж»";
     private final Path fileStorageLocation;
-    @Value("${file.upload-dir}")
+//    @Value("${file.upload-dir}")
     String uploadDir;
 
     private Font f1;
@@ -158,9 +154,8 @@ public class RegistryPdfService {
                 if (act.getExecutiveSchema().getSchemaPath() != null) {
                     Registry schemaRegistry = createSchemaRegistryEntry(act);
                     try {
-                        log.info("HERE");
                         int schemaPages = addRemoteDocumentToMerge(copy,
-                                fileStorageService.getFilePublicUrl(dto.getExecutiveSchemaUrl()));
+                                fileStorageService.getMinioFileUrl(dto.getExecutiveSchemaUrl()));
                         schemaRegistry.setNumberOfSheets(schemaPages);
                     } catch (Exception e) {
                         log.warn("!!!Не удалось добавить исполнительную схему: {}", e.getMessage());
@@ -183,8 +178,8 @@ public class RegistryPdfService {
                     if (control.getMaterial() != null) {
                         Registry certRegistry = createCertificateRegistryEntry(control);
                         try {
-                            int certPages = addRemoteDocumentToMerge(copy, fileStorageService.getFilePublicUrl(material.getPath()));
-                            log.info("СТраниц {}", certPages);
+                            int certPages = addRemoteDocumentToMerge(copy, fileStorageService.getMinioFileUrl(material.getPath()));
+                            log.info("Страниц {}", certPages);
                             certRegistry.setNumberOfSheets(certPages);
                         } catch (Exception e) {
                             log.warn("!!!!!Не удалось добавить сертификат: {}", e.getMessage());
@@ -589,28 +584,24 @@ public class RegistryPdfService {
         return pageCount;
     }
 
-    /**
-     * Добавляет удаленный PDF-документ в объединенный PDF
-     *
-     * @param copy        объект PdfCopy для объединения документов
-     * @param documentUrl URL документа в хранилище (полный URL)
-     * @return количество добавленных страниц
-     * @throws IOException       если произошла ошибка загрузки документа
-     * @throws DocumentException если документ поврежден или не является PDF
-     */
     private int addRemoteDocumentToMerge(PdfCopy copy, String documentUrl)
             throws IOException, DocumentException {
 
+        log.info("Добавляем документ по URL: {}", documentUrl);
 
-        log.info("{}!!!!!", documentUrl);
-        Path filePath = getFilePathFromUrl(documentUrl);
-        if (!Files.exists(filePath)) {
-            log.info(filePath.toString());
-            throw new IOException("Файл не найден: " + filePath);
-        }
+        try {
+            // 1. Загружаем документ по URL
+            URL url = new URI(documentUrl).toURL();
 
-        try (InputStream inputStream = Files.newInputStream(filePath)) {
-            return addDocumentToMerge(copy, inputStream);
+            // 2. Создаем InputStream из URL
+            try (InputStream inputStream = url.openStream()) {
+                // 3. Используем существующий метод, который добавляет нумерацию
+                return addDocumentToMerge(copy, inputStream);
+            }
+
+        } catch (URISyntaxException | MalformedURLException e) {
+            log.error("Некорректный URL: {}", documentUrl, e);
+            throw new IOException("Некорректный URL документа: " + documentUrl, e);
         }
     }
 

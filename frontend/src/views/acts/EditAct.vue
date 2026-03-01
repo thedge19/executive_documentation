@@ -17,21 +17,6 @@
             </ul>
           </div>
 
-          <!-- Поле для редактирования works -->
-          <div class="mb-4">
-            <label class="form-label fw-semibold">
-              <i class="bi bi-pencil-square me-2"></i>Выполненные работы
-            </label>
-            <textarea
-                class="form-control"
-                v-model="act.works"
-                placeholder="Введите описание выполненных работ"
-                rows="3"
-                required
-            ></textarea>
-            <div class="form-text">Описание работ, которые были выполнены</div>
-          </div>
-
           <!-- Статус исполнительной схемы -->
           <div class="mb-4">
             <label class="form-label fw-semibold d-block mb-3">
@@ -97,7 +82,7 @@ const router = useRouter()
 const act = ref({
   id: '',
   actNumber: null,
-  works: '',
+  // works: '',
   executiveSchemaId: null,
 })
 
@@ -159,10 +144,6 @@ const handleFileUpload = (event) => {
 const validateForm = () => {
   errors.value = []
 
-  if (!act.value.works || act.value.works.trim() === '') {
-    errors.value.push('Поле "Выполненные работы" обязательно для заполнения.')
-  }
-
   if (executiveSchema.value === 'Есть' && !selectedFile.value && !act.value.executiveSchemaId) {
     errors.value.push('Загрузите исполнительную схему (PDF файл).')
   }
@@ -185,8 +166,6 @@ const updateAct = async (event) => {
 
   try {
     const formData = new FormData()
-    formData.append('works', act.value.works)
-
     if (selectedFile.value) {
       formData.append('file', selectedFile.value)
     }
@@ -206,7 +185,7 @@ const updateAct = async (event) => {
       throw new Error(errorData.message || `Ошибка сервера: ${response.status}`)
     }
 
-    router.push('/')
+    await router.push('/')
   } catch (error) {
     console.error('Ошибка обновления:', error)
     errors.value.push(error.message || 'Не удалось обновить акт')

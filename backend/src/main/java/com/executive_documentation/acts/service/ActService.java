@@ -31,7 +31,7 @@ public interface ActService {
 
     void create(Map<String, String> formData, MultipartFile file);
 
-    ActResponseDto actUpdate(long id, String works, MultipartFile file);
+    ActResponseDto actUpdate(long id, MultipartFile file);
 
     void delete(Long actId);
 

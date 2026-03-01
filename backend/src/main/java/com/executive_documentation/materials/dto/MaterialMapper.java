@@ -1,7 +1,7 @@
 package com.executive_documentation.materials.dto;
 
 import com.executive_documentation.fileStorage.dto.FileStorageResponse;
-import com.executive_documentation.fileStorage.service.FileStorageService;
+import com.executive_documentation.fileStorage.service.LocalFileStorageService;
 import com.executive_documentation.materials.model.Material;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,7 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class MaterialMapper {
-    private final FileStorageService fileStorageService;
+    private final LocalFileStorageService fileStorageService;
 
     public MaterialResponseDto toResponseDto(Material material) {
         return MaterialResponseDto.builder()
@@ -44,7 +44,7 @@ public class MaterialMapper {
     private Map<String, String> mapCertificates(Material material) {
 
         Map<String, String> certificates = new LinkedHashMap<>();
-        certificates.put(material.getCertificateName(), fileStorageService.getFilePublicUrl(material.getPath()));
+        certificates.put(material.getCertificateName(), fileStorageService.getMinioFileUrl(material.getPath()));
 
         return certificates;
     }

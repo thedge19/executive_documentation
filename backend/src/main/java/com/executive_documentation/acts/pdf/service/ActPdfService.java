@@ -9,7 +9,7 @@ import com.executive_documentation.acts.pdf.utils.PdfUtils;
 import com.executive_documentation.acts.repository.ActRepository;
 import com.executive_documentation.acts.repository.EntranceControlRepository;
 import com.executive_documentation.acts.service.ActService;
-import com.executive_documentation.fileStorage.service.FileStorageService;
+import com.executive_documentation.fileStorage.service.LocalFileStorageService;
 import com.executive_documentation.materials.model.Material;
 import com.executive_documentation.materials.repository.MaterialRepository;
 import com.itextpdf.text.Document;
@@ -45,7 +45,7 @@ public class ActPdfService {
 
     private final ActService actService;
     private final ControlPdfService controlPdfService;
-    private final FileStorageService fileStorageService;
+    private final LocalFileStorageService fileStorageService;
     private final EntranceControlRepository entranceControlRepository;
     private final ActRepository actRepository;
     private final PdfCellCreator creator;
@@ -97,9 +97,12 @@ public class ActPdfService {
 
             // 4.2. Добавляем исполнительную схему (если есть)
             if (actDto.getExecutiveSchemaUrl() != null) {
+
+                String newFileName = fileStorageService.getMinioFileUrl(actDto.getExecutiveSchemaUrl());
+                log.info("Filename {}", newFileName);
                 try {
                     addRemoteDocumentToMerge(copy,
-                            fileStorageService.getStorageBaseUrl(actDto.getExecutiveSchemaUrl()));
+                            newFileName);
                 } catch (Exception e) {
                     log.warn("Не удалось добавить исполнительную схему: {}", e.getMessage());
                 }
@@ -119,7 +122,7 @@ public class ActPdfService {
                         log.info(material.getPath());
 
                         try {
-                            addRemoteDocumentToMerge(copy, fileStorageService.getStorageBaseUrl(
+                            addRemoteDocumentToMerge(copy, fileStorageService.getMinioFileUrl(
                                     material.getPath()));
                         } catch (Exception e) {
                             log.warn("Не удалось добавить сертификат: {}", e.getMessage());

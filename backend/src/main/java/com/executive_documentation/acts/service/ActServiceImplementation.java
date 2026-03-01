@@ -17,7 +17,7 @@ import com.executive_documentation.acts.repository.ExecutiveSchemaRepository;
 import com.executive_documentation.exception.NotFoundException;
 import com.executive_documentation.exception.ValidationException;
 import com.executive_documentation.fileStorage.dto.FileStorageResponse;
-import com.executive_documentation.fileStorage.service.FileStorageService;
+import com.executive_documentation.fileStorage.service.LocalFileStorageService;
 import com.executive_documentation.materials.dto.MaterialQuantityDto;
 import com.executive_documentation.materials.model.Material;
 import com.executive_documentation.materials.repository.MaterialRepository;
@@ -53,7 +53,7 @@ public class ActServiceImplementation implements ActService {
     private final SubObjectRepository subObjectRepository;
     private final EntranceControlRepository entranceControlRepository;
     private final EntranceControlMapper entranceControlMapper;
-    private final FileStorageService fileStorageService;
+    private final LocalFileStorageService fileStorageService;
     private final ExecutiveSchemaRepository executiveSchemaRepository;
     private final WorkingRepository workingRepository;
     private final MaterialRepository materialRepository;
@@ -127,7 +127,7 @@ public class ActServiceImplementation implements ActService {
         return executiveSchemaRepository.findAllByOrderBySchemasActNumberDesc()
                 .stream()
                 .peek(schema -> {
-                    String path = fileStorageService.getFilePublicUrl(schema.getSchemaPath());
+                    String path = fileStorageService.getStorageBaseUrl(schema.getSchemaPath());
                     schema.setSchemaPath(path);
                 }).collect(Collectors.toList());
     }
@@ -229,13 +229,31 @@ public class ActServiceImplementation implements ActService {
 
     @Transactional
     @Override
-    public ActResponseDto actUpdate(long id, String works, MultipartFile file) {
+    public ActResponseDto actUpdate(long id, MultipartFile file) {
         Act act = actRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Act not found with id: " + id));
 
-        act.setWorks(works);
-
         if (file != null) {
+            // Если есть старая схема - удаляем её
+            if (act.getExecutiveSchema() != null) {
+                ExecutiveSchema oldSchema = act.getExecutiveSchema();
+
+                // Удаляем физический файл
+                if (oldSchema.getSchemaPath() != null) {
+                    fileStorageService.deleteFile(oldSchema.getSchemaPath());
+                }
+
+                // Удаляем схему из базы
+                executiveSchemaRepository.delete(oldSchema);
+
+                // Отвязываем от акта (важно!)
+                act.setExecutiveSchema(null);
+
+                // Принудительно сбрасываем контекст для удаления
+                actRepository.flush();
+            }
+
+            // Добавляем новую схему
             act.setExecutiveSchema(addExecutiveSchema(act.getActNumber(), file));
         }
 

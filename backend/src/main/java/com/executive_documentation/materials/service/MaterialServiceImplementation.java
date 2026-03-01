@@ -1,7 +1,9 @@
 package com.executive_documentation.materials.service;
 
 import com.executive_documentation.exception.NotFoundException;
-import com.executive_documentation.fileStorage.service.FileStorageService;
+import com.executive_documentation.exception.ValidationException;
+import com.executive_documentation.fileStorage.dto.FileStorageResponse;
+import com.executive_documentation.fileStorage.service.LocalFileStorageService;
 import com.executive_documentation.materials.dto.MaterialMapper;
 import com.executive_documentation.materials.dto.MaterialRequestDto;
 import com.executive_documentation.materials.dto.MaterialResponseDto;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -25,7 +28,7 @@ public class MaterialServiceImplementation implements MaterialService {
 
     private final MaterialRepository materialRepository;
     private final MaterialMapper materialMapper;
-    private final FileStorageService fileStorageService;
+    private final LocalFileStorageService fileStorageService;
 
     @Value("${app.storage.base-url}")
     private String storageBaseUrl;
@@ -54,9 +57,24 @@ public class MaterialServiceImplementation implements MaterialService {
     @Transactional
     @Override
     public Material update(long id, MultipartFile file) {
-//        Material existingMaterial = findMaterialOrThrow(id);
-//        existingMaterial.setCertificate(addCertificate(file));
-//        return existingMaterial;
+        Material existingMaterial = materialRepository.findById(id).orElseThrow(() -> new NotFoundException("Material not found"));
+
+        if (file != null && !file.isEmpty()) {
+            if (existingMaterial.getPath() != null) {
+                fileStorageService.deleteFile(existingMaterial.getPath());
+            }
+
+            validateFile(file);
+            log.info("Add updated certificate for material {}", existingMaterial.getName());
+
+            FileStorageResponse response = fileStorageService.storeFile(file);
+
+            existingMaterial.setPath(response.fileName());
+            existingMaterial.setNumberOfPages(response.pageCount());
+        }
+
+
+
         return null;
     }
 
@@ -75,5 +93,11 @@ public class MaterialServiceImplementation implements MaterialService {
                 .orElseThrow(() -> new NotFoundException("Certificate not found with id: " + id));
 
         fileStorageService.deleteFile(material.getPath());
+    }
+
+    private void validateFile(MultipartFile file) {
+        if (!Objects.requireNonNull(file.getContentType()).equalsIgnoreCase("application/pdf")) {
+            throw new ValidationException("Only PDF files are allowed");
+        }
     }
 }
